@@ -1,76 +1,125 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Shield, UserCog, Users } from 'lucide-react';
 
-const Index = () => {
-  const navigate = useNavigate();
-
-  const features = [
-    {
-      icon: Building2,
-      title: 'Organizações',
-      description: 'Gerencie todas as organizações do sistema',
-      path: '/organizations',
-    },
-    {
-      icon: Shield,
-      title: 'Permissões',
-      description: 'Configure permissões e controles de acesso',
-      path: '/permissions',
-    },
-    {
-      icon: UserCog,
-      title: 'Funções',
-      description: 'Defina funções e privilégios',
-      path: '/roles',
-    },
-    {
-      icon: Users,
-      title: 'Usuários',
-      description: 'Administre os usuários do sistema',
-      path: '/users',
-    },
-  ];
-
+export default function Index() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Heimdall
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Sistema de Gerenciamento de Acesso e Permissões
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <p className="text-muted-foreground">Bem-vindo ao Sistema Heimdall</p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <button
-                key={feature.path}
-                onClick={() => navigate(feature.path)}
-                className="group p-6 rounded-lg border border-border bg-card hover:border-primary transition-all duration-300 hover:shadow-lg text-left"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Organizações</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">2</div>
+            <p className="text-xs text-muted-foreground">Total cadastradas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Usuários</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">2</div>
+            <p className="text-xs text-muted-foreground">Usuários ativos</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Funções</CardTitle>
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">2</div>
+            <p className="text-xs text-muted-foreground">Funções definidas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Permissões</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Permissões ativas</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Acesso Rápido</CardTitle>
+            <CardDescription>Navegue para as principais seções</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link to="/organizations">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Building2 className="h-4 w-4" />
+                Organizações
+              </Button>
+            </Link>
+            <Link to="/users">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Users className="h-4 w-4" />
+                Usuários
+              </Button>
+            </Link>
+            <Link to="/roles">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <UserCog className="h-4 w-4" />
+                Funções
+              </Button>
+            </Link>
+            <Link to="/permissions">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Shield className="h-4 w-4" />
+                Permissões
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Atividades Recentes</CardTitle>
+            <CardDescription>Últimas ações no sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <Users className="h-3 w-3 text-primary" />
                 </div>
-              </button>
-            );
-          })}
-        </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Novo usuário cadastrado</p>
+                  <p className="text-xs text-muted-foreground">Maria Silva adicionada</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <UserCog className="h-3 w-3 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Função atualizada</p>
+                  <p className="text-xs text-muted-foreground">Permissões do Operador modificadas</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Index;
+}
