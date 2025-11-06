@@ -10,6 +10,7 @@ import Organizations from "./pages/Organizations";
 import Permissions from "./pages/Permissions";
 import Roles from "./pages/Roles";
 import Users from "./pages/Users";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Users />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <AppLayout>
+                  <Settings />
                 </AppLayout>
               }
             />
