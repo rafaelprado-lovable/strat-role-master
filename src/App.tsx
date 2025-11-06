@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AppLayout } from "./components/layout/AppLayout";
 import Landing from "./pages/Landing";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 import Organizations from "./pages/Organizations";
 import Permissions from "./pages/Permissions";
@@ -25,6 +26,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/landing" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
             <Route
               path="/"
               element={
