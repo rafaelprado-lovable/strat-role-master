@@ -6,7 +6,7 @@ export function AppHeader() {
       <div className="w-64"></div>
 
       <h1 className="text-xl font-semibold text-foreground">
-        OmniTelco
+        Heimdall
       </h1>
 
       <div className="flex items-center gap-4 w-64 justify-end">
