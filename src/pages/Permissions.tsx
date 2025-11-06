@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import { permissionApi } from '@/services/mockApi';
+import { Permission } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -12,12 +14,27 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { PermissionDialog } from '@/components/permissions/PermissionDialog';
+import { DeletePermissionDialog } from '@/components/permissions/DeletePermissionDialog';
 
 export default function Permissions() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
+
   const { data: permissions, isLoading } = useQuery({
     queryKey: ['permissions'],
     queryFn: permissionApi.getAll,
   });
+
+  const handleCreate = () => {
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (permission: Permission) => {
+    setPermissionToDelete(permission);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -26,7 +43,7 @@ export default function Permissions() {
           <h2 className="text-3xl font-bold tracking-tight">Permissões</h2>
           <p className="text-muted-foreground">Gerencie as permissões do sistema</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={handleCreate}>
           <Plus className="h-4 w-4" />
           Nova Permissão
         </Button>
@@ -65,7 +82,11 @@ export default function Permissions() {
                       <Badge variant="outline">{permission.action}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(permission)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -76,6 +97,17 @@ export default function Permissions() {
           )}
         </CardContent>
       </Card>
+
+      <PermissionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
+
+      <DeletePermissionDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        permission={permissionToDelete}
+      />
     </div>
   );
 }
