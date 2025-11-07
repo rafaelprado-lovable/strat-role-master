@@ -55,6 +55,7 @@ const menuItems = [
       { title: 'Permissões', url: '/permissions' },
       { title: 'Funções', url: '/roles' },
       { title: 'Usuários', url: '/users' },
+      { title: 'Escopos', url: '/scopes' },
     ],
   },
   {

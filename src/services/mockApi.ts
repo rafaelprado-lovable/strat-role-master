@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User } from '@/types';
+import { Organization, Permission, Role, User, Scope } from '@/types';
 
 // Mock data
 export const mockOrganizations: Organization[] = [
@@ -90,6 +90,25 @@ export const mockUsers: User[] = [
   },
 ];
 
+export const mockScopes: Scope[] = [
+  {
+    id: '1',
+    name: 'Escopo Regional Sul',
+    description: 'Abrange todas as operações da região Sul',
+    organizationId: '1',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'Escopo Regional Norte',
+    description: 'Abrange todas as operações da região Norte',
+    organizationId: '1',
+    createdAt: '2024-02-15T10:00:00Z',
+    updatedAt: '2024-02-15T10:00:00Z',
+  },
+];
+
 // API service functions - To be replaced with actual API calls
 export const organizationApi = {
   getAll: async (): Promise<Organization[]> => {
@@ -175,6 +194,30 @@ export const userApi = {
   update: async (id: string, data: Partial<User>): Promise<User> => {
     return new Promise((resolve) => setTimeout(() => resolve({
       ...mockUsers.find(user => user.id === id)!,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  delete: async (id: string): Promise<void> => {
+    return new Promise((resolve) => setTimeout(() => resolve(), 300));
+  },
+};
+
+export const scopeApi = {
+  getAll: async (): Promise<Scope[]> => {
+    return new Promise((resolve) => setTimeout(() => resolve(mockScopes), 300));
+  },
+  create: async (data: Omit<Scope, 'id' | 'createdAt' | 'updatedAt'>): Promise<Scope> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...data,
+      id: String(mockScopes.length + 1),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  update: async (id: string, data: Partial<Scope>): Promise<Scope> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...mockScopes.find(scope => scope.id === id)!,
       ...data,
       updatedAt: new Date().toISOString(),
     }), 300));

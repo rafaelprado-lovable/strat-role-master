@@ -12,6 +12,7 @@ import Organizations from "./pages/Organizations";
 import Permissions from "./pages/Permissions";
 import Roles from "./pages/Roles";
 import Users from "./pages/Users";
+import Scopes from "./pages/Scopes";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -64,6 +65,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Users />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/scopes"
+              element={
+                <AppLayout>
+                  <Scopes />
                 </AppLayout>
               }
             />
