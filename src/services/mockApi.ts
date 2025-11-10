@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User, Scope } from '@/types';
+import { Organization, Permission, Role, User, Scope, Department } from '@/types';
 
 // Mock data
 export const mockOrganizations: Organization[] = [
@@ -67,6 +67,23 @@ export const mockRoles: Role[] = [
   },
 ];
 
+export const mockDepartments: Department[] = [
+  {
+    id: '1',
+    name: 'CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - VAdS - N3',
+    organizationId: '1',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'CTIO IT - INFRASTRUCTURE - N2',
+    organizationId: '1',
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-10T10:00:00Z',
+  },
+];
+
 export const mockUsers: User[] = [
   {
     id: '1',
@@ -74,6 +91,8 @@ export const mockUsers: User[] = [
     email: 'rafael.prado@eng.com',
     roleId: '1',
     organizationId: '1',
+    departmentId: '1',
+    phoneNumber: '5511981289919',
     status: 'active',
     createdAt: '2024-01-10T10:00:00Z',
     updatedAt: '2024-01-10T10:00:00Z',
@@ -84,6 +103,8 @@ export const mockUsers: User[] = [
     email: 'maria.silva@eng.com',
     roleId: '2',
     organizationId: '1',
+    departmentId: '2',
+    phoneNumber: '5511987654321',
     status: 'active',
     createdAt: '2024-02-15T10:00:00Z',
     updatedAt: '2024-02-15T10:00:00Z',
@@ -150,6 +171,12 @@ export const permissionApi = {
       createdAt: new Date().toISOString(),
     }), 300));
   },
+  update: async (id: string, data: Partial<Permission>): Promise<Permission> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...mockPermissions.find(perm => perm.id === id)!,
+      ...data,
+    }), 300));
+  },
   delete: async (id: string): Promise<void> => {
     return new Promise((resolve) => setTimeout(() => resolve(), 300));
   },
@@ -194,6 +221,30 @@ export const userApi = {
   update: async (id: string, data: Partial<User>): Promise<User> => {
     return new Promise((resolve) => setTimeout(() => resolve({
       ...mockUsers.find(user => user.id === id)!,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  delete: async (id: string): Promise<void> => {
+    return new Promise((resolve) => setTimeout(() => resolve(), 300));
+  },
+};
+
+export const departmentApi = {
+  getAll: async (): Promise<Department[]> => {
+    return new Promise((resolve) => setTimeout(() => resolve(mockDepartments), 300));
+  },
+  create: async (data: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Promise<Department> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...data,
+      id: String(mockDepartments.length + 1),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  update: async (id: string, data: Partial<Department>): Promise<Department> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...mockDepartments.find(dept => dept.id === id)!,
       ...data,
       updatedAt: new Date().toISOString(),
     }), 300));

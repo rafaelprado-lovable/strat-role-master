@@ -44,22 +44,24 @@ type FormValues = z.infer<typeof formSchema>;
 interface PermissionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  permission?: Permission;
 }
 
 const resources = ['organizations', 'users', 'roles', 'permissions'];
 const actions = ['create', 'read', 'update', 'delete'];
 
-export function PermissionDialog({ open, onOpenChange }: PermissionDialogProps) {
+export function PermissionDialog({ open, onOpenChange, permission }: PermissionDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isEditing = !!permission;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      resource: '',
-      action: '',
+      name: permission?.name || '',
+      description: permission?.description || '',
+      resource: permission?.resource || '',
+      action: permission?.action || '',
     },
   });
 
@@ -76,17 +78,34 @@ export function PermissionDialog({ open, onOpenChange }: PermissionDialogProps) 
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Permission> }) =>
+      permissionApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['permissions'] });
+      toast({
+        title: 'Permissão atualizada',
+        description: 'A permissão foi atualizada com sucesso.',
+      });
+      onOpenChange(false);
+    },
+  });
+
   const onSubmit = (data: FormValues) => {
-    createMutation.mutate(data as Omit<Permission, 'id' | 'createdAt'>);
+    if (isEditing && permission) {
+      updateMutation.mutate({ id: permission.id, data });
+    } else {
+      createMutation.mutate(data as Omit<Permission, 'id' | 'createdAt'>);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nova Permissão</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Permissão' : 'Nova Permissão'}</DialogTitle>
           <DialogDescription>
-            Crie uma nova permissão no sistema
+            {isEditing ? 'Atualize as informações da permissão' : 'Crie uma nova permissão no sistema'}
           </DialogDescription>
         </DialogHeader>
 
@@ -183,9 +202,9 @@ export function PermissionDialog({ open, onOpenChange }: PermissionDialogProps) 
               </Button>
               <Button
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
               >
-                Criar
+                {isEditing ? 'Atualizar' : 'Criar'}
               </Button>
             </DialogFooter>
           </form>

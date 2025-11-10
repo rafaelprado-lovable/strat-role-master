@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userApi, organizationApi, roleApi } from '@/services/mockApi';
+import { userApi, organizationApi, roleApi, departmentApi } from '@/services/mockApi';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +36,8 @@ const formSchema = z.object({
   email: z.string().email('Email inválido'),
   organizationId: z.string().min(1, 'Organização é obrigatória'),
   roleId: z.string().min(1, 'Função é obrigatória'),
+  departmentId: z.string().min(1, 'Departamento é obrigatório'),
+  phoneNumber: z.string().min(1, 'Telefone é obrigatório'),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -62,6 +64,11 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     queryFn: roleApi.getAll,
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,6 +76,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       email: user?.email || '',
       organizationId: user?.organizationId || '',
       roleId: user?.roleId || '',
+      departmentId: user?.departmentId || '',
+      phoneNumber: user?.phoneNumber || '',
       status: user?.status || 'active',
     },
   });
@@ -194,6 +203,45 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="departmentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Departamento</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um departamento" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {departments?.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 5511981289919" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { permissionApi } from '@/services/mockApi';
-import { Permission } from '@/types';
+import { departmentApi } from '@/services/mockApi';
+import { Department } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -13,33 +13,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { PermissionDialog } from '@/components/permissions/PermissionDialog';
-import { DeletePermissionDialog } from '@/components/permissions/DeletePermissionDialog';
+import { DepartmentDialog } from '@/components/departments/DepartmentDialog';
+import { DeleteDepartmentDialog } from '@/components/departments/DeleteDepartmentDialog';
 
-export default function Permissions() {
+export default function Departments() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedPermission, setSelectedPermission] = useState<Permission | undefined>(undefined);
-  const [permissionToDelete, setPermissionToDelete] = useState<Permission | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | undefined>(undefined);
+  const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
 
-  const { data: permissions, isLoading } = useQuery({
-    queryKey: ['permissions'],
-    queryFn: permissionApi.getAll,
+  const { data: departments, isLoading } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll,
   });
 
   const handleCreate = () => {
-    setSelectedPermission(undefined);
+    setSelectedDepartment(undefined);
     setDialogOpen(true);
   };
 
-  const handleEdit = (permission: Permission) => {
-    setSelectedPermission(permission);
+  const handleEdit = (department: Department) => {
+    setSelectedDepartment(department);
     setDialogOpen(true);
   };
 
-  const handleDelete = (permission: Permission) => {
-    setPermissionToDelete(permission);
+  const handleDelete = (department: Department) => {
+    setDepartmentToDelete(department);
     setDeleteDialogOpen(true);
   };
 
@@ -47,20 +46,20 @@ export default function Permissions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Permissões</h2>
-          <p className="text-muted-foreground">Gerencie as permissões do sistema</p>
+          <h2 className="text-3xl font-bold tracking-tight">Departamentos</h2>
+          <p className="text-muted-foreground">Gerencie os departamentos do sistema</p>
         </div>
         <Button className="gap-2" onClick={handleCreate}>
           <Plus className="h-4 w-4" />
-          Nova Permissão
+          Novo Departamento
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Permissões</CardTitle>
+          <CardTitle>Lista de Departamentos</CardTitle>
           <CardDescription>
-            Visualize e gerencie todas as permissões disponíveis
+            Visualize e gerencie todos os departamentos cadastrados
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -71,36 +70,30 @@ export default function Permissions() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Recurso</TableHead>
-                  <TableHead>Ação</TableHead>
+                  <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {permissions?.map((permission) => (
-                  <TableRow key={permission.id}>
-                    <TableCell className="font-medium">{permission.name}</TableCell>
-                    <TableCell>{permission.description}</TableCell>
+                {departments?.map((department) => (
+                  <TableRow key={department.id}>
+                    <TableCell className="font-medium">{department.name}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{permission.resource}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{permission.action}</Badge>
+                      {new Date(department.createdAt).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(permission)}
+                          onClick={() => handleEdit(department)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(permission)}
+                          onClick={() => handleDelete(department)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -114,16 +107,16 @@ export default function Permissions() {
         </CardContent>
       </Card>
 
-      <PermissionDialog
+      <DepartmentDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        permission={selectedPermission}
+        department={selectedDepartment}
       />
 
-      <DeletePermissionDialog
+      <DeleteDepartmentDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        permission={permissionToDelete}
+        department={departmentToDelete}
       />
     </div>
   );
