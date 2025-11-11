@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -36,7 +37,7 @@ const formSchema = z.object({
   email: z.string().email('Email inválido'),
   organizationId: z.string().min(1, 'Organização é obrigatória'),
   roleId: z.string().min(1, 'Função é obrigatória'),
-  departmentId: z.string().min(1, 'Departamento é obrigatório'),
+  departmentIds: z.array(z.string()).min(1, 'Selecione pelo menos um departamento'),
   phoneNumber: z.string().min(1, 'Telefone é obrigatório'),
   status: z.enum(['active', 'inactive']),
 });
@@ -76,7 +77,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       email: user?.email || '',
       organizationId: user?.organizationId || '',
       roleId: user?.roleId || '',
-      departmentId: user?.departmentId || '',
+      departmentIds: user?.departmentIds || [],
       phoneNumber: user?.phoneNumber || '',
       status: user?.status || 'active',
     },
@@ -210,24 +211,47 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
 
             <FormField
               control={form.control}
-              name="departmentId"
-              render={({ field }) => (
+              name="departmentIds"
+              render={() => (
                 <FormItem>
-                  <FormLabel>Departamento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um departamento" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments?.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="mb-4">
+                    <FormLabel>Departamentos</FormLabel>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {departments?.map((dept) => (
+                      <FormField
+                        key={dept.id}
+                        control={form.control}
+                        name="departmentIds"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={dept.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(dept.id)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, dept.id])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== dept.id
+                                          )
+                                        );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {dept.name}
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        }}
+                      />
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

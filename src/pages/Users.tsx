@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { userApi } from '@/services/mockApi';
+import { userApi, departmentApi } from '@/services/mockApi';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,11 @@ export default function Users() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: userApi.getAll,
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll,
   });
 
   const handleCreate = () => {
@@ -73,6 +78,7 @@ export default function Users() {
                 <TableRow>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Departamentos</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -97,6 +103,18 @@ export default function Users() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {user.departmentIds.map((deptId) => {
+                          const dept = departments?.find(d => d.id === deptId);
+                          return dept ? (
+                            <Badge key={deptId} variant="outline" className="text-xs">
+                              {dept.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
                         {user.status === 'active' ? 'Ativo' : 'Inativo'}

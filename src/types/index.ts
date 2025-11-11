@@ -34,7 +34,7 @@ export interface User {
   avatar?: string;
   roleId: string;
   organizationId: string;
-  departmentId: string;
+  departmentIds: string[];
   phoneNumber: string;
   status: 'active' | 'inactive';
   createdAt: string;
