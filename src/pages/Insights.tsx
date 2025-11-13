@@ -15,6 +15,8 @@ import {
   FileSearch,
   CalendarIcon,
   X,
+  ArrowUpDown,
+  Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -227,6 +237,12 @@ export default function Insights() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [searchNumber, setSearchNumber] = useState('');
+  const [sortBy, setSortBy] = useState<'priority' | 'state' | 'solved' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   const { data: insights = [] } = useQuery({
     queryKey: ['insights'],
@@ -248,23 +264,66 @@ export default function Insights() {
     );
   };
 
-  const filteredInsights = insights.filter((insight) => {
-    // Filtro de data
-    if (startDate || endDate) {
-      const entryDate = new Date(insight.engineering_sla.entry_time[0]);
-      if (startDate && entryDate < startDate) return false;
-      if (endDate && entryDate > endDate) return false;
-    }
+  const filteredInsights = insights
+    .filter((insight) => {
+      // Filtro de data
+      if (startDate || endDate) {
+        const entryDate = new Date(insight.engineering_sla.entry_time[0]);
+        if (startDate && entryDate < startDate) return false;
+        if (endDate && entryDate > endDate) return false;
+      }
 
-    // Filtro de departamentos
-    if (selectedDepartments.length > 0) {
-      const insightDepts = insight.engineering_sla.departaments.map((d) => d.name || d.sysId);
-      const hasMatchingDept = insightDepts.some((dept) => selectedDepartments.includes(dept));
-      if (!hasMatchingDept) return false;
-    }
+      // Filtro de departamentos
+      if (selectedDepartments.length > 0) {
+        const insightDepts = insight.engineering_sla.departaments.map((d) => d.name || d.sysId);
+        const hasMatchingDept = insightDepts.some((dept) => selectedDepartments.includes(dept));
+        if (!hasMatchingDept) return false;
+      }
 
-    return true;
-  });
+      // Filtro de número de incidente
+      if (searchNumber) {
+        if (!insight.incident_data.number.toLowerCase().includes(searchNumber.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (!sortBy) return 0;
+
+      let comparison = 0;
+      if (sortBy === 'priority') {
+        comparison = parseInt(a.incident_data.priority) - parseInt(b.incident_data.priority);
+      } else if (sortBy === 'state') {
+        comparison = parseInt(a.incident_data.state) - parseInt(b.incident_data.state);
+      } else if (sortBy === 'solved') {
+        comparison = (a.engineering_sla.solved_by_eng === b.engineering_sla.solved_by_eng) 
+          ? 0 
+          : a.engineering_sla.solved_by_eng ? -1 : 1;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+  const handleSort = (column: 'priority' | 'state' | 'solved') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  const handleViewDetails = (insight: Insight) => {
+    setSelectedInsight(insight);
+    setDetailsOpen(true);
+  };
+
+  const handleViewAnalysis = (insight: Insight) => {
+    setSelectedInsight(insight);
+    setAnalysisOpen(true);
+  };
 
   const totalInsights = filteredInsights.length;
   const solvedByEng = filteredInsights.filter((i) => i.engineering_sla.solved_by_eng).length;
@@ -289,7 +348,7 @@ export default function Insights() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">Data de Início</Label>
               <Popover>
@@ -342,6 +401,19 @@ export default function Insights() {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Número do Incidente</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número..."
+                  value={searchNumber}
+                  onChange={(e) => setSearchNumber(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -500,10 +572,40 @@ export default function Insights() {
             <TableHeader>
               <TableRow>
                 <TableHead>Número do Incidente</TableHead>
-                <TableHead>Prioridade</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => handleSort('priority')}
+                  >
+                    Prioridade
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => handleSort('state')}
+                  >
+                    Estado
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Tempo SLA (h)</TableHead>
-                <TableHead>Resolvido Eng.</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => handleSort('solved')}
+                  >
+                    Resolvido Eng.
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Escalação</TableHead>
                 <TableHead>Organização</TableHead>
                 <TableHead>Ações</TableHead>
@@ -553,10 +655,18 @@ export default function Insights() {
                     <TableCell className="uppercase">{insight.traceability.organization}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetails(insight)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewAnalysis(insight)}
+                        >
                           <FileSearch className="h-4 w-4" />
                         </Button>
                       </div>
@@ -568,6 +678,243 @@ export default function Insights() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Incidente</DialogTitle>
+            <DialogDescription>
+              Informações completas sobre o incidente {selectedInsight?.incident_data.number}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInsight && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold mb-2">Dados do Incidente</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Número:</span>
+                    <p className="font-medium">{selectedInsight.incident_data.number}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Prioridade:</span>
+                    <p className="font-medium">
+                      {priorityLabels[selectedInsight.incident_data.priority]?.label || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Estado:</span>
+                    <p className="font-medium">
+                      {stateLabels[selectedInsight.incident_data.state] || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Time de Atribuição:</span>
+                    <p className="font-medium">{selectedInsight.incident_data.assignment_team}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">SLA de Engenharia</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Entrada:</span>
+                    <p className="font-medium">
+                      {format(new Date(selectedInsight.engineering_sla.entry_time[0]), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Saída:</span>
+                    <p className="font-medium">
+                      {format(new Date(selectedInsight.engineering_sla.out_time[0]), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Tempo Total:</span>
+                    <p className="font-medium">{(selectedInsight.engineering_sla.total_time / 60).toFixed(2)}h</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Resolvido por Eng:</span>
+                    <p className="font-medium">
+                      {selectedInsight.engineering_sla.solved_by_eng ? 'Sim' : 'Não'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Departamentos:</span>
+                    <div className="mt-1 space-y-1">
+                      {selectedInsight.engineering_sla.departaments.map((dept, idx) => (
+                        <div key={idx} className="flex justify-between bg-muted/50 p-2 rounded">
+                          <span>{dept.name || dept.sysId}</span>
+                          <span className="font-medium">{(dept.totalTime / 60).toFixed(2)}h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Escalação</h3>
+                <div className="flex gap-2">
+                  {selectedInsight.escalation['50_percent'] && (
+                    <Badge variant="outline">50%</Badge>
+                  )}
+                  {selectedInsight.escalation['75_percent'] && (
+                    <Badge variant="outline">75%</Badge>
+                  )}
+                  {selectedInsight.escalation['90_percent'] && (
+                    <Badge variant="outline">90%</Badge>
+                  )}
+                  {!selectedInsight.escalation['50_percent'] &&
+                    !selectedInsight.escalation['75_percent'] &&
+                    !selectedInsight.escalation['90_percent'] && (
+                      <span className="text-sm text-muted-foreground">Sem escalação</span>
+                    )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Rastreabilidade</h3>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Organização:</span>
+                  <p className="font-medium uppercase">{selectedInsight.traceability.organization}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Atuação do Heimdall</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedInsight.heimdall_actuation.change_criticity} disabled />
+                    <span>Mudança de Criticidade</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedInsight.heimdall_actuation.close_by_analyse} disabled />
+                    <span>Fechado por Análise</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedInsight.heimdall_actuation.close_by_automation} disabled />
+                    <span>Fechado por Automação</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedInsight.heimdall_actuation.sla_management} disabled />
+                    <span>Gestão de SLA</span>
+                  </div>
+                </div>
+                {selectedInsight.heimdall_actuation.omsActuation && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded">
+                    <h4 className="font-medium text-sm mb-2">OMS Actuation</h4>
+                    <div className="space-y-1 text-sm">
+                      {selectedInsight.heimdall_actuation.omsActuation.RejectedByMask && (
+                        <p className="text-muted-foreground">Rejeitado por Máscara</p>
+                      )}
+                      {selectedInsight.heimdall_actuation.omsActuation.RejectedByIOP && (
+                        <p>
+                          <span className="text-muted-foreground">Rejeitado por IOP:</span>{' '}
+                          <span className="font-medium">
+                            {selectedInsight.heimdall_actuation.omsActuation.RejectedByIOP}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Análise do Incidente</DialogTitle>
+            <DialogDescription>
+              Análise detalhada do incidente {selectedInsight?.incident_data.number}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInsight && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Tempo de Resolução</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {(selectedInsight.engineering_sla.total_time / 60).toFixed(2)}h
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Departamentos Envolvidos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {selectedInsight.engineering_sla.departaments.length}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">Distribuição de Tempo por Departamento</h3>
+                <div className="space-y-2">
+                  {selectedInsight.engineering_sla.departaments.map((dept, idx) => {
+                    const percentage = (dept.totalTime / selectedInsight.engineering_sla.total_time) * 100;
+                    return (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{dept.name || dept.sysId}</span>
+                          <span className="font-medium">{percentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-3">Métricas de Desempenho</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between p-2 bg-muted/50 rounded">
+                    <span>Status de Resolução</span>
+                    <Badge variant={selectedInsight.engineering_sla.solved_by_eng ? 'default' : 'secondary'}>
+                      {selectedInsight.engineering_sla.solved_by_eng ? 'Resolvido' : 'Não Resolvido'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between p-2 bg-muted/50 rounded">
+                    <span>Nível de Escalação</span>
+                    <span className="font-medium">
+                      {selectedInsight.escalation['90_percent']
+                        ? '90%'
+                        : selectedInsight.escalation['75_percent']
+                        ? '75%'
+                        : selectedInsight.escalation['50_percent']
+                        ? '50%'
+                        : 'Nenhum'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-2 bg-muted/50 rounded">
+                    <span>Automação Aplicada</span>
+                    <Badge variant={selectedInsight.heimdall_actuation.close_by_automation ? 'default' : 'outline'}>
+                      {selectedInsight.heimdall_actuation.close_by_automation ? 'Sim' : 'Não'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
