@@ -64,7 +64,9 @@ const menuItems = [
     url: '/production',
     icon: Rocket,
     hasSubmenu: true,
-    submenu: [],
+    submenu: [
+      { title: 'Insights', url: '/insights' },
+    ],
   },
 ];
 

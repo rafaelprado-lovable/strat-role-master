@@ -14,6 +14,7 @@ import Roles from "./pages/Roles";
 import Users from "./pages/Users";
 import Scopes from "./pages/Scopes";
 import Departments from "./pages/Departments";
+import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -82,6 +83,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Departments />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/insights"
+              element={
+                <AppLayout>
+                  <Insights />
                 </AppLayout>
               }
             />

@@ -57,3 +57,42 @@ export interface Scope {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Insight {
+  id: string;
+  incident_data: {
+    number: string;
+    priority: string;
+    state: string;
+    assignment_team: string;
+  };
+  engineering_sla: {
+    entry_time: string[];
+    out_time: string[];
+    solved_by_eng: boolean;
+    total_time: number;
+    departaments: Array<{
+      sysId?: string;
+      name?: string;
+      totalTime: number;
+    }>;
+  };
+  escalation: {
+    '50_percent': boolean;
+    '75_percent': boolean;
+    '90_percent': boolean;
+  };
+  traceability: {
+    organization: string;
+  };
+  heimdall_actuation: {
+    change_criticity: boolean;
+    close_by_analyse: boolean;
+    close_by_automation: boolean;
+    sla_management: boolean;
+    omsActuation?: {
+      RejectedByMask?: boolean;
+      RejectedByIOP?: string;
+    };
+  };
+}
