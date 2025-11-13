@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
   Activity,
   CheckCircle,
@@ -11,16 +13,16 @@ import {
   Target,
   Eye,
   FileSearch,
+  CalendarIcon,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -222,17 +224,47 @@ const stateLabels: Record<string, string> = {
 };
 
 export default function Insights() {
-  const [selectedOrg, setSelectedOrg] = useState<string>('all');
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
 
   const { data: insights = [] } = useQuery({
     queryKey: ['insights'],
     queryFn: insightsApi.getAll,
   });
 
-  const filteredInsights =
-    selectedOrg === 'all'
-      ? insights
-      : insights.filter((i) => i.traceability.organization === selectedOrg);
+  // Extrair departamentos únicos dos insights
+  const allDepartments = Array.from(
+    new Set(
+      insights.flatMap((insight) =>
+        insight.engineering_sla.departaments.map((d) => d.name || d.sysId)
+      )
+    )
+  ).filter(Boolean);
+
+  const toggleDepartment = (dept: string) => {
+    setSelectedDepartments((prev) =>
+      prev.includes(dept) ? prev.filter((d) => d !== dept) : [...prev, dept]
+    );
+  };
+
+  const filteredInsights = insights.filter((insight) => {
+    // Filtro de data
+    if (startDate || endDate) {
+      const entryDate = new Date(insight.engineering_sla.entry_time[0]);
+      if (startDate && entryDate < startDate) return false;
+      if (endDate && entryDate > endDate) return false;
+    }
+
+    // Filtro de departamentos
+    if (selectedDepartments.length > 0) {
+      const insightDepts = insight.engineering_sla.departaments.map((d) => d.name || d.sysId);
+      const hasMatchingDept = insightDepts.some((dept) => selectedDepartments.includes(dept));
+      if (!hasMatchingDept) return false;
+    }
+
+    return true;
+  });
 
   const totalInsights = filteredInsights.length;
   const solvedByEng = filteredInsights.filter((i) => i.engineering_sla.solved_by_eng).length;
@@ -257,22 +289,99 @@ export default function Insights() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium text-foreground">Filtrar por Organização</label>
-              <Select value={selectedOrg} onValueChange={setSelectedOrg}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Selecionar organização" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as organizações</SelectItem>
-                  <SelectItem value="tim">TIM</SelectItem>
-                  <SelectItem value="vivo">VIVO</SelectItem>
-                  <SelectItem value="claro">CLARO</SelectItem>
-                  <SelectItem value="oi">OI</SelectItem>
-                  <SelectItem value="nextel">NEXTEL</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Data de Início</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !startDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Data de Fim</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !endDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Departamentos</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    {selectedDepartments.length > 0
+                      ? `${selectedDepartments.length} selecionado(s)`
+                      : 'Todos os departamentos'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4" align="start">
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {selectedDepartments.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-muted-foreground"
+                        onClick={() => setSelectedDepartments([])}
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        Limpar seleção
+                      </Button>
+                    )}
+                    {allDepartments.map((dept) => (
+                      <div key={dept} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={dept}
+                          checked={selectedDepartments.includes(dept)}
+                          onCheckedChange={() => toggleDepartment(dept)}
+                        />
+                        <Label htmlFor={dept} className="text-sm cursor-pointer">
+                          {dept}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardContent>
