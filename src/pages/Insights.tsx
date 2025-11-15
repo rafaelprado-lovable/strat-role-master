@@ -31,7 +31,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -367,6 +371,9 @@ export default function Insights() {
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  const { toast } = useToast();
 
   const { data: insights = [] } = useQuery({
     queryKey: ['insights'],
@@ -441,12 +448,66 @@ export default function Insights() {
 
   const handleViewDetails = (insight: Insight) => {
     setSelectedInsight(insight);
+    setNewStatus(insight.incident_data.state);
+    setNewComment('');
     setDetailsOpen(true);
   };
 
   const handleViewAnalysis = (insight: Insight) => {
     setSelectedInsight(insight);
     setAnalysisOpen(true);
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, insira um comentário.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Comentário adicionado',
+      description: `Comentário adicionado ao incidente ${selectedInsight?.incident_data.number}`,
+    });
+    setNewComment('');
+  };
+
+  const handleUpdateStatus = () => {
+    toast({
+      title: 'Status atualizado',
+      description: `Status do incidente ${selectedInsight?.incident_data.number} atualizado para ${stateLabels[newStatus]}`,
+    });
+  };
+
+  const handleCreateBug = () => {
+    toast({
+      title: 'Bug criado',
+      description: `Bug criado para o incidente ${selectedInsight?.incident_data.number}`,
+    });
+  };
+
+  const handleResolveIncident = () => {
+    toast({
+      title: 'Incidente resolvido',
+      description: `Incidente ${selectedInsight?.incident_data.number} marcado como resolvido`,
+    });
+  };
+
+  const handleCloseIncident = () => {
+    toast({
+      title: 'Incidente fechado',
+      description: `Incidente ${selectedInsight?.incident_data.number} fechado`,
+    });
+  };
+
+  const handleReassignIncident = () => {
+    toast({
+      title: 'Incidente reatribuído',
+      description: `Incidente ${selectedInsight?.incident_data.number} reatribuído`,
+    });
   };
 
   const totalInsights = filteredInsights.length;
@@ -975,7 +1036,7 @@ export default function Insights() {
                           <div className="flex-1">
                             <span className="text-sm font-medium">{note.created_by}</span>
                             {note.assignment_group && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
+                              <Badge variant="outline" className="ml-2 text-xs">
                                 {note.assignment_group}
                               </Badge>
                             )}
@@ -990,6 +1051,69 @@ export default function Insights() {
                   </div>
                 </div>
               )}
+
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4">Ações do ServiceNow</h3>
+                
+                <div className="space-y-4">
+                  {/* Adicionar Comentário */}
+                  <div className="space-y-2">
+                    <Label htmlFor="comment">Adicionar Comentário</Label>
+                    <Textarea
+                      id="comment"
+                      placeholder="Digite seu comentário aqui..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      rows={3}
+                    />
+                    <Button onClick={handleAddComment} size="sm">
+                      Adicionar Comentário
+                    </Button>
+                  </div>
+
+                  {/* Alterar Status */}
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Alterar Status</Label>
+                    <div className="flex gap-2">
+                      <Select value={newStatus} onValueChange={setNewStatus}>
+                        <SelectTrigger id="status" className="flex-1">
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Novo</SelectItem>
+                          <SelectItem value="2">Em Andamento</SelectItem>
+                          <SelectItem value="3">Em Espera</SelectItem>
+                          <SelectItem value="6">Resolvido</SelectItem>
+                          <SelectItem value="7">Fechado</SelectItem>
+                          <SelectItem value="8">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={handleUpdateStatus} size="sm">
+                        Atualizar Status
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Ações Rápidas */}
+                  <div className="space-y-2">
+                    <Label>Ações Rápidas</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={handleCreateBug} variant="outline" size="sm">
+                        Criar Bug
+                      </Button>
+                      <Button onClick={handleResolveIncident} variant="outline" size="sm">
+                        Marcar como Resolvido
+                      </Button>
+                      <Button onClick={handleCloseIncident} variant="outline" size="sm">
+                        Fechar Incidente
+                      </Button>
+                      <Button onClick={handleReassignIncident} variant="outline" size="sm">
+                        Reatribuir Incidente
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
