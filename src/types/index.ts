@@ -95,4 +95,15 @@ export interface Insight {
       RejectedByIOP?: string;
     };
   };
+  comments?: Array<{
+    created_at: string;
+    created_by: string;
+    value: string;
+  }>;
+  work_notes?: Array<{
+    created_at: string;
+    created_by: string;
+    value: string;
+    assignment_group?: string;
+  }>;
 }
