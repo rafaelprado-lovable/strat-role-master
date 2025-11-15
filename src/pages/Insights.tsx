@@ -82,6 +82,49 @@ const mockInsights: Insight[] = [
         RejectedByIOP: 'IOP1236',
       },
     },
+    comments: [
+      {
+        created_at: '2025-10-12T17:40:00.000Z',
+        created_by: 'João Silva',
+        value: 'Incidente reportado pelo cliente. Sem conectividade na região.',
+      },
+      {
+        created_at: '2025-10-12T18:15:00.000Z',
+        created_by: 'Maria Santos',
+        value: 'Equipe de campo acionada para verificação in loco.',
+      },
+      {
+        created_at: '2025-10-12T18:50:00.000Z',
+        created_by: 'Pedro Oliveira',
+        value: 'Problema identificado: falha em equipamento de rede.',
+      },
+    ],
+    work_notes: [
+      {
+        created_at: '2025-10-12T17:35:00.000Z',
+        created_by: 'Sistema',
+        value: 'Incidente criado automaticamente pelo monitoramento.',
+        assignment_group: 'NOC - Network Operations Center',
+      },
+      {
+        created_at: '2025-10-12T17:45:00.000Z',
+        created_by: 'João Silva',
+        value: 'Encaminhando para equipe de engenharia de rede.',
+        assignment_group: 'CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT',
+      },
+      {
+        created_at: '2025-10-12T18:20:00.000Z',
+        created_by: 'Maria Santos',
+        value: 'Escalado para equipe de campo. Necessário atendimento presencial.',
+        assignment_group: 'Field Operations',
+      },
+      {
+        created_at: '2025-10-12T19:00:00.000Z',
+        created_by: 'Pedro Oliveira',
+        value: 'Equipamento substituído. Testando conectividade.',
+        assignment_group: 'Field Operations',
+      },
+    ],
   },
   {
     id: '2',
@@ -115,6 +158,44 @@ const mockInsights: Insight[] = [
       close_by_automation: false,
       sla_management: true,
     },
+    comments: [
+      {
+        created_at: '2025-10-13T08:20:00.000Z',
+        created_by: 'Ana Costa',
+        value: 'Cliente reporta lentidão severa em toda a rede corporativa.',
+      },
+      {
+        created_at: '2025-10-13T10:30:00.000Z',
+        created_by: 'Carlos Mendes',
+        value: 'Identificado ataque DDoS. Implementando mitigação.',
+      },
+    ],
+    work_notes: [
+      {
+        created_at: '2025-10-13T08:18:00.000Z',
+        created_by: 'Sistema',
+        value: 'Alerta crítico: tráfego anormal detectado.',
+        assignment_group: 'Security Operations Center',
+      },
+      {
+        created_at: '2025-10-13T08:25:00.000Z',
+        created_by: 'Ana Costa',
+        value: 'Escalando para equipe de segurança com prioridade alta.',
+        assignment_group: 'Network Security Team',
+      },
+      {
+        created_at: '2025-10-13T10:00:00.000Z',
+        created_by: 'Carlos Mendes',
+        value: 'Aplicando regras de firewall para bloquear origem do ataque.',
+        assignment_group: 'Network Security Team',
+      },
+      {
+        created_at: '2025-10-13T13:50:00.000Z',
+        created_by: 'Carlos Mendes',
+        value: 'Ataque mitigado com sucesso. Monitorando situação.',
+        assignment_group: 'Network Security Team',
+      },
+    ],
   },
   {
     id: '3',
@@ -148,6 +229,49 @@ const mockInsights: Insight[] = [
       close_by_automation: false,
       sla_management: true,
     },
+    comments: [
+      {
+        created_at: '2025-10-13T14:25:00.000Z',
+        created_by: 'Fernando Lima',
+        value: 'Incidente crítico: falha completa do servidor principal de aplicação.',
+      },
+      {
+        created_at: '2025-10-13T16:00:00.000Z',
+        created_by: 'Juliana Rocha',
+        value: 'Backup restaurado. Investigando causa raiz da falha.',
+      },
+      {
+        created_at: '2025-10-13T22:45:00.000Z',
+        created_by: 'Fernando Lima',
+        value: 'Causa identificada: atualização de firmware com bug. Rollback realizado.',
+      },
+    ],
+    work_notes: [
+      {
+        created_at: '2025-10-13T14:22:00.000Z',
+        created_by: 'Sistema',
+        value: 'Alerta P1: Servidor de produção offline.',
+        assignment_group: 'Infrastructure Monitoring',
+      },
+      {
+        created_at: '2025-10-13T14:30:00.000Z',
+        created_by: 'Fernando Lima',
+        value: 'Escalado para engenharia de infraestrutura. Verificando logs.',
+        assignment_group: 'CTIO IT - INFRASTRUCTURE - N2',
+      },
+      {
+        created_at: '2025-10-13T15:45:00.000Z',
+        created_by: 'Juliana Rocha',
+        value: 'Iniciando processo de restore do backup mais recente.',
+        assignment_group: 'Security Team',
+      },
+      {
+        created_at: '2025-10-13T20:00:00.000Z',
+        created_by: 'Fernando Lima',
+        value: 'Análise concluída. Preparando rollback da atualização.',
+        assignment_group: 'Infrastructure',
+      },
+    ],
   },
   {
     id: '4',
@@ -821,6 +945,51 @@ export default function Insights() {
                   </div>
                 )}
               </div>
+
+              {selectedInsight.comments && selectedInsight.comments.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Comentários</h3>
+                  <div className="space-y-3">
+                    {selectedInsight.comments.map((comment, idx) => (
+                      <div key={idx} className="p-3 bg-muted/30 rounded-lg border border-border/40">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-sm font-medium">{comment.created_by}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(comment.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground">{comment.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedInsight.work_notes && selectedInsight.work_notes.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-2">Tramitação das Filas</h3>
+                  <div className="space-y-3">
+                    {selectedInsight.work_notes.map((note, idx) => (
+                      <div key={idx} className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">{note.created_by}</span>
+                            {note.assignment_group && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                {note.assignment_group}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground">{note.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
