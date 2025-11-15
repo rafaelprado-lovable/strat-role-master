@@ -66,6 +66,7 @@ const menuItems = [
     hasSubmenu: true,
     submenu: [
       { title: 'Insights', url: '/insights' },
+      { title: 'Abertura de Bug', url: '/bug-report' },
     ],
   },
 ];
