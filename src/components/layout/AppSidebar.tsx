@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
+  GitPullRequest,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -32,6 +33,12 @@ const menuItems = [
     title: 'Visão Geral',
     url: '/',
     icon: LayoutDashboard,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Changes',
+    url: '/changes',
+    icon: GitPullRequest,
     hasSubmenu: false,
   },
   {
