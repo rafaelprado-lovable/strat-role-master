@@ -17,6 +17,7 @@ import Departments from "./pages/Departments";
 import Insights from "./pages/Insights";
 import BugReport from "./pages/BugReport";
 import Changes from "./pages/Changes";
+import Analyses from "./pages/Analyses";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -109,6 +110,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Changes />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/analyses"
+              element={
+                <AppLayout>
+                  <Analyses />
                 </AppLayout>
               }
             />

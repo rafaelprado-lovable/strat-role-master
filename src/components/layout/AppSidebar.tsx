@@ -42,6 +42,12 @@ const menuItems = [
     hasSubmenu: false,
   },
   {
+    title: 'Análises',
+    url: '/analyses',
+    icon: CheckCircle,
+    hasSubmenu: false,
+  },
+  {
     title: 'Qualidade',
     url: '/quality',
     icon: CheckCircle,
