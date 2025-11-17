@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -117,39 +116,37 @@ export default function Changes() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Pré validação de changes - MIDDLEWARE
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie e valide changes do sistema middleware
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Pré validação de changes - MIDDLEWARE</h2>
+          <p className="text-muted-foreground">Gerencie e valide changes do sistema middleware</p>
         </div>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por número, descrição ou sistema..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="pl-10"
-            />
-          </div>
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por número, descrição ou sistema..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pl-10"
+          />
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Changes</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Changes</CardTitle>
+          <CardDescription>
+            Visualize e gerencie todas as changes cadastradas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -252,6 +249,5 @@ export default function Changes() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
   );
 }
