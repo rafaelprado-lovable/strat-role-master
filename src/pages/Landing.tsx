@@ -12,11 +12,13 @@ import {
   ArrowRight,
   TrendingUp,
   Lock,
-  Sparkles
+  Sparkles,
+  Bug
 } from "lucide-react";
 import dashboardImg from "@/assets/dashboard-screenshot.png";
 import loginImg from "@/assets/login-screenshot.png";
 import bugReportImg from "@/assets/bug-report-screenshot.png";
+import BugReportDialog from "@/components/BugReportDialog";
 
 export default function Landing() {
   return (
@@ -283,6 +285,14 @@ export default function Landing() {
                 <span>Fluxo de validação e aprovação configurável</span>
               </li>
             </ul>
+            <BugReportDialog 
+              trigger={
+                <Button size="lg" className="mt-4">
+                  <Bug className="mr-2 h-5 w-5" />
+                  Criar Bug
+                </Button>
+              }
+            />
           </div>
         </div>
       </section>
