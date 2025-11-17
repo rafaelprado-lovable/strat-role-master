@@ -18,6 +18,7 @@ import {
   ArrowUpDown,
   Search,
 } from 'lucide-react';
+import { BugDialog } from '@/components/incidents/BugDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -371,6 +372,7 @@ export default function Insights() {
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [bugDialogOpen, setBugDialogOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [newStatus, setNewStatus] = useState('');
   const { toast } = useToast();
@@ -483,10 +485,7 @@ export default function Insights() {
   };
 
   const handleCreateBug = () => {
-    toast({
-      title: 'Bug criado',
-      description: `Bug criado para o incidente ${selectedInsight?.incident_data.number}`,
-    });
+    setBugDialogOpen(true);
   };
 
   const handleResolveIncident = () => {
@@ -1208,6 +1207,13 @@ export default function Insights() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bug Creation Dialog */}
+      <BugDialog
+        open={bugDialogOpen}
+        onOpenChange={setBugDialogOpen}
+        incident={selectedInsight || undefined}
+      />
     </div>
   );
 }
