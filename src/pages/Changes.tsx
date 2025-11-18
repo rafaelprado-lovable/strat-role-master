@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangeDetailsDialog } from "@/components/changes/ChangeDetailsDialog";
 import {
   Table,
   TableBody,
@@ -36,6 +37,32 @@ interface Change {
   status: string;
   changeformAnexado: boolean;
   preAnalise: boolean;
+  inicioValidacao: string;
+  fimValidacao: string;
+  diaSemana: string;
+  equipesAplicacao: string;
+  equipesValidacao: string;
+  changeForm: {
+    tecnologia: string;
+    tipoRestart: string;
+    possuiServicoNovo: string;
+    possuiServicoReuso: string;
+    validacaoDurante: string;
+    validacaoHDC: string;
+    aumentoVolumetria: string;
+    impactoVendas: string;
+    houveUAT: string;
+    houveFQA: string;
+    systemTest: string;
+    semTestes: string;
+  };
+  servicos: Array<{
+    nome: string;
+    versaoProducao: string;
+    versaoCF: string;
+    versaoInstalacao: string;
+    clientsId: string;
+  }>;
 }
 
 const mockChanges: Change[] = [
@@ -48,6 +75,26 @@ const mockChanges: Change[] = [
     status: "PMID",
     changeformAnexado: true,
     preAnalise: true,
+    inicioValidacao: "17/11/2025 22:00:00",
+    fimValidacao: "17/11/2025 23:00:00",
+    diaSemana: "Segunda-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    changeForm: {
+      tecnologia: "PMID",
+      tipoRestart: "N/A",
+      possuiServicoNovo: "Não",
+      possuiServicoReuso: "Não",
+      validacaoDurante: "Sim",
+      validacaoHDC: "Sim",
+      aumentoVolumetria: "Não",
+      impactoVendas: "Não",
+      houveUAT: "Sim",
+      houveFQA: "Sim",
+      systemTest: "Sim",
+      semTestes: "Não",
+    },
+    servicos: [],
   },
   {
     id: "2",
@@ -58,6 +105,26 @@ const mockChanges: Change[] = [
     status: "PMID",
     changeformAnexado: false,
     preAnalise: true,
+    inicioValidacao: "17/11/2025 22:00:00",
+    fimValidacao: "17/11/2025 23:00:00",
+    diaSemana: "Segunda-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    changeForm: {
+      tecnologia: "PMID",
+      tipoRestart: "N/A",
+      possuiServicoNovo: "Sim",
+      possuiServicoReuso: "Não",
+      validacaoDurante: "Sim",
+      validacaoHDC: "Sim",
+      aumentoVolumetria: "Não",
+      impactoVendas: "Não",
+      houveUAT: "Sim",
+      houveFQA: "Sim",
+      systemTest: "Sim",
+      semTestes: "Não",
+    },
+    servicos: [],
   },
   {
     id: "3",
@@ -68,6 +135,26 @@ const mockChanges: Change[] = [
     status: "NMWS",
     changeformAnexado: false,
     preAnalise: true,
+    inicioValidacao: "09/12/2025 23:00:00",
+    fimValidacao: "10/12/2025 01:00:00",
+    diaSemana: "Quarta-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO OPS - CORE SERVICES - VAS - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO IT - CORPORATE SOLUTIONS OPERATIONS - E2B MOVEL - N3, CTIO IT - APP & DIGITAL PRODUCTS OPERATIONS - WEB PORTALS - N3, CTIO IT - CUSTOMER CARE & COGN. DIGITAL OPERATIONS",
+    changeForm: {
+      tecnologia: "NMWS",
+      tipoRestart: "N/A",
+      possuiServicoNovo: "Sem informação",
+      possuiServicoReuso: "Sem informação",
+      validacaoDurante: "Sem informação",
+      validacaoHDC: "Sem informação",
+      aumentoVolumetria: "Sem informação",
+      impactoVendas: "Verificar documentação",
+      houveUAT: "Não",
+      houveFQA: "Sim",
+      systemTest: "Não",
+      semTestes: "Não",
+    },
+    servicos: [],
   },
   {
     id: "4",
@@ -78,6 +165,26 @@ const mockChanges: Change[] = [
     status: "PMID",
     changeformAnexado: false,
     preAnalise: true,
+    inicioValidacao: "10/12/2025 00:00:00",
+    fimValidacao: "10/12/2025 01:00:00",
+    diaSemana: "Quarta-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    changeForm: {
+      tecnologia: "PMID",
+      tipoRestart: "N/A",
+      possuiServicoNovo: "Não",
+      possuiServicoReuso: "Não",
+      validacaoDurante: "Sim",
+      validacaoHDC: "Sim",
+      aumentoVolumetria: "Não",
+      impactoVendas: "Não",
+      houveUAT: "Sim",
+      houveFQA: "Sim",
+      systemTest: "Sim",
+      semTestes: "Não",
+    },
+    servicos: [],
   },
   {
     id: "5",
@@ -88,6 +195,26 @@ const mockChanges: Change[] = [
     status: "PMID",
     changeformAnexado: false,
     preAnalise: true,
+    inicioValidacao: "18/11/2025 22:00:00",
+    fimValidacao: "18/11/2025 23:00:00",
+    diaSemana: "Segunda-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    changeForm: {
+      tecnologia: "PMID",
+      tipoRestart: "N/A",
+      possuiServicoNovo: "Não",
+      possuiServicoReuso: "Não",
+      validacaoDurante: "Sim",
+      validacaoHDC: "Sim",
+      aumentoVolumetria: "Não",
+      impactoVendas: "Não",
+      houveUAT: "Sim",
+      houveFQA: "Sim",
+      systemTest: "Sim",
+      semTestes: "Não",
+    },
+    servicos: [],
   },
 ];
 
@@ -98,6 +225,8 @@ export default function Changes() {
   const [endDate, setEndDate] = useState<Date>();
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedChange, setSelectedChange] = useState<Change | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const itemsPerPage = 10;
 
   const filteredChanges = mockChanges.filter((change) => {
@@ -125,8 +254,9 @@ export default function Changes() {
     toast.success(`Pré-análise realizada para ${numero}`);
   };
 
-  const handleVisualizar = (numero: string) => {
-    toast.info(`Visualizando change ${numero}`);
+  const handleVisualizar = (change: Change) => {
+    setSelectedChange(change);
+    setDetailsOpen(true);
   };
 
   const handleEnviarRelatorio = (numero: string) => {
@@ -303,7 +433,7 @@ export default function Changes() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleVisualizar(change.numero)}
+                            onClick={() => handleVisualizar(change)}
                             title="Visualizar"
                           >
                             <Eye className="h-4 w-4" />
@@ -357,6 +487,14 @@ export default function Changes() {
             )}
           </CardContent>
         </Card>
+
+        {selectedChange && (
+          <ChangeDetailsDialog
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+            change={selectedChange}
+          />
+        )}
       </div>
   );
 }
