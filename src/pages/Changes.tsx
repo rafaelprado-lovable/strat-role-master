@@ -18,9 +18,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search } from "lucide-react";
+import { CheckSquare, Eye, Send, Search, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Change {
   id: string;
@@ -89,14 +94,27 @@ const mockChanges: Change[] = [
 export default function Changes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const itemsPerPage = 10;
 
-  const filteredChanges = mockChanges.filter(
-    (change) =>
+  const filteredChanges = mockChanges.filter((change) => {
+    const matchesSearch =
       change.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       change.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      change.sistema.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      change.sistema.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const changeDate = new Date(change.dataExecucao.split(" ")[0].split("/").reverse().join("-"));
+    const matchesStartDate = !startDate || changeDate >= startDate;
+    const matchesEndDate = !endDate || changeDate <= endDate;
+
+    const matchesDepartment = departmentFilter === "all" || change.sistema === departmentFilter;
+    const matchesStatus = statusFilter === "all" || change.status === statusFilter;
+
+    return matchesSearch && matchesStartDate && matchesEndDate && matchesDepartment && matchesStatus;
+  });
 
   const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -124,20 +142,111 @@ export default function Changes() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por número, descrição ou sistema..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Data de Início */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data de Início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : "Selecionar"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data de Fim */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data de Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : "Selecionar"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Número do Incidente */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Número do Incidente</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Departamentos */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Departamentos</label>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os departamentos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os departamentos</SelectItem>
+                  <SelectItem value="Autorizar">Autorizar</SelectItem>
+                  <SelectItem value="Novo">Novo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="PMID">PMID</SelectItem>
+                  <SelectItem value="NMWS">NMWS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
