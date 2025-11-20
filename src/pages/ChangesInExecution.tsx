@@ -17,10 +17,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Search } from "lucide-react";
+import { Eye, Search, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChangeInExecutionDetailsDialog } from "@/components/changes/ChangeInExecutionDetailsDialog";
+import { useNavigate } from "react-router-dom";
 
 interface Task {
   id: string;
@@ -95,6 +96,7 @@ const mockChangesInExecution: ChangeInExecution[] = [
 ];
 
 export default function ChangesInExecution() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [numeroFilter, setNumeroFilter] = useState<string>("all");
@@ -126,6 +128,10 @@ export default function ChangesInExecution() {
   const handleConsultarDados = (change: ChangeInExecution) => {
     setSelectedChange(change);
     setDetailsOpen(true);
+  };
+
+  const handleExecutar = (changeId: string) => {
+    navigate(`/change-execution/${changeId}`);
   };
 
   return (
@@ -235,7 +241,7 @@ export default function ChangesInExecution() {
                 <TableHead>DESCRIÇÃO RESUMIDA</TableHead>
                 <TableHead>FIM DA EXECUÇÃO</TableHead>
                 <TableHead>STATUS</TableHead>
-                <TableHead className="text-center">CONSULTAR DADOS</TableHead>
+                <TableHead className="text-center">AÇÕES</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,14 +261,25 @@ export default function ChangesInExecution() {
                       <Badge variant="secondary">{change.status}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleConsultarDados(change)}
-                        title="Consultar dados"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleConsultarDados(change)}
+                          title="Consultar dados"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleExecutar(change.id)}
+                          title="Executar change"
+                        >
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          Executar
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
