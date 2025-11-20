@@ -276,6 +276,15 @@ export default function ChangeExecution() {
     return (completedItems / totalItems) * 100;
   };
 
+  const isStepEnabled = (cluster: Cluster, stepIndex: number) => {
+    // First step (stop) is always enabled
+    if (stepIndex === 0) return true;
+    
+    // Check if previous step is completed successfully
+    const previousStep = cluster.steps[stepIndex - 1];
+    return previousStep.items.every(item => item.status === "executado com sucesso");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -302,7 +311,7 @@ export default function ChangeExecution() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {cluster.steps.map((step) => (
+                {cluster.steps.map((step, stepIndex) => (
                   <Card key={step.id} className="border-border/50">
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
@@ -311,35 +320,49 @@ export default function ChangeExecution() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      {step.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-start gap-2 p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {getStatusIcon(item.status)}
-                              <span className="text-sm font-medium truncate">{item.name}</span>
+                      {step.items.map((item) => {
+                        const stepEnabled = isStepEnabled(cluster, stepIndex);
+                        const canExecute = item.status === "não executado" && stepEnabled;
+                        
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-start gap-2 p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                {getStatusIcon(item.status)}
+                                <span className="text-sm font-medium truncate">{item.name}</span>
+                              </div>
+                              {'description' in item && item.description && (
+                                <p className="text-xs text-muted-foreground">{item.description}</p>
+                              )}
+                              <Badge variant={getStatusBadgeVariant(item.status)} className="mt-2 text-xs">
+                                {item.status}
+                              </Badge>
                             </div>
-                            {'description' in item && item.description && (
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
-                            )}
-                            <Badge variant={getStatusBadgeVariant(item.status)} className="mt-2 text-xs">
-                              {item.status}
-                            </Badge>
+                            {canExecute ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleExecuteItem(cluster.id, step.id, item.id)}
+                                title="Executar"
+                              >
+                                <Play className="h-4 w-4" />
+                              </Button>
+                            ) : item.status === "não executado" && !stepEnabled ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                disabled
+                                title="Aguardando conclusão do step anterior"
+                              >
+                                <Play className="h-4 w-4 opacity-30" />
+                              </Button>
+                            ) : null}
                           </div>
-                          {item.status === "não executado" && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleExecuteItem(cluster.id, step.id, item.id)}
-                              title="Executar"
-                            >
-                              <Play className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 ))}
