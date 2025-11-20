@@ -20,6 +20,15 @@ import {
 import { Eye, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChangeInExecutionDetailsDialog } from "@/components/changes/ChangeInExecutionDetailsDialog";
+
+interface Task {
+  id: string;
+  numeroTarefa: string;
+  descricaoTarefa: string;
+  tipoTarefa: string;
+  statusTarefa: string;
+}
 
 interface ChangeInExecution {
   id: string;
@@ -27,22 +36,61 @@ interface ChangeInExecution {
   descricaoResumida: string;
   fimExecucao: string;
   status: string;
+  tipo: string;
+  descricaoChange: string;
+  inicioValidacao: string;
+  fimValidacao: string;
+  diaSemana: string;
+  equipesAplicacao: string;
+  equipesValidacao: string;
+  tarefas: Task[];
 }
 
 const mockChangesInExecution: ChangeInExecution[] = [
   {
     id: "1",
+    numero: "CHG0174916",
+    descricaoResumida: "Bug 1185202: [PRODUÇÃO]|PMID",
+    fimExecucao: "16/11/2025 23:00:00",
+    status: "Em execução",
+    tipo: "Revisão",
+    descricaoChange: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
+    inicioValidacao: "16/11/2025 22:00:00",
+    fimValidacao: "16/11/2025 23:00:00",
+    diaSemana: "Segunda-feira",
+    equipesAplicacao: "CTIO IT -INTEGRATION SOLUTIONS MANAGEMENT -MIDDLEWARE -N3.",
+    equipesValidacao: "CTIO IT -INTEGRATION SOLUTIONS MANAGEMENT -MIDDLEWARE -N3, CTIO IT -DIGITAL SALES OPERATIONS -ECOMMERCE -N3, CTIO IT -DIGITAL SALES OPERATIONS -ACN -N3.",
+    tarefas: [
+      {
+        id: "1",
+        numeroTarefa: "CTASK0232341",
+        descricaoTarefa: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
+        tipoTarefa: "Implementação",
+        statusTarefa: "Encerrado",
+      },
+      {
+        id: "2",
+        numeroTarefa: "CTASK0232357",
+        descricaoTarefa: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
+        tipoTarefa: "Revisão",
+        statusTarefa: "Pendente",
+      },
+    ],
+  },
+  {
+    id: "2",
     numero: "CHG0173972",
     descricaoResumida: "Projeto HUB - Liberação de clientid",
     fimExecucao: "17/11/2025 23:00:00",
     status: "Em execução",
-  },
-  {
-    id: "2",
-    numero: "CHG0174528",
-    descricaoResumida: "Projeto HUB - API TIMWE",
-    fimExecucao: "17/11/2025 23:00:00",
-    status: "Em execução",
+    tipo: "Implementação",
+    descricaoChange: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
+    inicioValidacao: "17/11/2025 22:00:00",
+    fimValidacao: "17/11/2025 23:00:00",
+    diaSemana: "Segunda-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    tarefas: [],
   },
 ];
 
@@ -53,6 +101,8 @@ export default function ChangesInExecution() {
   const [descricaoFilter, setDescricaoFilter] = useState<string>("all");
   const [fimExecucaoFilter, setFimExecucaoFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedChange, setSelectedChange] = useState<ChangeInExecution | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const itemsPerPage = 10;
 
   const filteredChanges = mockChangesInExecution.filter((change) => {
@@ -73,8 +123,9 @@ export default function ChangesInExecution() {
   const endIndex = startIndex + itemsPerPage;
   const currentChanges = filteredChanges.slice(startIndex, endIndex);
 
-  const handleConsultarDados = (numero: string) => {
-    console.log("Consultar dados:", numero);
+  const handleConsultarDados = (change: ChangeInExecution) => {
+    setSelectedChange(change);
+    setDetailsOpen(true);
   };
 
   return (
@@ -207,7 +258,7 @@ export default function ChangesInExecution() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleConsultarDados(change.numero)}
+                        onClick={() => handleConsultarDados(change)}
                         title="Consultar dados"
                       >
                         <Eye className="h-4 w-4" />
@@ -244,6 +295,14 @@ export default function ChangesInExecution() {
           )}
         </CardContent>
       </Card>
+
+      {selectedChange && (
+        <ChangeInExecutionDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          change={selectedChange}
+        />
+      )}
     </div>
   );
 }
