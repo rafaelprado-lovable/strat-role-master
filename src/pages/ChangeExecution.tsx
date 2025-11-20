@@ -93,9 +93,7 @@ const mockClusters: Cluster[] = [
         name: "Stop Services",
         type: "stop_services",
         items: [
-          { id: "s2", name: "kong_pmid2_uat1", status: "executado com sucesso" },
-          { id: "s3", name: "kong_pmid2_uat2", status: "executado com sucesso" },
-          { id: "s4", name: "kong_pmid2_uat3", status: "executado com sucesso" }
+          { id: "s2", name: "kong_pmid2_uats", status: "executado com sucesso" }
         ]
       },
       {
@@ -104,7 +102,8 @@ const mockClusters: Cluster[] = [
         type: "install_packages",
         items: [
           { id: "p2", name: "package_v1.2.3", description: "Main application package", status: "executado com sucesso" },
-          { id: "p3", name: "dependency_v2.0.1", description: "Required dependency", status: "executado com sucesso" }
+          { id: "p3", name: "dependency_v2.0.1", description: "Required dependency", status: "executado com sucesso" },
+          { id: "p4", name: "config_v3.1.0", description: "Configuration package", status: "executado com sucesso" }
         ]
       },
       {
@@ -112,9 +111,7 @@ const mockClusters: Cluster[] = [
         name: "Sync Servers",
         type: "sync_servers",
         items: [
-          { id: "sy2", name: "kong_pmid2_uat1", status: "não executado" },
-          { id: "sy3", name: "kong_pmid2_uat2", status: "não executado" },
-          { id: "sy4", name: "kong_pmid2_uat3", status: "não executado" }
+          { id: "sy2", name: "kong_pmid2_uats", status: "não executado" }
         ]
       },
       {
@@ -122,9 +119,7 @@ const mockClusters: Cluster[] = [
         name: "Start Services",
         type: "start_services",
         items: [
-          { id: "st2", name: "kong_pmid2_uat1", status: "não executado" },
-          { id: "st3", name: "kong_pmid2_uat2", status: "não executado" },
-          { id: "st4", name: "kong_pmid2_uat3", status: "não executado" }
+          { id: "st2", name: "kong_pmid2_uats", status: "não executado" }
         ]
       }
     ]
@@ -146,7 +141,8 @@ const mockClusters: Cluster[] = [
         name: "Install Packages",
         type: "install_packages",
         items: [
-          { id: "p4", name: "package_v1.2.3", description: "Main application package", status: "não executado" }
+          { id: "p5", name: "package_v1.2.3", description: "Main application package", status: "não executado" },
+          { id: "p6", name: "dependency_v2.0.1", description: "Required dependency", status: "não executado" }
         ]
       },
       {
