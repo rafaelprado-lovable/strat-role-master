@@ -18,6 +18,7 @@ import Insights from "./pages/Insights";
 import BugReport from "./pages/BugReport";
 import Changes from "./pages/Changes";
 import ChangesInExecution from "./pages/ChangesInExecution";
+import ChangeExecution from "./pages/ChangeExecution";
 import Analyses from "./pages/Analyses";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -119,6 +120,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <ChangesInExecution />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/change-execution/:id"
+              element={
+                <AppLayout>
+                  <ChangeExecution />
                 </AppLayout>
               }
             />
