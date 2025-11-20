@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Menu,
   GitPullRequest,
+  Activity,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -39,6 +40,12 @@ const menuItems = [
     title: 'Changes',
     url: '/changes',
     icon: GitPullRequest,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Changes em Execução',
+    url: '/changes-in-execution',
+    icon: Activity,
     hasSubmenu: false,
   },
   {
