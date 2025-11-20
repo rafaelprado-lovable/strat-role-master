@@ -5,6 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface HistoryEntry {
   timestamp: string;
@@ -184,6 +188,32 @@ const getCombinedHistory = () => {
 };
 
 export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetailsDialogProps) {
+  const [comment, setComment] = useState("");
+
+  const handleApprove = () => {
+    if (comment.trim()) {
+      toast.success(`Change ${change.numero} aprovada com sucesso!`, {
+        description: `Comentário: ${comment}`
+      });
+      setComment("");
+      onOpenChange(false);
+    } else {
+      toast.error("Por favor, adicione um comentário antes de aprovar.");
+    }
+  };
+
+  const handleReject = () => {
+    if (comment.trim()) {
+      toast.error(`Change ${change.numero} rejeitada.`, {
+        description: `Motivo: ${comment}`
+      });
+      setComment("");
+      onOpenChange(false);
+    } else {
+      toast.error("Por favor, adicione um comentário explicando o motivo da rejeição.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
@@ -432,6 +462,43 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
                 </ScrollArea>
               </TabsContent>
             </Tabs>
+          </div>
+
+          <Separator />
+
+          {/* Área de Aprovação/Rejeição */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Análise da Change</h3>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Comentário <span className="text-destructive">*</span>
+              </label>
+              <Textarea
+                placeholder="Adicione seus comentários sobre a análise da change..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleApprove}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Aprovar
+              </Button>
+              <Button
+                onClick={handleReject}
+                variant="destructive"
+                className="flex-1"
+                size="lg"
+              >
+                <XCircle className="mr-2 h-5 w-5" />
+                Rejeitar
+              </Button>
+            </div>
           </div>
 
           {/* Botão Refazer análise */}
