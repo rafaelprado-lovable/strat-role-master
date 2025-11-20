@@ -84,16 +84,90 @@ export default function ChangesInExecution() {
           <h2 className="text-3xl font-bold tracking-tight">Changes em execução</h2>
           <p className="text-muted-foreground">Mostrando {filteredChanges.length} registros</p>
         </div>
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search:"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
       </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Busca */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search:"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Número da Change */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Número da Change</label>
+              <Select value={numeroFilter} onValueChange={setNumeroFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os números" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os números</SelectItem>
+                  {mockChangesInExecution.map((change) => (
+                    <SelectItem key={change.id} value={change.numero}>
+                      {change.numero}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Descrição */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descrição</label>
+              <Select value={descricaoFilter} onValueChange={setDescricaoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as descrições" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as descrições</SelectItem>
+                  <SelectItem value="HUB">Projeto HUB</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Fim da Execução */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Fim da Execução</label>
+              <Select value={fimExecucaoFilter} onValueChange={setFimExecucaoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as datas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as datas</SelectItem>
+                  <SelectItem value="17/11/2025 23:00:00">17/11/2025 23:00:00</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="Em execução">Em execução</SelectItem>
+                  <SelectItem value="Concluído">Concluído</SelectItem>
+                  <SelectItem value="Erro">Erro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -144,55 +218,6 @@ export default function ChangesInExecution() {
               )}
             </TableBody>
           </Table>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={numeroFilter} onValueChange={setNumeroFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Número da change" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os números</SelectItem>
-                {mockChangesInExecution.map((change) => (
-                  <SelectItem key={change.id} value={change.numero}>
-                    {change.numero}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={descricaoFilter} onValueChange={setDescricaoFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Descrição" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as descrições</SelectItem>
-                <SelectItem value="HUB">Projeto HUB</SelectItem>
-                <SelectItem value="API">API</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={fimExecucaoFilter} onValueChange={setFimExecucaoFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Fim da execução" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as datas</SelectItem>
-                <SelectItem value="17/11/2025 23:00:00">17/11/2025 23:00:00</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="Em execução">Em execução</SelectItem>
-                <SelectItem value="Concluído">Concluído</SelectItem>
-                <SelectItem value="Erro">Erro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {filteredChanges.length > itemsPerPage && (
             <div className="mt-6 flex items-center justify-between">
