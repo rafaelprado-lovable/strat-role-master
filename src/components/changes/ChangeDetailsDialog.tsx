@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface HistoryEntry {
+  timestamp: string;
+  author: string;
+  type: string;
+  content: string;
+}
 
 interface ChangeDetailsDialogProps {
   open: boolean;
@@ -39,6 +48,140 @@ interface ChangeDetailsDialogProps {
     }>;
   };
 }
+
+// Mock history data
+const mockHistoryData = {
+  comments: [
+    {
+      timestamp: "10/11/2025 09:30:12",
+      author: "Rafael Jesus",
+      type: "Comentários adicionais",
+      content: "Solicitada alteração no campo Sox perimeter via CAT00279685"
+    },
+    {
+      timestamp: "11/10/2025 09:09:22",
+      author: "Vitoria Lima Guimaraes",
+      type: "Comentários adicionais",
+      content: "*🔔 Lembrete Importante*\n \nAinda existem pendências de aprovação relacionadas à atividade. Lembrando que após a aprovação técnica da Operação de Change, *fica a cargo do solicitante entrar em contato* com as equipes para aprovações da mudança em tempo hábil *(áreas técnicas, gestores diretos e negócios).*"
+    },
+    {
+      timestamp: "07/10/2025 13:02:04",
+      author: "Paulo Santiago Leonelli Vidigal",
+      type: "Comentários adicionais",
+      content: "A aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3 foi rejeitada (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - SALES E CUSTOMER CARE MANAGEMENT - ACN - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - PMID - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nReason 1: Aprovação Rejeitada\nReason 2: Análise Técnica Rejeitada (rejeição grupos aprovação técnica)\n\nComentários:\n BFFDIGITAL não está na validação da change, favor incluir validação da equipe BFFDIGITAL"
+    },
+    {
+      timestamp: "06/10/2025 16:19:09",
+      author: "Gisele Maria De Barros",
+      type: "Comentários adicionais",
+      content: "Filas funcionais adicionadas."
+    },
+    {
+      timestamp: "01/10/2025 13:28:29",
+      author: "Paulo Santiago Leonelli Vidigal",
+      type: "Comentários adicionais",
+      content: "A aprovação do grupo referente a CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3 foi rejeitada (Technical and Business Approvals).\n\nReason 1: Aprovação Rejeitada\nReason 2: Análise Técnica Rejeitada (rejeição grupos aprovação técnica)\n\nComentários:\n Precisamos da validação funcional dos client id URA e BFFDIGITAL"
+    }
+  ],
+  workNotes: [
+    {
+      timestamp: "13/10/2025 22:36:44",
+      author: "System",
+      type: "Anotações de trabalho",
+      content: "Informações de CI enviadas ao Netcool com sucesso."
+    },
+    {
+      timestamp: "13/10/2025 22:00:26",
+      author: "System",
+      type: "Anotações de trabalho",
+      content: "Informações de CI enviadas ao Netcool com sucesso."
+    }
+  ],
+  approvalHistory: [
+    {
+      timestamp: "13/10/2025 16:07:34",
+      author: "Julio Cesar De Carvalho Amaral",
+      type: "Approval history",
+      content: "Aprovação do grupo para CTIO IT - APP & DIGITAL PRODUCTS OPERATIONS - APP MEU TIM - N3 foi aprovada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "09/10/2025 17:43:01",
+      author: "Raul De Campos Gouveia",
+      type: "Approval history",
+      content: "Aprovação do grupo para CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3 foi aprovada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "09/10/2025 12:21:26",
+      author: "Luciana De Oliveira Lins",
+      type: "Approval history",
+      content: "Luciana De Oliveira Lins approved the task."
+    },
+    {
+      timestamp: "09/10/2025 10:06:51",
+      author: "Adriano Oliveira Bastos",
+      type: "Approval history",
+      content: "Aprovação do grupo para CTIO IT - CUSTOMER CARE & COGN. DIGITAL OPERATIONS - URA-COGNITIVA - N3 foi aprovada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "08/10/2025 18:02:25",
+      author: "Emilia De Deus Bernardino Silva",
+      type: "Approval history",
+      content: "Luciana De Oliveira Lins requested to approve task"
+    },
+    {
+      timestamp: "08/10/2025 17:21:11",
+      author: "Jessica Janaina Crocco Lopes",
+      type: "Approval history",
+      content: "Aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - PMID - N3 foi aprovada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "08/10/2025 17:20:11",
+      author: "Jessica Janaina Crocco Lopes",
+      type: "Approval history",
+      content: "Aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3 foi aprovada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "08/10/2025 11:41:45",
+      author: "Vitoria Lima Guimaraes",
+      type: "Approval history",
+      content: "Aprovação do grupo para Change Management IT foi aprovada (Change Manager Approval)."
+    },
+    {
+      timestamp: "07/10/2025 13:02:01",
+      author: "Paulo Santiago Leonelli Vidigal",
+      type: "Approval history",
+      content: "A aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3 foi rejeitada (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - SALES E CUSTOMER CARE MANAGEMENT - ACN - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo referente a CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - PMID - N3 foi aprovada por todos os usuários (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "07/10/2025 06:42:50",
+      author: "Vitoria Lima Guimaraes",
+      type: "Approval history",
+      content: "Aprovação do grupo para Change Management IT foi aprovada (Change Manager Approval)."
+    },
+    {
+      timestamp: "01/10/2025 13:28:25",
+      author: "Paulo Santiago Leonelli Vidigal",
+      type: "Approval history",
+      content: "A aprovação do grupo referente a CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3 foi aprovada por todos os usuários (Technical and Business Approvals).\n\nA aprovação do grupo para CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3 foi rejeitada (Technical and Business Approvals)."
+    },
+    {
+      timestamp: "30/09/2025 09:38:18",
+      author: "Vitoria Lima Guimaraes",
+      type: "Approval history",
+      content: "Aprovação do grupo para Change Management IT foi aprovada (Change Manager Approval)."
+    }
+  ]
+};
+
+// Combine comments and work notes sorted by date
+const getCombinedHistory = () => {
+  const combined = [...mockHistoryData.comments, ...mockHistoryData.workNotes];
+  return combined.sort((a, b) => {
+    const dateA = new Date(a.timestamp.split(' ')[0].split('/').reverse().join('-'));
+    const dateB = new Date(b.timestamp.split(' ')[0].split('/').reverse().join('-'));
+    return dateB.getTime() - dateA.getTime();
+  });
+};
 
 export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetailsDialogProps) {
   return (
@@ -186,6 +329,109 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <Separator />
+
+          {/* Histórico */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Histórico - {change.numero}</h3>
+            <Tabs defaultValue="comments" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="comments">Comentários</TabsTrigger>
+                <TabsTrigger value="workNotes">Work Notes</TabsTrigger>
+                <TabsTrigger value="combined">Comentários + Work Notes</TabsTrigger>
+                <TabsTrigger value="approval">Histórico de Aprovação</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="comments" className="mt-4">
+                <ScrollArea className="h-[400px] rounded-md border p-4">
+                  <div className="space-y-4">
+                    {mockHistoryData.comments.map((entry, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{entry.author}</p>
+                            <p className="text-xs text-muted-foreground">{entry.timestamp}</p>
+                          </div>
+                          <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                            {entry.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{entry.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="workNotes" className="mt-4">
+                <ScrollArea className="h-[400px] rounded-md border p-4">
+                  <div className="space-y-4">
+                    {mockHistoryData.workNotes.map((entry, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{entry.author}</p>
+                            <p className="text-xs text-muted-foreground">{entry.timestamp}</p>
+                          </div>
+                          <span className="text-xs px-2 py-1 bg-secondary/50 text-secondary-foreground rounded">
+                            {entry.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{entry.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="combined" className="mt-4">
+                <ScrollArea className="h-[400px] rounded-md border p-4">
+                  <div className="space-y-4">
+                    {getCombinedHistory().map((entry, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{entry.author}</p>
+                            <p className="text-xs text-muted-foreground">{entry.timestamp}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            entry.type === "Anotações de trabalho" 
+                              ? "bg-secondary/50 text-secondary-foreground" 
+                              : "bg-primary/10 text-primary"
+                          }`}>
+                            {entry.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{entry.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="approval" className="mt-4">
+                <ScrollArea className="h-[400px] rounded-md border p-4">
+                  <div className="space-y-4">
+                    {mockHistoryData.approvalHistory.map((entry, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{entry.author}</p>
+                            <p className="text-xs text-muted-foreground">{entry.timestamp}</p>
+                          </div>
+                          <span className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded">
+                            {entry.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{entry.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Botão Refazer análise */}
