@@ -152,7 +152,7 @@ export default function SwapAlarms() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleCleanup(alarm)}
-                          disabled={loadingAlarm === alarm.id}
+                          disabled={loadingAlarm !== null}
                         >
                           {loadingAlarm === alarm.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
