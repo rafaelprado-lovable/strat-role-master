@@ -11,6 +11,7 @@ import {
   Menu,
   GitPullRequest,
   Activity,
+  AlertTriangle,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -52,6 +53,12 @@ const menuItems = [
     title: 'Análises',
     url: '/analyses',
     icon: CheckCircle,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Alarmes de SWAP',
+    url: '/swap-alarms',
+    icon: AlertTriangle,
     hasSubmenu: false,
   },
   {
