@@ -21,6 +21,7 @@ import ChangesInExecution from "./pages/ChangesInExecution";
 import ChangeExecution from "./pages/ChangeExecution";
 import Analyses from "./pages/Analyses";
 import Plantoes from "./pages/Plantoes";
+import SwapAlarms from "./pages/SwapAlarms";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -145,6 +146,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Plantoes />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/swap-alarms"
+              element={
+                <AppLayout>
+                  <SwapAlarms />
                 </AppLayout>
               }
             />
