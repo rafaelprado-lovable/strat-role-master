@@ -107,3 +107,16 @@ export interface Insight {
     assignment_group?: string;
   }>;
 }
+
+export interface Plantao {
+  id: string;
+  departmentId: string;
+  userId?: string;
+  customName?: string;
+  customPhone?: string;
+  startDate: string;
+  endDate: string;
+  status: 'active' | 'scheduled' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+}
