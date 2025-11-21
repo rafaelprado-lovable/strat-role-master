@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User, Scope, Department } from '@/types';
+import { Organization, Permission, Role, User, Scope, Department, Plantao } from '@/types';
 
 // Mock data
 export const mockOrganizations: Organization[] = [
@@ -269,6 +269,54 @@ export const scopeApi = {
   update: async (id: string, data: Partial<Scope>): Promise<Scope> => {
     return new Promise((resolve) => setTimeout(() => resolve({
       ...mockScopes.find(scope => scope.id === id)!,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  delete: async (id: string): Promise<void> => {
+    return new Promise((resolve) => setTimeout(() => resolve(), 300));
+  },
+};
+
+export const mockPlantoes: Plantao[] = [
+  {
+    id: '1',
+    departmentId: '1',
+    userId: '1',
+    startDate: '2025-01-20T08:00:00Z',
+    endDate: '2025-01-20T18:00:00Z',
+    status: 'active',
+    createdAt: '2025-01-15T10:00:00Z',
+    updatedAt: '2025-01-15T10:00:00Z',
+  },
+  {
+    id: '2',
+    departmentId: '2',
+    customName: 'João Silva',
+    customPhone: '5511999887766',
+    startDate: '2025-01-21T08:00:00Z',
+    endDate: '2025-01-21T18:00:00Z',
+    status: 'scheduled',
+    createdAt: '2025-01-15T11:00:00Z',
+    updatedAt: '2025-01-15T11:00:00Z',
+  },
+];
+
+export const plantaoApi = {
+  getAll: async (): Promise<Plantao[]> => {
+    return new Promise((resolve) => setTimeout(() => resolve(mockPlantoes), 300));
+  },
+  create: async (data: Omit<Plantao, 'id' | 'createdAt' | 'updatedAt'>): Promise<Plantao> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...data,
+      id: String(mockPlantoes.length + 1),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }), 300));
+  },
+  update: async (id: string, data: Partial<Plantao>): Promise<Plantao> => {
+    return new Promise((resolve) => setTimeout(() => resolve({
+      ...mockPlantoes.find(plantao => plantao.id === id)!,
       ...data,
       updatedAt: new Date().toISOString(),
     }), 300));

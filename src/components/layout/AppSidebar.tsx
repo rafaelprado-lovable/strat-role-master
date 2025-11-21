@@ -77,6 +77,7 @@ const menuItems = [
       { title: 'Usuários', url: '/users' },
       { title: 'Departamentos', url: '/departments' },
       { title: 'Escopos', url: '/scopes' },
+      { title: 'Plantões', url: '/plantoes' },
     ],
   },
   {
