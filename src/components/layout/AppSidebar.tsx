@@ -12,6 +12,7 @@ import {
   GitPullRequest,
   Activity,
   AlertTriangle,
+  PhoneCall,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -59,6 +60,12 @@ const menuItems = [
     title: 'Alarmes de SWAP',
     url: '/swap-alarms',
     icon: AlertTriangle,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Resolução de Chamados',
+    url: '/call-resolution',
+    icon: PhoneCall,
     hasSubmenu: false,
   },
   {
