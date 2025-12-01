@@ -19,14 +19,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search, CalendarIcon } from "lucide-react";
+import { CheckSquare, Eye, Send, Search, CalendarIcon, Users, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface Change {
   id: string;
@@ -375,6 +377,94 @@ export default function Changes() {
               </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Timeline de Changes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Timeline de Changes</CardTitle>
+          <CardDescription>
+            Visualização cronológica das changes para o período selecionado
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pb-4">
+              {filteredChanges.length === 0 ? (
+                <div className="w-full text-center py-8 text-muted-foreground">
+                  Nenhuma change encontrada para o período
+                </div>
+              ) : (
+                filteredChanges.map((change, index) => {
+                  const parsedDate = change.dataExecucao.split(" ")[0].split("/");
+                  const formattedDate = `${parsedDate[0]}/${parsedDate[1]}/${parsedDate[2]}`;
+                  
+                  return (
+                    <div key={change.id} className="relative flex flex-col items-center">
+                      {/* Timeline connector */}
+                      {index < filteredChanges.length - 1 && (
+                        <div className="absolute top-4 left-[calc(50%+80px)] w-8 h-0.5 bg-border" />
+                      )}
+                      
+                      {/* Timeline dot */}
+                      <div className="w-3 h-3 rounded-full bg-primary mb-3 z-10" />
+                      
+                      {/* Change Card */}
+                      <Card 
+                        className="w-[280px] cursor-pointer hover:border-primary/50 transition-colors flex-shrink-0"
+                        onClick={() => handleVisualizar(change)}
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">
+                              {change.numero}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {change.status}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {formattedDate} - {change.diaSemana}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <FileText className="h-3 w-3" />
+                              <span>Descrição</span>
+                            </div>
+                            <p className="text-sm line-clamp-2">{change.descricao}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              <span>Equipe na Implementação</span>
+                            </div>
+                            <p className="text-xs line-clamp-2 text-muted-foreground">
+                              {change.equipesAplicacao || "Não informado"}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <Badge 
+                              variant={change.changeformAnexado ? "default" : "destructive"} 
+                              className="text-xs"
+                            >
+                              {change.changeformAnexado ? "CF Anexado" : "Sem CF"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">{change.sistema}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </CardContent>
       </Card>
 
