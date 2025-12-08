@@ -23,6 +23,7 @@ import Analyses from "./pages/Analyses";
 import Plantoes from "./pages/Plantoes";
 import SwapAlarms from "./pages/SwapAlarms";
 import CallResolution from "./pages/CallResolution";
+import PostChange from "./pages/PostChange";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -163,6 +164,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <CallResolution />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/post-change"
+              element={
+                <AppLayout>
+                  <PostChange />
                 </AppLayout>
               }
             />
