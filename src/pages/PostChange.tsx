@@ -1,18 +1,190 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Download, Star, CalendarIcon, AlertTriangle } from "lucide-react";
+import { Download, Star, CalendarIcon, AlertTriangle, Search, Eye, FileText, Users, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import pptxgen from "pptxgenjs";
+import { PostChangeDetailsDialog, PostChange } from "@/components/changes/PostChangeDetailsDialog";
 
-// Mock data for success rates
+// Mock data for executed changes
+const mockPostChanges: PostChange[] = [
+  {
+    id: "1",
+    numero: "CHG0170034",
+    descricao: "Atualização de API de autenticação PMID",
+    dataExecucao: "15/11/2024 22:00:00",
+    sistema: "Autorizar",
+    plataforma: "PMID",
+    status: "rollback",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    motivoRollback: "rollback por falta de validação",
+    detalheRollback: "Em horário de janela e sem impacto",
+    tempoExecucao: "45 min",
+    impacto: "Baixo",
+    servicos: [
+      { nome: "auth-service", versaoAnterior: "2.1.0", versaoNova: "2.2.0", statusInstalacao: "Rollback" },
+    ],
+    validacoes: { validacaoFuncional: false, validacaoHDC: true, rollbackExecutado: true, impactoCliente: false },
+    observacoes: "Rollback realizado devido à falta de validação funcional antes da execução."
+  },
+  {
+    id: "2",
+    numero: "CHG0170427",
+    descricao: "Liberação de clientid para nova integração",
+    dataExecucao: "16/11/2024 22:00:00",
+    sistema: "Autorizar",
+    plataforma: "PMID",
+    status: "rollback",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - PMID - N3",
+    motivoRollback: "rollback por falta de validação",
+    detalheRollback: "Em horário de janela e sem impacto",
+    tempoExecucao: "30 min",
+    impacto: "Baixo",
+    servicos: [],
+    validacoes: { validacaoFuncional: false, validacaoHDC: false, rollbackExecutado: true, impactoCliente: false },
+    observacoes: ""
+  },
+  {
+    id: "3",
+    numero: "CHG0173972",
+    descricao: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
+    dataExecucao: "17/11/2024 22:00:00",
+    sistema: "Autorizar",
+    plataforma: "PMID",
+    status: "sucesso",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    tempoExecucao: "1h 15min",
+    impacto: "Nenhum",
+    servicos: [
+      { nome: "hub-api", versaoAnterior: "1.0.0", versaoNova: "1.1.0", statusInstalacao: "Sucesso" },
+      { nome: "product-detail-api", versaoAnterior: "3.2.1", versaoNova: "3.3.0", statusInstalacao: "Sucesso" },
+    ],
+    validacoes: { validacaoFuncional: true, validacaoHDC: true, rollbackExecutado: false, impactoCliente: false },
+    observacoes: "Execução realizada com sucesso dentro da janela programada."
+  },
+  {
+    id: "4",
+    numero: "CHG0174528",
+    descricao: "Projeto HUB - Liberação da nova API de recarga do TIMWE",
+    dataExecucao: "17/11/2024 23:00:00",
+    sistema: "Autorizar",
+    plataforma: "PMID",
+    status: "sucesso",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    tempoExecucao: "50 min",
+    impacto: "Nenhum",
+    servicos: [
+      { nome: "recarga-timwe-api", versaoAnterior: "N/A", versaoNova: "1.0.0", statusInstalacao: "Sucesso" },
+    ],
+    validacoes: { validacaoFuncional: true, validacaoHDC: true, rollbackExecutado: false, impactoCliente: false },
+    observacoes: ""
+  },
+  {
+    id: "5",
+    numero: "CHG0168326",
+    descricao: "Atualização de configuração INFOBUS",
+    dataExecucao: "18/11/2024 22:00:00",
+    sistema: "Integração",
+    plataforma: "INFOBUS",
+    status: "rollback",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - INFOBUS - N3",
+    motivoRollback: "rollback por falha na configuração",
+    detalheRollback: "Em horário de janela e sem impacto",
+    tempoExecucao: "25 min",
+    impacto: "Baixo",
+    servicos: [
+      { nome: "infobus-config", versaoAnterior: "1.5.0", versaoNova: "1.6.0", statusInstalacao: "Rollback" },
+    ],
+    validacoes: { validacaoFuncional: true, validacaoHDC: false, rollbackExecutado: true, impactoCliente: false },
+    observacoes: "Falha na configuração identificada durante validação HDC."
+  },
+  {
+    id: "6",
+    numero: "CHG0170428",
+    descricao: "Deploy de nova versão NMWS",
+    dataExecucao: "19/11/2024 22:00:00",
+    sistema: "Novo",
+    plataforma: "NMWS",
+    status: "rollback",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    motivoRollback: "rollback por falta de validação",
+    detalheRollback: "Em horário de janela e sem impacto",
+    tempoExecucao: "35 min",
+    impacto: "Baixo",
+    servicos: [],
+    validacoes: { validacaoFuncional: false, validacaoHDC: true, rollbackExecutado: true, impactoCliente: false },
+    observacoes: ""
+  },
+  {
+    id: "7",
+    numero: "CHG0175001",
+    descricao: "Atualização SAP-BASIS - Patch de segurança",
+    dataExecucao: "20/11/2024 02:00:00",
+    sistema: "Enterprise",
+    plataforma: "SAP-BASIS",
+    status: "sucesso",
+    equipesAplicacao: "CTIO IT - ENTERPRISE OPERATIONS - SAP - N3",
+    equipesValidacao: "CTIO IT - ENTERPRISE OPERATIONS - SAP - N3",
+    tempoExecucao: "2h 30min",
+    impacto: "Nenhum",
+    servicos: [
+      { nome: "sap-basis-core", versaoAnterior: "7.52", versaoNova: "7.53", statusInstalacao: "Sucesso" },
+    ],
+    validacoes: { validacaoFuncional: true, validacaoHDC: true, rollbackExecutado: false, impactoCliente: false },
+    observacoes: "Patch aplicado com sucesso durante janela de manutenção."
+  },
+  {
+    id: "8",
+    numero: "CHG0175002",
+    descricao: "Liberação VAS - Nova feature de notificações",
+    dataExecucao: "20/11/2024 22:00:00",
+    sistema: "Integração",
+    plataforma: "VAS",
+    status: "sucesso",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - VAS - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - VAS - N3",
+    tempoExecucao: "1h",
+    impacto: "Nenhum",
+    servicos: [
+      { nome: "vas-notification-service", versaoAnterior: "2.0.0", versaoNova: "2.1.0", statusInstalacao: "Sucesso" },
+    ],
+    validacoes: { validacaoFuncional: true, validacaoHDC: true, rollbackExecutado: false, impactoCliente: false },
+    observacoes: ""
+  },
+];
+
+// Chart data
 const cicEngineeringData = [
   { name: "VENDAS", sucesso: 13, rollback: 0 },
   { name: "OMS", sucesso: 8, rollback: 0 },
@@ -86,15 +258,46 @@ const calculateSuccessRate = (data: { sucesso: number; rollback: number }[]) => 
   return ((totalSuccesso / total) * 100).toFixed(1);
 };
 
-const PostChange = () => {
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: new Date(2024, 10, 1),
-    to: new Date(2024, 10, 25),
-  });
+const PostChangePage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedChange, setSelectedChange] = useState<PostChange | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const itemsPerPage = 10;
 
   const cicSuccessRate = calculateSuccessRate(cicEngineeringData);
   const enterpriseSuccessRate = calculateSuccessRate(enterpriseData);
   const integracoesSuccessRate = calculateSuccessRate(integracoesData);
+
+  const filteredChanges = mockPostChanges.filter((change) => {
+    const matchesSearch =
+      change.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      change.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      change.plataforma.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const changeDate = new Date(change.dataExecucao.split(" ")[0].split("/").reverse().join("-"));
+    const matchesStartDate = !startDate || changeDate >= startDate;
+    const matchesEndDate = !endDate || changeDate <= endDate;
+
+    const matchesPlatform = platformFilter === "all" || change.plataforma === platformFilter;
+    const matchesStatus = statusFilter === "all" || change.status === statusFilter;
+
+    return matchesSearch && matchesStartDate && matchesEndDate && matchesPlatform && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentChanges = filteredChanges.slice(startIndex, endIndex);
+
+  const handleVisualizar = (change: PostChange) => {
+    setSelectedChange(change);
+    setDetailsOpen(true);
+  };
 
   const exportToPPTX = async () => {
     const pptx = new pptxgen();
@@ -115,7 +318,7 @@ const PostChange = () => {
       align: "center",
     });
     slide1.addText(
-      `Período: ${dateRange.from ? format(dateRange.from, "dd/MM/yyyy", { locale: ptBR }) : ""} - ${dateRange.to ? format(dateRange.to, "dd/MM/yyyy", { locale: ptBR }) : ""}`,
+      `Período: ${startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Início"} - ${endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Fim"}`,
       {
         x: 0.5,
         y: 3.5,
@@ -147,22 +350,6 @@ const PostChange = () => {
       bold: true,
       color: "228B22",
     });
-    slide2.addText("CIC - ENGINEERING", {
-      x: 0.5,
-      y: 1,
-      w: 9,
-      h: 0.5,
-      fontSize: 16,
-      bold: true,
-      color: "1a1a2e",
-      align: "center",
-    });
-
-    const cicChartData = cicEngineeringData.map((item) => ({
-      name: item.name,
-      labels: [item.name],
-      values: [item.sucesso],
-    }));
 
     slide2.addChart(pptx.ChartType.bar, [
       {
@@ -196,16 +383,6 @@ const PostChange = () => {
       bold: true,
       color: "228B22",
     });
-    slide3.addText("ENTERPRISE", {
-      x: 0.5,
-      y: 1,
-      w: 9,
-      h: 0.5,
-      fontSize: 16,
-      bold: true,
-      color: "1a1a2e",
-      align: "center",
-    });
 
     slide3.addChart(pptx.ChartType.bar, [
       {
@@ -238,16 +415,6 @@ const PostChange = () => {
       fontSize: 20,
       bold: true,
       color: "228B22",
-    });
-    slide4.addText("INTEGRAÇÕES", {
-      x: 0.5,
-      y: 1,
-      w: 9,
-      h: 0.5,
-      fontSize: 16,
-      bold: true,
-      color: "1a1a2e",
-      align: "center",
     });
 
     slide4.addChart(pptx.ChartType.bar, [
@@ -318,37 +485,125 @@ const PostChange = () => {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Pós Change</h1>
+          <h2 className="text-3xl font-bold tracking-tight">Pós Change</h2>
           <p className="text-muted-foreground">Análise de execução e taxa de sucesso das changes</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from && dateRange.to
-                  ? `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
-                  : "Selecione o período"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                locale={ptBR}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-
-          <Button onClick={exportToPPTX} className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar PPTX
-          </Button>
-        </div>
+        <Button onClick={exportToPPTX} className="gap-2">
+          <Download className="h-4 w-4" />
+          Exportar PPTX
+        </Button>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Data de Início */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data de Início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : "Selecionar"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data de Fim */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data de Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : "Selecionar"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Busca */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Número da Change</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Plataforma */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Plataforma</label>
+              <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as plataformas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as plataformas</SelectItem>
+                  <SelectItem value="PMID">PMID</SelectItem>
+                  <SelectItem value="NMWS">NMWS</SelectItem>
+                  <SelectItem value="VAS">VAS</SelectItem>
+                  <SelectItem value="INFOBUS">INFOBUS</SelectItem>
+                  <SelectItem value="SAP-BASIS">SAP-BASIS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="sucesso">Sucesso</SelectItem>
+                  <SelectItem value="rollback">Rollback</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Success Rates Summary */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -378,9 +633,100 @@ const PostChange = () => {
         </Card>
       </div>
 
+      {/* Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Timeline de Changes Executadas</CardTitle>
+          <CardDescription>
+            Visualização cronológica das changes executadas no período
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 pb-4">
+              {filteredChanges.length === 0 ? (
+                <div className="w-full text-center py-8 text-muted-foreground">
+                  Nenhuma change encontrada para o período
+                </div>
+              ) : (
+                filteredChanges.map((change, index) => {
+                  const parsedDate = change.dataExecucao.split(" ")[0].split("/");
+                  const formattedDate = `${parsedDate[0]}/${parsedDate[1]}/${parsedDate[2]}`;
+                  
+                  return (
+                    <div key={change.id} className="relative flex flex-col items-center">
+                      {index < filteredChanges.length - 1 && (
+                        <div className="absolute top-4 left-[calc(50%+80px)] w-8 h-0.5 bg-border" />
+                      )}
+                      
+                      <div className={cn(
+                        "w-3 h-3 rounded-full mb-3 z-10",
+                        change.status === "sucesso" ? "bg-green-500" : "bg-destructive"
+                      )} />
+                      
+                      <Card 
+                        className={cn(
+                          "w-[280px] cursor-pointer transition-colors flex-shrink-0",
+                          change.status === "sucesso" 
+                            ? "hover:border-green-500/50" 
+                            : "hover:border-destructive/50 border-destructive/30"
+                        )}
+                        onClick={() => handleVisualizar(change)}
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">
+                              {change.numero}
+                            </Badge>
+                            <Badge variant={change.status === "sucesso" ? "default" : "destructive"} className="text-xs">
+                              {change.status === "sucesso" ? "Sucesso" : "Rollback"}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {formattedDate} - {change.plataforma}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <FileText className="h-3 w-3" />
+                              <span>Descrição</span>
+                            </div>
+                            <p className="text-sm line-clamp-2">{change.descricao}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              <span>Equipe na Implementação</span>
+                            </div>
+                            <p className="text-xs line-clamp-2 text-muted-foreground">
+                              {change.equipesAplicacao || "Não informado"}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            {change.status === "sucesso" ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            )}
+                            <span className="text-xs text-muted-foreground">{change.tempoExecucao}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* CIC Engineering Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-center">CIC - ENGINEERING</CardTitle>
@@ -400,7 +746,6 @@ const PostChange = () => {
           </CardContent>
         </Card>
 
-        {/* Enterprise Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-center">ENTERPRISE</CardTitle>
@@ -420,7 +765,6 @@ const PostChange = () => {
           </CardContent>
         </Card>
 
-        {/* Integrações Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-center">INTEGRAÇÕES</CardTitle>
@@ -440,7 +784,6 @@ const PostChange = () => {
           </CardContent>
         </Card>
 
-        {/* Rollback Details */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -478,12 +821,114 @@ const PostChange = () => {
         </Card>
       </div>
 
-      {/* Footer with update date */}
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Listagem de Changes Executadas</CardTitle>
+          <CardDescription>
+            Detalhamento de todas as changes executadas no período
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>NÚMERO</TableHead>
+                <TableHead>DESCRIÇÃO</TableHead>
+                <TableHead>PLATAFORMA</TableHead>
+                <TableHead>DATA EXECUÇÃO</TableHead>
+                <TableHead>TEMPO</TableHead>
+                <TableHead>STATUS</TableHead>
+                <TableHead className="text-right">AÇÕES</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentChanges.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Nenhuma change encontrada
+                  </TableCell>
+                </TableRow>
+              ) : (
+                currentChanges.map((change) => (
+                  <TableRow key={change.id}>
+                    <TableCell className="font-mono font-medium">{change.numero}</TableCell>
+                    <TableCell className="max-w-[300px] truncate">{change.descricao}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{change.plataforma}</Badge>
+                    </TableCell>
+                    <TableCell>{change.dataExecucao.split(" ")[0]}</TableCell>
+                    <TableCell>{change.tempoExecucao}</TableCell>
+                    <TableCell>
+                      <Badge variant={change.status === "sucesso" ? "default" : "destructive"}>
+                        {change.status === "sucesso" ? "Sucesso" : "Rollback"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleVisualizar(change)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Detalhes
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        isActive={currentPage === page}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Footer */}
       <div className="text-right text-sm text-muted-foreground">
         Atualização: {format(new Date(), "dd/MM", { locale: ptBR })}
       </div>
+
+      {/* Details Dialog */}
+      {selectedChange && (
+        <PostChangeDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          change={selectedChange}
+        />
+      )}
     </div>
   );
 };
 
-export default PostChange;
+export default PostChangePage;
