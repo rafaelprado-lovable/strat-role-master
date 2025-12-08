@@ -13,6 +13,7 @@ import {
   Activity,
   AlertTriangle,
   PhoneCall,
+  FileBarChart,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -48,6 +49,12 @@ const menuItems = [
     title: 'Changes em Execução',
     url: '/changes-in-execution',
     icon: Activity,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Pós Change',
+    url: '/post-change',
+    icon: FileBarChart,
     hasSubmenu: false,
   },
   {
