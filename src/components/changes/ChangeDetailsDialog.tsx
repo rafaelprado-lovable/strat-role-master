@@ -522,6 +522,36 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
           {/* Área de Aprovação/Rejeição */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Análise da Change</h3>
+            
+            {/* Sugestões de Motivos para Rejeição */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Sugestões de motivos para rejeição
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Versão do ChangeForm divergente da produção",
+                  "Falta validação funcional de equipe",
+                  "Impacto em vendas não documentado",
+                  "Pipelines com configuração incorreta",
+                  "Validação do HDC pendente",
+                  "Ausência de testes funcionais",
+                  "Documentação incompleta",
+                  "Janela de execução inadequada"
+                ].map((motivo) => (
+                  <Button
+                    key={motivo}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-auto py-1.5 px-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                    onClick={() => setComment(prev => prev ? `${prev}\n- ${motivo}` : `- ${motivo}`)}
+                  >
+                    {motivo}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">
                 Comentário <span className="text-destructive">*</span>
