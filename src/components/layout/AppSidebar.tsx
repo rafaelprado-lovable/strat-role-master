@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   PhoneCall,
   FileBarChart,
+  Gauge,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -67,6 +68,12 @@ const menuItems = [
     title: 'Alarmes de SWAP',
     url: '/swap-alarms',
     icon: AlertTriangle,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Sanity Check',
+    url: '/sanity-check',
+    icon: Gauge,
     hasSubmenu: false,
   },
   {

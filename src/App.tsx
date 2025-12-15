@@ -24,6 +24,7 @@ import Plantoes from "./pages/Plantoes";
 import SwapAlarms from "./pages/SwapAlarms";
 import CallResolution from "./pages/CallResolution";
 import PostChange from "./pages/PostChange";
+import SanityCheck from "./pages/SanityCheck";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -172,6 +173,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <PostChange />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/sanity-check"
+              element={
+                <AppLayout>
+                  <SanityCheck />
                 </AppLayout>
               }
             />
