@@ -416,6 +416,47 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
 
           <Separator />
 
+          {/* Validação Funcional */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Validação Funcional</h3>
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">
+                  Contato dos responsáveis pela validação funcional:
+                </p>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">Rafael Martins</p>
+                  <p className="text-sm text-muted-foreground">
+                    rafael.martins@engdb.com.br - (31) 99174-6531
+                  </p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Procedimento:</p>
+                <p className="text-sm">
+                  Será efetuado uma chamada para gerar o token de acesso ao TIMWE.
+                </p>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">A validação ocorrerá:</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-5 h-5 border-2 border-primary rounded bg-primary">
+                    <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm">Durante a change</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Histórico */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Histórico - {change.numero}</h3>
