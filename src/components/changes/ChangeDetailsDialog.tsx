@@ -326,6 +326,59 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
 
           <Separator />
 
+          {/* Validações Realizadas */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Validações Realizadas</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>DESCRIÇÃO DA VALIDAÇÃO</TableHead>
+                  <TableHead className="w-[120px] text-center">STATUS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Versão no ChangeForm é o mesmo de produção</TableCell>
+                  <TableCell className="text-center">
+                    {change.servicos.every(s => s.versaoCF === s.versaoProducao) ? (
+                      <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500 mx-auto" />
+                    )}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Impacto em vendas</TableCell>
+                  <TableCell className="text-center">
+                    {change.changeForm.impactoVendas === "Não" ? (
+                      <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500 mx-auto" />
+                    )}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Validação do HDC</TableCell>
+                  <TableCell className="text-center">
+                    {change.changeForm.validacaoHDC === "Sim" ? (
+                      <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500 mx-auto" />
+                    )}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Pipelines estão corretas</TableCell>
+                  <TableCell className="text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+
+          <Separator />
+
           {/* Dados do serviço */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Dados do serviço</h3>
