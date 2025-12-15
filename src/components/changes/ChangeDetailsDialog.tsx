@@ -445,12 +445,34 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
               
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-2">A validação ocorrerá:</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-5 h-5 border-2 border-primary rounded bg-primary">
-                    <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-5 h-5 border-2 border-primary rounded bg-primary">
+                      <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                    <span className="text-sm">Durante a change</span>
                   </div>
-                  <span className="text-sm">Durante a change</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-5 h-5 border-2 border-muted-foreground/30 rounded">
+                    </div>
+                    <span className="text-sm text-muted-foreground">Durante o dia</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-5 h-5 border-2 border-muted-foreground/30 rounded">
+                    </div>
+                    <span className="text-sm text-muted-foreground">Durante a semana</span>
+                  </div>
                 </div>
+                
+                {/* Justificativa - exibida quando não é "Durante a change" */}
+                {false && (
+                  <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md">
+                    <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1">Justificativa:</p>
+                    <p className="text-sm text-muted-foreground">
+                      A validação será realizada no próximo dia útil devido à indisponibilidade da equipe durante o horário da change.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
