@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { AlertTriangle, CheckCircle, Clock, RefreshCw, Activity } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { AlertTriangle, CheckCircle, Clock, RefreshCw, Activity, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ServiceStatus {
   name: string;
@@ -235,13 +236,90 @@ const availabilityData: ServiceStatus[] = [
   { name: 'VAS_S_SalesOrder', value: '100%', status: 'ok' },
 ];
 
+// Extract unique system prefixes from service names
+const extractSystem = (name: string): string => {
+  // Try to extract prefix before underscore or specific patterns
+  const patterns = [
+    /^(AIRVANTAGE)_/i,
+    /^(BSCSIX)_/i,
+    /^(BSCS)_/i,
+    /^(BSCS)[RU]/i,
+    /^(CBCF)_/i,
+    /^(CBD)_/i,
+    /^(CRIVO)[R_]/i,
+    /^(ECM)[R_]/i,
+    /^(EPC)R/i,
+    /^(F)_/i,
+    /^(GEMFIRE)_/i,
+    /^(GEMS)[R_]/i,
+    /^(Gemfire)/i,
+    /^(GFA)_/i,
+    /^(HPERM)_/i,
+    /^(HRD)_/i,
+    /^(Hperm)/i,
+    /^(IMDB)[R_]/i,
+    /^(Imdb)/i,
+    /^(JUVO)_/i,
+    /^(MDG)_/i,
+    /^(MRSBL)[R_]/i,
+    /^(OCS)[R_]/i,
+    /^(OMS)_/i,
+    /^(ORCH)[C_]/i,
+    /^(Orch)/i,
+    /^(P2K)_/i,
+    /^(PFE)[RU_]/i,
+    /^(PGU)_/i,
+    /^(PMID)_/i,
+    /^(PROTOCOLO)/i,
+    /^(RMCA)[R_]/i,
+    /^(RTDM)_/i,
+    /^(RabbitMQ)/i,
+    /^(Rules)[CE_]/i,
+    /^(SENHAUNICA)_/i,
+    /^(SGG)_/i,
+    /^(SGR)R/i,
+    /^(SIEBELCAT)_/i,
+    /^(SIEBELPOS)[N_]/i,
+    /^(SIEBELPRE)_/i,
+    /^(SIEBEL)_/i,
+    /^(SiebelPos)/i,
+    /^(S)_/i,
+    /^(UCM)R/i,
+    /^(VAS)[RUS_]/i,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = name.match(pattern);
+    if (match) {
+      return match[1].toUpperCase();
+    }
+  }
+  return 'OUTROS';
+};
+
+const allSystems = Array.from(
+  new Set([...responseTimeData, ...availabilityData].map(s => extractSystem(s.name)))
+).sort();
+
 const SanityCheck = () => {
   const [lastUpdate] = useState(new Date());
+  const [selectedSystem, setSelectedSystem] = useState<string>('all');
   
-  const responseTimeErrors = responseTimeData.filter(s => s.status === 'error');
-  const availabilityErrors = availabilityData.filter(s => s.status === 'error');
+  // Filter data based on selected system
+  const filteredResponseTimeData = useMemo(() => {
+    if (selectedSystem === 'all') return responseTimeData;
+    return responseTimeData.filter(s => extractSystem(s.name) === selectedSystem);
+  }, [selectedSystem]);
+  
+  const filteredAvailabilityData = useMemo(() => {
+    if (selectedSystem === 'all') return availabilityData;
+    return availabilityData.filter(s => extractSystem(s.name) === selectedSystem);
+  }, [selectedSystem]);
+  
+  const responseTimeErrors = filteredResponseTimeData.filter(s => s.status === 'error');
+  const availabilityErrors = filteredAvailabilityData.filter(s => s.status === 'error');
   const totalErrors = responseTimeErrors.length + availabilityErrors.length;
-  const totalServices = responseTimeData.length + availabilityData.length;
+  const totalServices = filteredResponseTimeData.length + filteredAvailabilityData.length;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('pt-BR') + ' - ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -288,7 +366,21 @@ const SanityCheck = () => {
             Monitoramento de disponibilidade e tempo de resposta dos serviços NMWS
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedSystem} onValueChange={setSelectedSystem}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por sistema" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Sistemas</SelectItem>
+                {allSystems.map(system => (
+                  <SelectItem key={system} value={system}>{system}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>Última atualização: {formatDate(lastUpdate)}</span>
@@ -454,7 +546,7 @@ const SanityCheck = () => {
             <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-1">
-                  {responseTimeData.map((service) => (
+                  {filteredResponseTimeData.map((service) => (
                     <ServiceRow key={service.name} service={service} type="response" />
                   ))}
                 </div>
@@ -474,7 +566,7 @@ const SanityCheck = () => {
             <CardContent>
               <ScrollArea className="h-[600px]">
                 <div className="space-y-1">
-                  {availabilityData.map((service) => (
+                  {filteredAvailabilityData.map((service) => (
                     <ServiceRow key={service.name} service={service} type="availability" />
                   ))}
                 </div>
