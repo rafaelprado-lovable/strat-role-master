@@ -6,7 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Check, X, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -189,6 +190,11 @@ const getCombinedHistory = () => {
 
 export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetailsDialogProps) {
   const [comment, setComment] = useState("");
+  const [validations, setValidations] = useState({
+    versaoChangeFormProducao: false,
+    impactoVendasHDC: false,
+    pipelinesCorretas: false,
+  });
 
   const handleApprove = () => {
     if (comment.trim()) {
@@ -462,6 +468,77 @@ export function ChangeDetailsDialog({ open, onOpenChange, change }: ChangeDetail
                 </ScrollArea>
               </TabsContent>
             </Tabs>
+          </div>
+
+          <Separator />
+
+          {/* Checklist de Validações */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Checklist de Validações</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card">
+                <Checkbox
+                  id="versaoChangeFormProducao"
+                  checked={validations.versaoChangeFormProducao}
+                  onCheckedChange={(checked) =>
+                    setValidations((prev) => ({ ...prev, versaoChangeFormProducao: checked === true }))
+                  }
+                />
+                <div className="space-y-1">
+                  <label
+                    htmlFor="versaoChangeFormProducao"
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    Versão no ChangeForm é o mesmo de produção
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Verificar se as versões informadas no CF correspondem às versões em produção
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card">
+                <Checkbox
+                  id="impactoVendasHDC"
+                  checked={validations.impactoVendasHDC}
+                  onCheckedChange={(checked) =>
+                    setValidations((prev) => ({ ...prev, impactoVendasHDC: checked === true }))
+                  }
+                />
+                <div className="space-y-1">
+                  <label
+                    htmlFor="impactoVendasHDC"
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    Impacto em vendas com validação do HDC
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Confirmar validação do HDC para changes com impacto em vendas
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 rounded-lg border bg-card">
+                <Checkbox
+                  id="pipelinesCorretas"
+                  checked={validations.pipelinesCorretas}
+                  onCheckedChange={(checked) =>
+                    setValidations((prev) => ({ ...prev, pipelinesCorretas: checked === true }))
+                  }
+                />
+                <div className="space-y-1">
+                  <label
+                    htmlFor="pipelinesCorretas"
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    Pipelines estão corretas
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Validar se as pipelines de deploy estão configuradas corretamente
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Separator />
