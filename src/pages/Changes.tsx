@@ -19,7 +19,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search, CalendarIcon, Users, FileText } from "lucide-react";
+import { CheckSquare, Eye, Send, Search, CalendarIcon, Users, FileText, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +29,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface ValidationChecklist {
+  versaoChangeFormProd: boolean | null;
+  impactoVendasHDC: boolean | null;
+  pipelinesCorretas: boolean | null;
+}
 
 interface Change {
   id: string;
@@ -44,6 +51,7 @@ interface Change {
   diaSemana: string;
   equipesAplicacao: string;
   equipesValidacao: string;
+  validationChecklist: ValidationChecklist;
   changeForm: {
     tecnologia: string;
     tipoRestart: string;
@@ -82,6 +90,11 @@ const mockChanges: Change[] = [
     diaSemana: "Segunda-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    validationChecklist: {
+      versaoChangeFormProd: true,
+      impactoVendasHDC: true,
+      pipelinesCorretas: true,
+    },
     changeForm: {
       tecnologia: "PMID",
       tipoRestart: "N/A",
@@ -112,6 +125,11 @@ const mockChanges: Change[] = [
     diaSemana: "Segunda-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    validationChecklist: {
+      versaoChangeFormProd: false,
+      impactoVendasHDC: true,
+      pipelinesCorretas: null,
+    },
     changeForm: {
       tecnologia: "PMID",
       tipoRestart: "N/A",
@@ -142,6 +160,11 @@ const mockChanges: Change[] = [
     diaSemana: "Quarta-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO OPS - CORE SERVICES - VAS - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO IT - CORPORATE SOLUTIONS OPERATIONS - E2B MOVEL - N3, CTIO IT - APP & DIGITAL PRODUCTS OPERATIONS - WEB PORTALS - N3, CTIO IT - CUSTOMER CARE & COGN. DIGITAL OPERATIONS",
+    validationChecklist: {
+      versaoChangeFormProd: null,
+      impactoVendasHDC: null,
+      pipelinesCorretas: null,
+    },
     changeForm: {
       tecnologia: "NMWS",
       tipoRestart: "N/A",
@@ -172,6 +195,11 @@ const mockChanges: Change[] = [
     diaSemana: "Quarta-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    validationChecklist: {
+      versaoChangeFormProd: true,
+      impactoVendasHDC: false,
+      pipelinesCorretas: true,
+    },
     changeForm: {
       tecnologia: "PMID",
       tipoRestart: "N/A",
@@ -202,6 +230,11 @@ const mockChanges: Change[] = [
     diaSemana: "Segunda-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
+    validationChecklist: {
+      versaoChangeFormProd: true,
+      impactoVendasHDC: true,
+      pipelinesCorretas: false,
+    },
     changeForm: {
       tecnologia: "PMID",
       tipoRestart: "N/A",
@@ -377,6 +410,82 @@ export default function Changes() {
               </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Checklist de Validações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Checklist de Validações</CardTitle>
+          <CardDescription>
+            Status das validações realizadas para cada change
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Change</TableHead>
+                <TableHead className="text-center">Versão no ChangeForm é o mesmo de produção</TableHead>
+                <TableHead className="text-center">Impacto em vendas com validação do HDC</TableHead>
+                <TableHead className="text-center">Pipelines estão corretas</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredChanges.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    Nenhuma change encontrada
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredChanges.map((change) => (
+                  <TableRow key={change.id}>
+                    <TableCell className="font-medium">{change.numero}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        {change.validationChecklist.versaoChangeFormProd === true && (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        )}
+                        {change.validationChecklist.versaoChangeFormProd === false && (
+                          <XCircle className="h-5 w-5 text-destructive" />
+                        )}
+                        {change.validationChecklist.versaoChangeFormProd === null && (
+                          <AlertCircle className="h-5 w-5 text-yellow-500" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        {change.validationChecklist.impactoVendasHDC === true && (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        )}
+                        {change.validationChecklist.impactoVendasHDC === false && (
+                          <XCircle className="h-5 w-5 text-destructive" />
+                        )}
+                        {change.validationChecklist.impactoVendasHDC === null && (
+                          <AlertCircle className="h-5 w-5 text-yellow-500" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        {change.validationChecklist.pipelinesCorretas === true && (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        )}
+                        {change.validationChecklist.pipelinesCorretas === false && (
+                          <XCircle className="h-5 w-5 text-destructive" />
+                        )}
+                        {change.validationChecklist.pipelinesCorretas === null && (
+                          <AlertCircle className="h-5 w-5 text-yellow-500" />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
