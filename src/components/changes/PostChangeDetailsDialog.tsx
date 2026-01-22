@@ -4,29 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, AlertTriangle, Activity } from "lucide-react";
-import { ServiceTimelineChart } from "./ServiceTimelineChart";
-
-interface HttpCodeGroup {
-  code: string;
-  total_count: number;
-  avg_time: number;
-}
-
-interface ServiceDataPoint {
-  timestamp: string;
-  context_info: {
-    application: string;
-    service_name: string;
-    route_path: string;
-  };
-  http_code_group: HttpCodeGroup[];
-  avg_time: number;
-}
-
-interface ServiceDayData {
-  day_key: string;
-  services: ServiceDataPoint[];
-}
+import { ServiceTimelineChart, ServiceTimelineData } from "./ServiceTimelineChart";
 
 export interface PostChange {
   id: string;
@@ -55,7 +33,7 @@ export interface PostChange {
     impactoCliente: boolean;
   };
   observacoes: string;
-  serviceTimeline?: ServiceDayData[];
+  serviceTimeline?: ServiceTimelineData;
 }
 
 interface PostChangeDetailsDialogProps {
@@ -224,7 +202,7 @@ export function PostChangeDetailsDialog({ open, onOpenChange, change }: PostChan
           </div>
 
           {/* Monitoramento de Serviços - Timeline Charts */}
-          {change.serviceTimeline && change.serviceTimeline.length > 0 && (
+          {change.serviceTimeline && (change.serviceTimeline.today.length > 0 || change.serviceTimeline.lastWeek.length > 0) && (
             <>
               <Separator />
               <div>
@@ -233,7 +211,7 @@ export function PostChangeDetailsDialog({ open, onOpenChange, change }: PostChan
                   Monitoramento de Serviços
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Análise de performance e disponibilidade dos serviços durante a execução
+                  Comparação de performance: dia atual vs mesma hora da semana anterior
                 </p>
                 <ServiceTimelineChart data={change.serviceTimeline} />
               </div>

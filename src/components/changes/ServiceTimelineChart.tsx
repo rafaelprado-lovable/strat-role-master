@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { CalendarDays, Clock } from "lucide-react";
 
 interface HttpCodeGroup {
   code: string;
@@ -25,8 +27,13 @@ interface ServiceDayData {
   services: ServiceDataPoint[];
 }
 
+export interface ServiceTimelineData {
+  today: ServiceDayData[];
+  lastWeek: ServiceDayData[];
+}
+
 interface ServiceTimelineChartProps {
-  data: ServiceDayData[];
+  data: ServiceTimelineData;
 }
 
 const COLORS = {
@@ -48,17 +55,28 @@ const formatTime = (timestamp: string) => {
 
 const formatDate = (dayKey: string) => {
   try {
-    return format(parseISO(dayKey), "dd/MM/yyyy", { locale: ptBR });
+    return format(parseISO(dayKey), "dd/MM/yyyy (EEEE)", { locale: ptBR });
   } catch {
     return dayKey;
   }
 };
 
-export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
-  // Group services by service_name across all days
-  const serviceGroups = new Map<string, { serviceName: string; application: string; routePath: string; dataPoints: Array<{ timestamp: string; http_code_group: HttpCodeGroup[]; avg_time: number }> }>();
+interface TimelineChartSectionProps {
+  dayData: ServiceDayData[];
+  title: string;
+  icon: React.ReactNode;
+}
 
-  data.forEach((day) => {
+function TimelineChartSection({ dayData, title, icon }: TimelineChartSectionProps) {
+  // Group services by service_name across all days
+  const serviceGroups = new Map<string, { 
+    serviceName: string; 
+    application: string; 
+    routePath: string; 
+    dataPoints: Array<{ timestamp: string; http_code_group: HttpCodeGroup[]; avg_time: number }> 
+  }>();
+
+  dayData.forEach((day) => {
     day.services.forEach((service) => {
       const key = service.context_info.service_name;
       if (!serviceGroups.has(key)) {
@@ -82,8 +100,16 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
     group.dataPoints.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
   });
 
+  const dateLabel = dayData.length > 0 ? formatDate(dayData[0].day_key) : "";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {icon}
+        <span className="font-medium">{title}</span>
+        {dateLabel && <span>- {dateLabel}</span>}
+      </div>
+
       {Array.from(serviceGroups.entries()).map(([serviceName, group]) => {
         // Transform data for the chart
         const chartData = group.dataPoints.map((point) => {
@@ -110,45 +136,49 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
         });
 
         return (
-          <Card key={serviceName}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">{group.application}</span>
-                <span className="text-lg">{serviceName}</span>
+          <Card key={serviceName} className="border-muted">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  {group.application}
+                </span>
+                <span>{serviceName}</span>
               </CardTitle>
               <CardDescription className="font-mono text-xs">
                 {group.routePath}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 {/* Request Count Chart */}
                 <div>
-                  <h4 className="mb-4 text-sm font-medium">Quantidade de Requisições</h4>
-                  <div className="h-[250px]">
+                  <h4 className="mb-3 text-xs font-medium text-muted-foreground">Quantidade de Requisições</h4>
+                  <div className="h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis
                           dataKey="time"
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 9 }}
                           className="text-muted-foreground"
                         />
-                        <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                        <YAxis tick={{ fontSize: 9 }} className="text-muted-foreground" />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: "hsl(var(--background))",
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
+                            fontSize: "12px",
                           }}
                           labelStyle={{ color: "hsl(var(--foreground))" }}
                           formatter={(value: number, name: string) => {
                             const code = name.replace("count_", "");
-                            return [value, `${code} requests`];
+                            return [value.toLocaleString(), `${code}`];
                           }}
                         />
                         <Legend
                           formatter={(value: string) => value.replace("count_", "")}
+                          wrapperStyle={{ fontSize: "11px" }}
                         />
                         {Array.from(httpCodes).map((code) => (
                           <Line
@@ -158,8 +188,8 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
                             name={`count_${code}`}
                             stroke={COLORS[code as keyof typeof COLORS] || "hsl(var(--muted-foreground))"}
                             strokeWidth={2}
-                            dot={{ r: 3 }}
-                            activeDot={{ r: 5 }}
+                            dot={{ r: 2 }}
+                            activeDot={{ r: 4 }}
                             connectNulls
                           />
                         ))}
@@ -170,35 +200,37 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
 
                 {/* Response Time Chart */}
                 <div>
-                  <h4 className="mb-4 text-sm font-medium">Tempo Médio de Resposta (ms)</h4>
-                  <div className="h-[250px]">
+                  <h4 className="mb-3 text-xs font-medium text-muted-foreground">Tempo Médio de Resposta (ms)</h4>
+                  <div className="h-[200px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis
                           dataKey="time"
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 9 }}
                           className="text-muted-foreground"
                         />
-                        <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                        <YAxis tick={{ fontSize: 9 }} className="text-muted-foreground" />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: "hsl(var(--background))",
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
+                            fontSize: "12px",
                           }}
                           labelStyle={{ color: "hsl(var(--foreground))" }}
                           formatter={(value: number, name: string) => {
-                            if (name === "avgTime") return [`${value}ms`, "Média Geral"];
+                            if (name === "avgTime") return [`${value.toLocaleString()}ms`, "Média Geral"];
                             const code = name.replace("time_", "");
-                            return [`${value}ms`, `${code} avg`];
+                            return [`${value.toLocaleString()}ms`, `${code}`];
                           }}
                         />
                         <Legend
                           formatter={(value: string) => {
-                            if (value === "avgTime") return "Média Geral";
-                            return value.replace("time_", "") + " avg";
+                            if (value === "avgTime") return "Média";
+                            return value.replace("time_", "");
                           }}
+                          wrapperStyle={{ fontSize: "11px" }}
                         />
                         <Line
                           type="monotone"
@@ -207,8 +239,8 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
                           stroke={COLORS.avgTime}
                           strokeWidth={2}
                           strokeDasharray="5 5"
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 5 }}
+                          dot={{ r: 2 }}
+                          activeDot={{ r: 4 }}
                         />
                         {Array.from(httpCodes).map((code) => (
                           <Line
@@ -218,8 +250,8 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
                             name={`time_${code}`}
                             stroke={COLORS[code as keyof typeof COLORS] || "hsl(var(--muted-foreground))"}
                             strokeWidth={2}
-                            dot={{ r: 3 }}
-                            activeDot={{ r: 5 }}
+                            dot={{ r: 2 }}
+                            activeDot={{ r: 4 }}
                             connectNulls
                           />
                         ))}
@@ -230,29 +262,34 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
               </div>
 
               {/* Summary Stats */}
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {Array.from(httpCodes).map((code) => {
                   const totalCount = group.dataPoints.reduce((sum, point) => {
                     const httpGroup = point.http_code_group.find((h) => h.code === code);
                     return sum + (httpGroup?.total_count || 0);
                   }, 0);
 
-                  const avgResponseTime = group.dataPoints.reduce((sum, point) => {
-                    const httpGroup = point.http_code_group.find((h) => h.code === code);
-                    return sum + (httpGroup?.avg_time || 0);
-                  }, 0) / group.dataPoints.filter((p) => p.http_code_group.some((h) => h.code === code)).length;
+                  const pointsWithCode = group.dataPoints.filter((p) => 
+                    p.http_code_group.some((h) => h.code === code)
+                  );
+                  const avgResponseTime = pointsWithCode.length > 0
+                    ? pointsWithCode.reduce((sum, point) => {
+                        const httpGroup = point.http_code_group.find((h) => h.code === code);
+                        return sum + (httpGroup?.avg_time || 0);
+                      }, 0) / pointsWithCode.length
+                    : 0;
 
                   const isError = code === "4xx" || code === "5xx";
 
                   return (
                     <div
                       key={code}
-                      className={`rounded-lg border p-3 ${isError && totalCount > 0 ? "border-destructive/50 bg-destructive/10" : ""}`}
+                      className={`rounded-lg border p-2 ${isError && totalCount > 0 ? "border-destructive/50 bg-destructive/10" : ""}`}
                     >
                       <div className="text-xs font-medium text-muted-foreground">{code}</div>
-                      <div className="mt-1 text-lg font-bold">{totalCount.toLocaleString()}</div>
+                      <div className="text-sm font-bold">{totalCount.toLocaleString()}</div>
                       <div className="text-xs text-muted-foreground">
-                        ~{Math.round(avgResponseTime || 0)}ms avg
+                        ~{Math.round(avgResponseTime).toLocaleString()}ms
                       </div>
                     </div>
                   );
@@ -262,6 +299,43 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
           </Card>
         );
       })}
+
+      {serviceGroups.size === 0 && (
+        <div className="text-center py-8 text-muted-foreground text-sm">
+          Nenhum dado de serviço disponível para este período
+        </div>
+      )}
     </div>
+  );
+}
+
+export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
+  return (
+    <Tabs defaultValue="today" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="today" className="gap-2">
+          <Clock className="h-4 w-4" />
+          Dia Atual
+        </TabsTrigger>
+        <TabsTrigger value="lastWeek" className="gap-2">
+          <CalendarDays className="h-4 w-4" />
+          Semana Anterior
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="today" className="mt-4">
+        <TimelineChartSection 
+          dayData={data.today} 
+          title="Meia-noite até o momento atual"
+          icon={<Clock className="h-4 w-4" />}
+        />
+      </TabsContent>
+      <TabsContent value="lastWeek" className="mt-4">
+        <TimelineChartSection 
+          dayData={data.lastWeek} 
+          title="Mesmo dia da semana anterior (meia-noite até horário atual)"
+          icon={<CalendarDays className="h-4 w-4" />}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }

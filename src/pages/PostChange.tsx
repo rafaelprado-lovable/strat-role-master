@@ -52,42 +52,95 @@ const mockPostChanges: PostChange[] = [
     ],
     validacoes: { validacaoFuncional: false, validacaoHDC: true, rollbackExecutado: true, impactoCliente: false },
     observacoes: "Rollback realizado devido à falta de validação funcional antes da execução.",
-    serviceTimeline: [
-      {
-        day_key: "2024-11-15",
-        services: [
-          {
-            timestamp: "2024-11-15 22:00:00",
-            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
-            http_code_group: [
-              { code: "2xx", total_count: 1122, avg_time: 389.65 },
-              { code: "4xx", total_count: 16, avg_time: 8339.01 },
-              { code: "5xx", total_count: 6, avg_time: 421.2 }
-            ],
-            avg_time: 3049.96
-          },
-          {
-            timestamp: "2024-11-15 22:30:00",
-            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
-            http_code_group: [
-              { code: "2xx", total_count: 778, avg_time: 379.05 },
-              { code: "4xx", total_count: 6, avg_time: 8335.22 }
-            ],
-            avg_time: 4357.14
-          },
-          {
-            timestamp: "2024-11-15 23:00:00",
-            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
-            http_code_group: [
-              { code: "2xx", total_count: 619, avg_time: 366.59 },
-              { code: "4xx", total_count: 4, avg_time: 5006 },
-              { code: "5xx", total_count: 2, avg_time: 256.5 }
-            ],
-            avg_time: 1876.36
-          }
-        ]
-      }
-    ]
+    serviceTimeline: {
+      today: [
+        {
+          day_key: "2026-01-22",
+          services: [
+            {
+              timestamp: "2026-01-22 00:00:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 1122, avg_time: 389.65 },
+                { code: "4xx", total_count: 16, avg_time: 8339.01 },
+                { code: "5xx", total_count: 6, avg_time: 421.2 }
+              ],
+              avg_time: 3049.96
+            },
+            {
+              timestamp: "2026-01-22 00:30:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 978, avg_time: 379.05 },
+                { code: "4xx", total_count: 8, avg_time: 5335.22 }
+              ],
+              avg_time: 2857.14
+            },
+            {
+              timestamp: "2026-01-22 01:00:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 819, avg_time: 366.59 },
+                { code: "4xx", total_count: 4, avg_time: 5006 }
+              ],
+              avg_time: 2686.30
+            },
+            {
+              timestamp: "2026-01-22 01:30:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 756, avg_time: 345.20 },
+                { code: "4xx", total_count: 3, avg_time: 4500 }
+              ],
+              avg_time: 2422.60
+            }
+          ]
+        }
+      ],
+      lastWeek: [
+        {
+          day_key: "2026-01-15",
+          services: [
+            {
+              timestamp: "2026-01-15 00:00:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 1050, avg_time: 320.50 },
+                { code: "4xx", total_count: 12, avg_time: 6200.00 }
+              ],
+              avg_time: 3260.25
+            },
+            {
+              timestamp: "2026-01-15 00:30:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 890, avg_time: 310.80 },
+                { code: "4xx", total_count: 5, avg_time: 4800.00 }
+              ],
+              avg_time: 2555.40
+            },
+            {
+              timestamp: "2026-01-15 01:00:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 780, avg_time: 298.40 },
+                { code: "4xx", total_count: 3, avg_time: 4200.00 }
+              ],
+              avg_time: 2249.20
+            },
+            {
+              timestamp: "2026-01-15 01:30:00",
+              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              http_code_group: [
+                { code: "2xx", total_count: 720, avg_time: 285.60 },
+                { code: "4xx", total_count: 2, avg_time: 3800.00 }
+              ],
+              avg_time: 2042.80
+            }
+          ]
+        }
+      ]
+    }
   },
   {
     id: "2",
