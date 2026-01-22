@@ -1,12 +1,26 @@
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isAfter, isBefore, setHours, setMinutes, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, Clock, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+import { CalendarDays, Clock, TrendingUp, TrendingDown, Minus, AlertTriangle, Filter } from "lucide-react";
 
 const CRITICAL_5XX_THRESHOLD = 50; // Alert when 5xx variation > 50%
+
+// Time filter options
+const TIME_FILTER_OPTIONS = [
+  { value: "all", label: "Todo o período", startHour: 0, endHour: 24 },
+  { value: "00-06", label: "00:00 - 06:00", startHour: 0, endHour: 6 },
+  { value: "06-12", label: "06:00 - 12:00", startHour: 6, endHour: 12 },
+  { value: "12-18", label: "12:00 - 18:00", startHour: 12, endHour: 18 },
+  { value: "18-24", label: "18:00 - 00:00", startHour: 18, endHour: 24 },
+  { value: "last-2h", label: "Últimas 2 horas", dynamic: true, hours: 2 },
+  { value: "last-4h", label: "Últimas 4 horas", dynamic: true, hours: 4 },
+  { value: "last-6h", label: "Últimas 6 horas", dynamic: true, hours: 6 },
+];
 
 interface HttpCodeGroup {
   code: string;
@@ -578,11 +592,75 @@ function TimelineChartSection({ dayData, title, icon }: TimelineChartSectionProp
   );
 }
 
+// Filter data based on time selection
+function filterDataByTime(dayData: ServiceDayData[], timeFilter: string): ServiceDayData[] {
+  const filterOption = TIME_FILTER_OPTIONS.find(opt => opt.value === timeFilter);
+  
+  if (!filterOption || timeFilter === "all") {
+    return dayData;
+  }
+
+  return dayData.map(day => {
+    const filteredServices = day.services.filter(service => {
+      try {
+        const timestamp = parseISO(service.timestamp.replace(" ", "T"));
+        const hour = timestamp.getHours();
+        
+        if ('dynamic' in filterOption && filterOption.dynamic) {
+          // Dynamic filter (last X hours)
+          const now = new Date();
+          const hoursAgo = new Date(now.getTime() - (filterOption.hours || 0) * 60 * 60 * 1000);
+          return isAfter(timestamp, hoursAgo);
+        } else if ('startHour' in filterOption && 'endHour' in filterOption) {
+          // Static hour range
+          return hour >= filterOption.startHour && hour < filterOption.endHour;
+        }
+        return true;
+      } catch {
+        return true;
+      }
+    });
+
+    return {
+      ...day,
+      services: filteredServices
+    };
+  }).filter(day => day.services.length > 0);
+}
+
 export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
+  const [timeFilter, setTimeFilter] = useState("all");
+
+  // Filter data based on time selection
+  const filteredData = useMemo(() => ({
+    today: filterDataByTime(data.today, timeFilter),
+    lastWeek: filterDataByTime(data.lastWeek, timeFilter)
+  }), [data, timeFilter]);
+
   return (
     <div className="space-y-4">
+      {/* Time Filter */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span className="font-medium">Filtro de Horário</span>
+        </div>
+        <Select value={timeFilter} onValueChange={setTimeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Selecione o período" />
+          </SelectTrigger>
+          <SelectContent>
+            {TIME_FILTER_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Comparison Summary */}
-      <ComparisonSummary todayData={data.today} lastWeekData={data.lastWeek} />
+      <ComparisonSummary todayData={filteredData.today} lastWeekData={filteredData.lastWeek} />
 
       {/* Tabs with detailed charts */}
       <Tabs defaultValue="today" className="w-full">
@@ -598,14 +676,14 @@ export function ServiceTimelineChart({ data }: ServiceTimelineChartProps) {
         </TabsList>
         <TabsContent value="today" className="mt-4">
           <TimelineChartSection 
-            dayData={data.today} 
+            dayData={filteredData.today} 
             title="Meia-noite até o momento atual"
             icon={<Clock className="h-4 w-4" />}
           />
         </TabsContent>
         <TabsContent value="lastWeek" className="mt-4">
           <TimelineChartSection 
-            dayData={data.lastWeek} 
+            dayData={filteredData.lastWeek} 
             title="Mesmo dia da semana anterior (meia-noite até horário atual)"
             icon={<CalendarDays className="h-4 w-4" />}
           />
