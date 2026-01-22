@@ -57,13 +57,14 @@ const mockPostChanges: PostChange[] = [
         {
           day_key: "2026-01-22",
           services: [
+            // Service 1: auth-service-v2-prd
             {
               timestamp: "2026-01-22 00:00:00",
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 1122, avg_time: 389.65 },
                 { code: "4xx", total_count: 16, avg_time: 8339.01 },
-                { code: "5xx", total_count: 6, avg_time: 421.2 }
+                { code: "5xx", total_count: 45, avg_time: 421.2 } // Critical increase vs last week
               ],
               avg_time: 3049.96
             },
@@ -72,7 +73,8 @@ const mockPostChanges: PostChange[] = [
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 978, avg_time: 379.05 },
-                { code: "4xx", total_count: 8, avg_time: 5335.22 }
+                { code: "4xx", total_count: 8, avg_time: 5335.22 },
+                { code: "5xx", total_count: 38, avg_time: 450.0 }
               ],
               avg_time: 2857.14
             },
@@ -81,18 +83,71 @@ const mockPostChanges: PostChange[] = [
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 819, avg_time: 366.59 },
-                { code: "4xx", total_count: 4, avg_time: 5006 }
+                { code: "4xx", total_count: 4, avg_time: 5006 },
+                { code: "5xx", total_count: 22, avg_time: 380.0 }
               ],
               avg_time: 2686.30
             },
+            // Service 2: user-profile-api
             {
-              timestamp: "2026-01-22 01:30:00",
-              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              timestamp: "2026-01-22 00:00:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
               http_code_group: [
-                { code: "2xx", total_count: 756, avg_time: 345.20 },
-                { code: "4xx", total_count: 3, avg_time: 4500 }
+                { code: "2xx", total_count: 2450, avg_time: 125.30 },
+                { code: "4xx", total_count: 32, avg_time: 2100.00 },
+                { code: "5xx", total_count: 5, avg_time: 850.00 }
               ],
-              avg_time: 2422.60
+              avg_time: 1025.10
+            },
+            {
+              timestamp: "2026-01-22 00:30:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
+              http_code_group: [
+                { code: "2xx", total_count: 2280, avg_time: 118.50 },
+                { code: "4xx", total_count: 28, avg_time: 1950.00 },
+                { code: "5xx", total_count: 3, avg_time: 720.00 }
+              ],
+              avg_time: 929.50
+            },
+            {
+              timestamp: "2026-01-22 01:00:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
+              http_code_group: [
+                { code: "2xx", total_count: 2100, avg_time: 112.80 },
+                { code: "4xx", total_count: 18, avg_time: 1800.00 }
+              ],
+              avg_time: 956.40
+            },
+            // Service 3: payment-gateway
+            {
+              timestamp: "2026-01-22 00:00:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 890, avg_time: 520.40 },
+                { code: "4xx", total_count: 12, avg_time: 3200.00 },
+                { code: "5xx", total_count: 8, avg_time: 1500.00 }
+              ],
+              avg_time: 1740.13
+            },
+            {
+              timestamp: "2026-01-22 00:30:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 920, avg_time: 495.20 },
+                { code: "4xx", total_count: 8, avg_time: 2800.00 },
+                { code: "5xx", total_count: 5, avg_time: 1200.00 }
+              ],
+              avg_time: 1498.40
+            },
+            {
+              timestamp: "2026-01-22 01:00:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 850, avg_time: 480.60 },
+                { code: "4xx", total_count: 6, avg_time: 2500.00 },
+                { code: "5xx", total_count: 3, avg_time: 1100.00 }
+              ],
+              avg_time: 1360.20
             }
           ]
         }
@@ -101,12 +156,14 @@ const mockPostChanges: PostChange[] = [
         {
           day_key: "2026-01-15",
           services: [
+            // Service 1: auth-service-v2-prd (much lower 5xx last week)
             {
               timestamp: "2026-01-15 00:00:00",
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 1050, avg_time: 320.50 },
-                { code: "4xx", total_count: 12, avg_time: 6200.00 }
+                { code: "4xx", total_count: 12, avg_time: 6200.00 },
+                { code: "5xx", total_count: 5, avg_time: 380.00 } // Only 5 vs 45 today = +800%
               ],
               avg_time: 3260.25
             },
@@ -115,7 +172,8 @@ const mockPostChanges: PostChange[] = [
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 890, avg_time: 310.80 },
-                { code: "4xx", total_count: 5, avg_time: 4800.00 }
+                { code: "4xx", total_count: 5, avg_time: 4800.00 },
+                { code: "5xx", total_count: 3, avg_time: 350.00 }
               ],
               avg_time: 2555.40
             },
@@ -124,18 +182,72 @@ const mockPostChanges: PostChange[] = [
               context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
               http_code_group: [
                 { code: "2xx", total_count: 780, avg_time: 298.40 },
-                { code: "4xx", total_count: 3, avg_time: 4200.00 }
+                { code: "4xx", total_count: 3, avg_time: 4200.00 },
+                { code: "5xx", total_count: 2, avg_time: 320.00 }
               ],
               avg_time: 2249.20
             },
+            // Service 2: user-profile-api
             {
-              timestamp: "2026-01-15 01:30:00",
-              context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+              timestamp: "2026-01-15 00:00:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
               http_code_group: [
-                { code: "2xx", total_count: 720, avg_time: 285.60 },
-                { code: "4xx", total_count: 2, avg_time: 3800.00 }
+                { code: "2xx", total_count: 2300, avg_time: 130.20 },
+                { code: "4xx", total_count: 40, avg_time: 2200.00 },
+                { code: "5xx", total_count: 8, avg_time: 900.00 }
               ],
-              avg_time: 2042.80
+              avg_time: 1076.73
+            },
+            {
+              timestamp: "2026-01-15 00:30:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
+              http_code_group: [
+                { code: "2xx", total_count: 2150, avg_time: 122.40 },
+                { code: "4xx", total_count: 35, avg_time: 2050.00 },
+                { code: "5xx", total_count: 6, avg_time: 780.00 }
+              ],
+              avg_time: 984.13
+            },
+            {
+              timestamp: "2026-01-15 01:00:00",
+              context_info: { application: "PMID", service_name: "user-profile-api", route_path: "/users/v1/profile" },
+              http_code_group: [
+                { code: "2xx", total_count: 1980, avg_time: 115.60 },
+                { code: "4xx", total_count: 22, avg_time: 1900.00 },
+                { code: "5xx", total_count: 4, avg_time: 680.00 }
+              ],
+              avg_time: 898.53
+            },
+            // Service 3: payment-gateway
+            {
+              timestamp: "2026-01-15 00:00:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 920, avg_time: 480.20 },
+                { code: "4xx", total_count: 10, avg_time: 2900.00 },
+                { code: "5xx", total_count: 12, avg_time: 1400.00 }
+              ],
+              avg_time: 1593.40
+            },
+            {
+              timestamp: "2026-01-15 00:30:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 880, avg_time: 465.30 },
+                { code: "4xx", total_count: 8, avg_time: 2700.00 },
+                { code: "5xx", total_count: 10, avg_time: 1350.00 }
+              ],
+              avg_time: 1505.10
+            },
+            {
+              timestamp: "2026-01-15 01:00:00",
+              context_info: { application: "Gateway", service_name: "payment-gateway-prd", route_path: "/payments/v2/process" },
+              http_code_group: [
+                { code: "2xx", total_count: 840, avg_time: 450.80 },
+                { code: "4xx", total_count: 5, avg_time: 2400.00 },
+                { code: "5xx", total_count: 8, avg_time: 1280.00 }
+              ],
+              avg_time: 1376.93
             }
           ]
         }

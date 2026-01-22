@@ -1,9 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { CalendarDays, Clock, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+
+const CRITICAL_5XX_THRESHOLD = 50; // Alert when 5xx variation > 50%
 
 interface HttpCodeGroup {
   code: string;
@@ -146,6 +149,14 @@ function VariationBadge({ current, previous, isError = false }: VariationBadgePr
   );
 }
 
+interface CriticalAlert {
+  serviceName: string;
+  application: string;
+  percentage: number;
+  todayCount: number;
+  lastWeekCount: number;
+}
+
 interface ComparisonSummaryProps {
   todayData: ServiceDayData[];
   lastWeekData: ServiceDayData[];
@@ -167,71 +178,155 @@ function ComparisonSummary({ todayData, lastWeekData }: ComparisonSummaryProps) 
     service.httpCodes.forEach((_, code) => allCodes.add(code));
   });
 
+  // Check for critical 5xx alerts
+  const criticalAlerts: CriticalAlert[] = [];
+  
+  Array.from(allServices).forEach((serviceName) => {
+    const todayService = todayTotals.get(serviceName);
+    const lastWeekService = lastWeekTotals.get(serviceName);
+    
+    const today5xx = todayService?.httpCodes.get('5xx')?.count || 0;
+    const lastWeek5xx = lastWeekService?.httpCodes.get('5xx')?.count || 0;
+    
+    const { percentage, direction } = calculateVariation(today5xx, lastWeek5xx);
+    
+    if (direction === 'up' && percentage >= CRITICAL_5XX_THRESHOLD) {
+      criticalAlerts.push({
+        serviceName,
+        application: todayService?.application || lastWeekService?.application || '',
+        percentage,
+        todayCount: today5xx,
+        lastWeekCount: lastWeek5xx,
+      });
+    }
+  });
+
   return (
-    <Card className="mb-4 border-primary/20 bg-primary/5">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          Comparativo: Dia Atual vs Semana Anterior
-        </CardTitle>
-        <CardDescription>
-          Variação percentual no total de requisições
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {Array.from(allServices).map((serviceName) => {
-            const todayService = todayTotals.get(serviceName);
-            const lastWeekService = lastWeekTotals.get(serviceName);
-            const sortedCodes = Array.from(allCodes).sort();
-
-            return (
-              <div key={serviceName} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                    {todayService?.application || lastWeekService?.application}
-                  </span>
-                  <span className="text-sm font-medium">{serviceName}</span>
+    <div className="space-y-4">
+      {/* Critical 5xx Alerts */}
+      {criticalAlerts.length > 0 && (
+        <Alert variant="destructive" className="border-destructive bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-semibold">Alerta Crítico: Aumento de Erros 5xx</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-2">
+              {criticalAlerts.map((alert) => (
+                <div 
+                  key={alert.serviceName}
+                  className="flex items-center justify-between rounded-lg bg-destructive/20 px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-destructive-foreground/70 bg-destructive/30 px-2 py-0.5 rounded">
+                      {alert.application}
+                    </span>
+                    <span className="font-medium">{alert.serviceName}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm">
+                      <span className="font-bold">{alert.todayCount.toLocaleString()}</span>
+                      <span className="text-destructive-foreground/70"> vs {alert.lastWeekCount.toLocaleString()}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">
+                      <TrendingUp className="h-3 w-3" />
+                      +{alert.percentage.toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {sortedCodes.map((code) => {
-                    const todayCode = todayService?.httpCodes.get(code);
-                    const lastWeekCode = lastWeekService?.httpCodes.get(code);
-                    const todayCount = todayCode?.count || 0;
-                    const lastWeekCount = lastWeekCode?.count || 0;
-                    const isError = code === '4xx' || code === '5xx';
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
-                    return (
-                      <div 
-                        key={code}
-                        className={`rounded-lg border p-2 ${
-                          isError && todayCount > 0 ? 'border-destructive/50 bg-destructive/10' : 'bg-background'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">{code}</span>
-                          <VariationBadge 
-                            current={todayCount} 
-                            previous={lastWeekCount} 
-                            isError={isError}
-                          />
+      {/* Comparison Summary Card */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Comparativo: Dia Atual vs Semana Anterior
+          </CardTitle>
+          <CardDescription>
+            Variação percentual no total de requisições por serviço
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array.from(allServices).map((serviceName) => {
+              const todayService = todayTotals.get(serviceName);
+              const lastWeekService = lastWeekTotals.get(serviceName);
+              const sortedCodes = Array.from(allCodes).sort();
+              
+              // Check if this service has critical 5xx
+              const today5xx = todayService?.httpCodes.get('5xx')?.count || 0;
+              const lastWeek5xx = lastWeekService?.httpCodes.get('5xx')?.count || 0;
+              const { percentage: variation5xx, direction: dir5xx } = calculateVariation(today5xx, lastWeek5xx);
+              const isCritical = dir5xx === 'up' && variation5xx >= CRITICAL_5XX_THRESHOLD;
+
+              return (
+                <div 
+                  key={serviceName} 
+                  className={`space-y-2 p-3 rounded-lg ${isCritical ? 'border-2 border-destructive bg-destructive/5' : ''}`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isCritical && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      {todayService?.application || lastWeekService?.application}
+                    </span>
+                    <span className="text-sm font-medium">{serviceName}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {sortedCodes.map((code) => {
+                      const todayCode = todayService?.httpCodes.get(code);
+                      const lastWeekCode = lastWeekService?.httpCodes.get(code);
+                      const todayCount = todayCode?.count || 0;
+                      const lastWeekCount = lastWeekCode?.count || 0;
+                      const isError = code === '4xx' || code === '5xx';
+                      
+                      // Check if this specific code has critical variation
+                      const { percentage: codeVariation, direction: codeDir } = calculateVariation(todayCount, lastWeekCount);
+                      const isCodeCritical = code === '5xx' && codeDir === 'up' && codeVariation >= CRITICAL_5XX_THRESHOLD;
+
+                      return (
+                        <div 
+                          key={code}
+                          className={`rounded-lg border p-2 ${
+                            isCodeCritical 
+                              ? 'border-destructive bg-destructive/20 animate-pulse' 
+                              : isError && todayCount > 0 
+                                ? 'border-destructive/50 bg-destructive/10' 
+                                : 'bg-background'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-xs font-medium ${isCodeCritical ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                              {code}
+                              {isCodeCritical && ' ⚠️'}
+                            </span>
+                            <VariationBadge 
+                              current={todayCount} 
+                              previous={lastWeekCount} 
+                              isError={isError}
+                            />
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <span className={`text-sm font-bold ${isCodeCritical ? 'text-destructive' : ''}`}>
+                              {todayCount.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              vs {lastWeekCount.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-bold">{todayCount.toLocaleString()}</span>
-                          <span className="text-xs text-muted-foreground">
-                            vs {lastWeekCount.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
