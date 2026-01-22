@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -25,13 +24,12 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Download, Star, CalendarIcon, AlertTriangle, Search, Eye, FileText, Users, CheckCircle, XCircle, Activity } from "lucide-react";
+import { Download, Star, CalendarIcon, AlertTriangle, Search, Eye, CheckCircle, XCircle, FileText, Users } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import pptxgen from "pptxgenjs";
 import { PostChangeDetailsDialog, PostChange } from "@/components/changes/PostChangeDetailsDialog";
-import { ServiceTimelineChart } from "@/components/changes/ServiceTimelineChart";
 
 // Mock data for executed changes
 const mockPostChanges: PostChange[] = [
@@ -53,7 +51,43 @@ const mockPostChanges: PostChange[] = [
       { nome: "auth-service", versaoAnterior: "2.1.0", versaoNova: "2.2.0", statusInstalacao: "Rollback" },
     ],
     validacoes: { validacaoFuncional: false, validacaoHDC: true, rollbackExecutado: true, impactoCliente: false },
-    observacoes: "Rollback realizado devido à falta de validação funcional antes da execução."
+    observacoes: "Rollback realizado devido à falta de validação funcional antes da execução.",
+    serviceTimeline: [
+      {
+        day_key: "2024-11-15",
+        services: [
+          {
+            timestamp: "2024-11-15 22:00:00",
+            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+            http_code_group: [
+              { code: "2xx", total_count: 1122, avg_time: 389.65 },
+              { code: "4xx", total_count: 16, avg_time: 8339.01 },
+              { code: "5xx", total_count: 6, avg_time: 421.2 }
+            ],
+            avg_time: 3049.96
+          },
+          {
+            timestamp: "2024-11-15 22:30:00",
+            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+            http_code_group: [
+              { code: "2xx", total_count: 778, avg_time: 379.05 },
+              { code: "4xx", total_count: 6, avg_time: 8335.22 }
+            ],
+            avg_time: 4357.14
+          },
+          {
+            timestamp: "2024-11-15 23:00:00",
+            context_info: { application: "PMID", service_name: "auth-service-v2-prd", route_path: "/auth/v2/token" },
+            http_code_group: [
+              { code: "2xx", total_count: 619, avg_time: 366.59 },
+              { code: "4xx", total_count: 4, avg_time: 5006 },
+              { code: "5xx", total_count: 2, avg_time: 256.5 }
+            ],
+            avg_time: 1876.36
+          }
+        ]
+      }
+    ]
   },
   {
     id: "2",
@@ -250,164 +284,6 @@ const rollbackDetails = [
       { numero: "CHG0173997", motivo: "rollback por falha no código", detalhe: "" },
     ],
   },
-];
-
-// Mock data for service timeline charts
-const mockServiceTimelineData = [
-  {
-    day_key: "2026-01-22",
-    services: [
-      {
-        timestamp: "2026-01-22 00:00:00",
-        context_info: {
-          application: "PMID",
-          service_name: "bff-r-offers-packages-v1-prd",
-          route_path: "/access/bff/v1/offersPackages/{}/{}"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 1122, avg_time: 389.65 },
-          { code: "4xx", total_count: 16, avg_time: 8339.01 },
-          { code: "5xx", total_count: 6, avg_time: 421.2 }
-        ],
-        avg_time: 3049.96
-      },
-      {
-        timestamp: "2026-01-22 00:30:00",
-        context_info: {
-          application: "PMID",
-          service_name: "bff-r-offers-packages-v1-prd",
-          route_path: "/access/bff/v1/offersPackages/{}/{}"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 778, avg_time: 379.05 },
-          { code: "4xx", total_count: 6, avg_time: 8335.22 }
-        ],
-        avg_time: 4357.14
-      },
-      {
-        timestamp: "2026-01-22 01:00:00",
-        context_info: {
-          application: "PMID",
-          service_name: "bff-r-offers-packages-v1-prd",
-          route_path: "/access/bff/v1/offersPackages/{}/{}"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 619, avg_time: 366.59 },
-          { code: "4xx", total_count: 4, avg_time: 5006 },
-          { code: "5xx", total_count: 2, avg_time: 256.5 }
-        ],
-        avg_time: 1876.36
-      },
-      {
-        timestamp: "2026-01-22 01:30:00",
-        context_info: {
-          application: "PMID",
-          service_name: "bff-r-offers-packages-v1-prd",
-          route_path: "/access/bff/v1/offersPackages/{}/{}"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 890, avg_time: 412.33 },
-          { code: "4xx", total_count: 8, avg_time: 6200.5 }
-        ],
-        avg_time: 3306.42
-      },
-      {
-        timestamp: "2026-01-22 02:00:00",
-        context_info: {
-          application: "PMID",
-          service_name: "bff-r-offers-packages-v1-prd",
-          route_path: "/access/bff/v1/offersPackages/{}/{}"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 1050, avg_time: 350.21 },
-          { code: "4xx", total_count: 12, avg_time: 7500.0 },
-          { code: "5xx", total_count: 3, avg_time: 380.0 }
-        ],
-        avg_time: 2743.40
-      },
-      {
-        timestamp: "2026-01-22 00:00:00",
-        context_info: {
-          application: "OMS",
-          service_name: "oms-order-service-v2-prd",
-          route_path: "/order/v2/create"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 2500, avg_time: 245.80 },
-          { code: "4xx", total_count: 35, avg_time: 120.50 },
-          { code: "5xx", total_count: 12, avg_time: 890.30 }
-        ],
-        avg_time: 418.87
-      },
-      {
-        timestamp: "2026-01-22 00:30:00",
-        context_info: {
-          application: "OMS",
-          service_name: "oms-order-service-v2-prd",
-          route_path: "/order/v2/create"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 2200, avg_time: 280.45 },
-          { code: "4xx", total_count: 28, avg_time: 150.20 },
-          { code: "5xx", total_count: 8, avg_time: 750.60 }
-        ],
-        avg_time: 393.75
-      },
-      {
-        timestamp: "2026-01-22 01:00:00",
-        context_info: {
-          application: "OMS",
-          service_name: "oms-order-service-v2-prd",
-          route_path: "/order/v2/create"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 1800, avg_time: 310.20 },
-          { code: "4xx", total_count: 22, avg_time: 180.00 }
-        ],
-        avg_time: 245.10
-      },
-      {
-        timestamp: "2026-01-22 00:00:00",
-        context_info: {
-          application: "VAS",
-          service_name: "vas-notification-sender-prd",
-          route_path: "/notification/send"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 5600, avg_time: 85.50 },
-          { code: "4xx", total_count: 120, avg_time: 45.20 }
-        ],
-        avg_time: 65.35
-      },
-      {
-        timestamp: "2026-01-22 00:30:00",
-        context_info: {
-          application: "VAS",
-          service_name: "vas-notification-sender-prd",
-          route_path: "/notification/send"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 4800, avg_time: 92.30 },
-          { code: "4xx", total_count: 95, avg_time: 52.10 },
-          { code: "5xx", total_count: 5, avg_time: 1200.00 }
-        ],
-        avg_time: 448.13
-      },
-      {
-        timestamp: "2026-01-22 01:00:00",
-        context_info: {
-          application: "VAS",
-          service_name: "vas-notification-sender-prd",
-          route_path: "/notification/send"
-        },
-        http_code_group: [
-          { code: "2xx", total_count: 5200, avg_time: 78.90 },
-          { code: "4xx", total_count: 88, avg_time: 48.50 }
-        ],
-        avg_time: 63.70
-      }
-    ]
-  }
 ];
 
 const calculateSuccessRate = (data: { sucesso: number; rollback: number }[]) => {
@@ -979,19 +855,6 @@ const PostChangePage = () => {
             </ScrollArea>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Service Timeline Charts */}
-      <Separator className="my-6" />
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-primary" />
-          <h3 className="text-xl font-semibold">Monitoramento de Serviços</h3>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Análise de performance e disponibilidade dos serviços em tempo real
-        </p>
-        <ServiceTimelineChart data={mockServiceTimelineData} />
       </div>
 
       {/* Table */}

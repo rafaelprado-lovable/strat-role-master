@@ -3,7 +3,30 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Activity } from "lucide-react";
+import { ServiceTimelineChart } from "./ServiceTimelineChart";
+
+interface HttpCodeGroup {
+  code: string;
+  total_count: number;
+  avg_time: number;
+}
+
+interface ServiceDataPoint {
+  timestamp: string;
+  context_info: {
+    application: string;
+    service_name: string;
+    route_path: string;
+  };
+  http_code_group: HttpCodeGroup[];
+  avg_time: number;
+}
+
+interface ServiceDayData {
+  day_key: string;
+  services: ServiceDataPoint[];
+}
 
 export interface PostChange {
   id: string;
@@ -32,6 +55,7 @@ export interface PostChange {
     impactoCliente: boolean;
   };
   observacoes: string;
+  serviceTimeline?: ServiceDayData[];
 }
 
 interface PostChangeDetailsDialogProps {
@@ -198,6 +222,23 @@ export function PostChangeDetailsDialog({ open, onOpenChange, change }: PostChan
               </TableBody>
             </Table>
           </div>
+
+          {/* Monitoramento de Serviços - Timeline Charts */}
+          {change.serviceTimeline && change.serviceTimeline.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Monitoramento de Serviços
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Análise de performance e disponibilidade dos serviços durante a execução
+                </p>
+                <ServiceTimelineChart data={change.serviceTimeline} />
+              </div>
+            </>
+          )}
 
           {/* Observações */}
           {change.observacoes && (
