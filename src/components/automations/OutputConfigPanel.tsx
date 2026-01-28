@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, Tag } from 'lucide-react';
 
 interface OutputConfig {
   key: string;
   label: string;
   description: string;
+  required?: boolean;
 }
 
 interface OutputConfigPanelProps {
@@ -20,6 +22,7 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
   const [newKey, setNewKey] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newDescription, setNewDescription] = useState('');
+  const [newRequired, setNewRequired] = useState(false);
 
   const handleAdd = () => {
     if (!newKey.trim() || !newLabel.trim()) return;
@@ -28,16 +31,26 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
       key: newKey.trim().replace(/\s+/g, '_').toLowerCase(),
       label: newLabel.trim(),
       description: newDescription.trim(),
+      required: newRequired,
     };
 
     onChange([...outputs, newOutput]);
     setNewKey('');
     setNewLabel('');
     setNewDescription('');
+    setNewRequired(false);
   };
 
   const handleRemove = (key: string) => {
     onChange(outputs.filter((o) => o.key !== key));
+  };
+
+  const handleToggleRequired = (key: string) => {
+    onChange(
+      outputs.map((o) =>
+        o.key === key ? { ...o, required: !o.required } : o
+      )
+    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,6 +84,15 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
                     {output.key}
                   </Badge>
                   <span className="text-sm font-medium truncate">{output.label}</span>
+                  {output.required ? (
+                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                      Obrigatório
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                      Opcional
+                    </Badge>
+                  )}
                 </div>
                 {output.description && (
                   <p className="text-xs text-muted-foreground mt-1 truncate">
@@ -78,6 +100,14 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
                   </p>
                 )}
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => handleToggleRequired(output.key)}
+              >
+                {output.required ? 'Tornar opcional' : 'Tornar obrigatório'}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -91,7 +121,7 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
         </div>
       )}
 
-      <div className="space-y-2 p-3 border rounded-md bg-muted/20">
+      <div className="space-y-3 p-3 border rounded-md bg-muted/20">
         <p className="text-xs font-medium text-muted-foreground">Adicionar saída</p>
         <div className="grid grid-cols-2 gap-2">
           <Input
@@ -116,16 +146,27 @@ export function OutputConfigPanel({ outputs, onChange }: OutputConfigPanelProps)
           onKeyPress={handleKeyPress}
           className="text-sm"
         />
-        <Button
-          size="sm"
-          variant="secondary"
-          className="w-full"
-          onClick={handleAdd}
-          disabled={!newKey.trim() || !newLabel.trim()}
-        >
-          <Plus className="h-3.5 w-3.5 mr-1" />
-          Adicionar saída
-        </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="required"
+              checked={newRequired}
+              onCheckedChange={setNewRequired}
+            />
+            <Label htmlFor="required" className="text-sm cursor-pointer">
+              Obrigatório
+            </Label>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleAdd}
+            disabled={!newKey.trim() || !newLabel.trim()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Adicionar
+          </Button>
+        </div>
       </div>
     </div>
   );

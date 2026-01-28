@@ -36,97 +36,109 @@ interface EdgeMappingDialogProps {
   onSave: (edgeId: string, mappings: ParameterMapping[]) => void;
 }
 
+interface OutputDef {
+  key: string;
+  label: string;
+  required?: boolean;
+}
+
 // Default outputs for each block type
-const DEFAULT_OUTPUTS: Record<string, { key: string; label: string }[]> = {
+const DEFAULT_OUTPUTS: Record<string, OutputDef[]> = {
   alarm: [
-    { key: 'alarmId', label: 'ID do Alarme' },
-    { key: 'alarmType', label: 'Tipo' },
-    { key: 'service', label: 'Serviço' },
-    { key: 'message', label: 'Mensagem' },
-    { key: 'timestamp', label: 'Timestamp' },
+    { key: 'alarmId', label: 'ID do Alarme', required: true },
+    { key: 'alarmType', label: 'Tipo', required: true },
+    { key: 'service', label: 'Serviço', required: false },
+    { key: 'message', label: 'Mensagem', required: false },
+    { key: 'timestamp', label: 'Timestamp', required: true },
   ],
   incident: [
-    { key: 'incidentId', label: 'ID do Incidente' },
-    { key: 'priority', label: 'Prioridade' },
-    { key: 'team', label: 'Equipe' },
-    { key: 'title', label: 'Título' },
-    { key: 'description', label: 'Descrição' },
+    { key: 'incidentId', label: 'ID do Incidente', required: true },
+    { key: 'priority', label: 'Prioridade', required: true },
+    { key: 'team', label: 'Equipe', required: false },
+    { key: 'title', label: 'Título', required: true },
+    { key: 'description', label: 'Descrição', required: false },
   ],
   rabbit_full: [
-    { key: 'queueName', label: 'Nome da Fila' },
-    { key: 'messageCount', label: 'Qtd Mensagens' },
-    { key: 'usagePercent', label: 'Uso (%)' },
-    { key: 'threshold', label: 'Threshold' },
+    { key: 'queueName', label: 'Nome da Fila', required: true },
+    { key: 'messageCount', label: 'Qtd Mensagens', required: true },
+    { key: 'usagePercent', label: 'Uso (%)', required: true },
+    { key: 'threshold', label: 'Threshold', required: false },
   ],
   webhook: [
-    { key: 'statusCode', label: 'Status Code' },
-    { key: 'responseBody', label: 'Response Body' },
-    { key: 'responseHeaders', label: 'Headers' },
+    { key: 'statusCode', label: 'Status Code', required: true },
+    { key: 'responseBody', label: 'Response Body', required: false },
+    { key: 'responseHeaders', label: 'Headers', required: false },
   ],
   email: [
-    { key: 'sent', label: 'Enviado' },
-    { key: 'messageId', label: 'Message ID' },
+    { key: 'sent', label: 'Enviado', required: true },
+    { key: 'messageId', label: 'Message ID', required: false },
   ],
   slack: [
-    { key: 'sent', label: 'Enviado' },
-    { key: 'messageTs', label: 'Message TS' },
+    { key: 'sent', label: 'Enviado', required: true },
+    { key: 'messageTs', label: 'Message TS', required: false },
   ],
   script: [
-    { key: 'result', label: 'Resultado' },
-    { key: 'success', label: 'Sucesso' },
-    { key: 'error', label: 'Erro' },
+    { key: 'result', label: 'Resultado', required: false },
+    { key: 'success', label: 'Sucesso', required: true },
+    { key: 'error', label: 'Erro', required: false },
   ],
   delay: [
-    { key: 'completed', label: 'Completado' },
-    { key: 'duration', label: 'Duração' },
+    { key: 'completed', label: 'Completado', required: true },
+    { key: 'duration', label: 'Duração', required: false },
   ],
   if: [
-    { key: 'result', label: 'Resultado' },
-    { key: 'branch', label: 'Branch' },
+    { key: 'result', label: 'Resultado', required: true },
+    { key: 'branch', label: 'Branch', required: true },
   ],
   filter: [
-    { key: 'passed', label: 'Passou' },
-    { key: 'data', label: 'Dados' },
+    { key: 'passed', label: 'Passou', required: true },
+    { key: 'data', label: 'Dados', required: false },
   ],
   customBlock: [
-    { key: 'stdout', label: 'Stdout' },
-    { key: 'stderr', label: 'Stderr' },
-    { key: 'exitCode', label: 'Exit Code' },
-    { key: 'result', label: 'Resultado' },
+    { key: 'stdout', label: 'Stdout', required: false },
+    { key: 'stderr', label: 'Stderr', required: false },
+    { key: 'exitCode', label: 'Exit Code', required: true },
+    { key: 'result', label: 'Resultado', required: false },
   ],
 };
 
+interface InputDef {
+  key: string;
+  label: string;
+  required?: boolean;
+}
+
 // Default inputs for each block type
-const DEFAULT_INPUTS: Record<string, { key: string; label: string }[]> = {
+const DEFAULT_INPUTS: Record<string, InputDef[]> = {
   webhook: [
-    { key: 'url', label: 'URL' },
-    { key: 'body', label: 'Body' },
-    { key: 'headers', label: 'Headers' },
+    { key: 'url', label: 'URL', required: true },
+    { key: 'body', label: 'Body', required: false },
+    { key: 'headers', label: 'Headers', required: false },
   ],
   email: [
-    { key: 'to', label: 'Destinatário' },
-    { key: 'subject', label: 'Assunto' },
-    { key: 'body', label: 'Corpo' },
+    { key: 'to', label: 'Destinatário', required: true },
+    { key: 'subject', label: 'Assunto', required: true },
+    { key: 'body', label: 'Corpo', required: false },
   ],
   slack: [
-    { key: 'channel', label: 'Canal' },
-    { key: 'message', label: 'Mensagem' },
+    { key: 'channel', label: 'Canal', required: true },
+    { key: 'message', label: 'Mensagem', required: true },
   ],
   script: [
-    { key: 'input', label: 'Input' },
+    { key: 'input', label: 'Input', required: false },
   ],
   delay: [
-    { key: 'duration', label: 'Duração' },
+    { key: 'duration', label: 'Duração', required: true },
   ],
   if: [
-    { key: 'field', label: 'Campo' },
-    { key: 'value', label: 'Valor' },
+    { key: 'field', label: 'Campo', required: true },
+    { key: 'value', label: 'Valor', required: true },
   ],
   filter: [
-    { key: 'expression', label: 'Expressão' },
+    { key: 'expression', label: 'Expressão', required: true },
   ],
   customBlock: [
-    { key: 'params', label: 'Parâmetros' },
+    { key: 'params', label: 'Parâmetros', required: false },
   ],
 };
 
@@ -157,12 +169,17 @@ export function EdgeMappingDialog({
 
   // Get outputs from source node (custom + default)
   const sourceConfig = (sourceData.config as Record<string, unknown>) || {};
-  const customOutputs = (sourceConfig.outputs as { key: string; label: string }[]) || [];
+  const customOutputs = (sourceConfig.outputs as OutputDef[]) || [];
   const defaultOutputs = DEFAULT_OUTPUTS[sourceType] || [];
-  const sourceOutputs = [...customOutputs, ...defaultOutputs];
+  const sourceOutputs: OutputDef[] = [...customOutputs, ...defaultOutputs];
 
   // Get inputs for target node
-  const targetInputs = DEFAULT_INPUTS[targetType] || [];
+  const targetInputs: InputDef[] = DEFAULT_INPUTS[targetType] || [];
+
+  // Check if all required inputs are mapped
+  const requiredInputs = targetInputs.filter((i) => i.required);
+  const mappedInputs = mappings.map((m) => m.targetInput);
+  const missingRequired = requiredInputs.filter((i) => !mappedInputs.includes(i.key));
 
   const handleAddMapping = () => {
     setMappings([...mappings, { sourceOutput: '', targetInput: '' }]);
@@ -267,7 +284,12 @@ export function EdgeMappingDialog({
                             ) : (
                               sourceOutputs.map((output) => (
                                 <SelectItem key={output.key} value={output.key}>
-                                  {output.label}
+                                  <span className="flex items-center gap-2">
+                                    {output.label}
+                                    {output.required && (
+                                      <span className="text-[10px] text-destructive">*</span>
+                                    )}
+                                  </span>
                                 </SelectItem>
                               ))
                             )}
@@ -298,7 +320,12 @@ export function EdgeMappingDialog({
                             ) : (
                               targetInputs.map((input) => (
                                 <SelectItem key={input.key} value={input.key}>
-                                  {input.label}
+                                  <span className="flex items-center gap-2">
+                                    {input.label}
+                                    {input.required && (
+                                      <span className="text-[10px] text-destructive font-bold">*</span>
+                                    )}
+                                  </span>
                                 </SelectItem>
                               ))
                             )}
@@ -320,6 +347,26 @@ export function EdgeMappingDialog({
               </ScrollArea>
             )}
 
+            {/* Required inputs warning */}
+            {missingRequired.length > 0 && (
+              <div className="mt-4 p-3 rounded-md bg-destructive/10 border border-destructive/30">
+                <p className="text-xs font-medium text-destructive mb-2">
+                  Entradas obrigatórias não mapeadas:
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {missingRequired.map((input) => (
+                    <Badge
+                      key={input.key}
+                      variant="destructive"
+                      className="text-xs"
+                    >
+                      {input.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quick reference */}
             {sourceOutputs.length > 0 && (
               <div className="mt-4 p-3 rounded-md bg-muted/30 border">
@@ -330,10 +377,35 @@ export function EdgeMappingDialog({
                   {sourceOutputs.map((output) => (
                     <Badge
                       key={output.key}
-                      variant="outline"
+                      variant={output.required ? "default" : "outline"}
                       className="text-xs font-mono"
                     >
                       {output.key}
+                      {output.required && <span className="ml-1">*</span>}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  * = obrigatório
+                </p>
+              </div>
+            )}
+
+            {/* Target inputs reference */}
+            {targetInputs.length > 0 && (
+              <div className="mt-2 p-3 rounded-md bg-muted/30 border">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  Entradas de "{targetNode.data.label as string}":
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {targetInputs.map((input) => (
+                    <Badge
+                      key={input.key}
+                      variant={input.required ? "default" : "outline"}
+                      className="text-xs font-mono"
+                    >
+                      {input.key}
+                      {input.required && <span className="ml-1">*</span>}
                     </Badge>
                   ))}
                 </div>
@@ -346,7 +418,9 @@ export function EdgeMappingDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>Salvar Mapeamento</Button>
+          <Button onClick={handleSave} disabled={missingRequired.length > 0}>
+            Salvar Mapeamento
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
