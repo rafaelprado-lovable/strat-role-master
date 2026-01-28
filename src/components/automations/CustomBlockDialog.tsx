@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -25,11 +28,12 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Server, Terminal, Settings, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Server, Terminal, Settings, ArrowDownToLine, ArrowUpFromLine, CheckCircle2 } from 'lucide-react';
 import { CustomBlock, Machine, StepConfigParam, StepInputValue, StepOutputValue } from '@/types/automations';
 import { StepConfigParamsPanel } from './StepConfigParamsPanel';
 import { StepInputValuesPanel } from './StepInputValuesPanel';
 import { StepOutputValuesPanel } from './StepOutputValuesPanel';
+import { SCRIPT_TEMPLATES, ScriptTemplate, SCRIPT_CATEGORIES } from './ScriptTemplates';
 
 interface CustomBlockDialogProps {
   open: boolean;
@@ -55,6 +59,7 @@ export function CustomBlockDialog({
   onSave,
   editingBlock,
 }: CustomBlockDialogProps) {
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [machineId, setMachineId] = useState('');
@@ -65,9 +70,32 @@ export function CustomBlockDialog({
   const [stepInputValue, setStepInputValue] = useState<StepInputValue[]>([]);
   const [stepOutputValue, setStepOutputValue] = useState<StepOutputValue[]>([]);
 
+  // Apply template when selected
+  const handleSelectTemplate = (template: ScriptTemplate) => {
+    if (selectedTemplateId === template.id) {
+      // Deselect if clicking the same template
+      setSelectedTemplateId(null);
+      return;
+    }
+
+    setSelectedTemplateId(template.id);
+    
+    if (template.id !== 'custom') {
+      setName(template.name);
+      setDescription(template.description);
+      setScriptPath(template.defaultScriptPath);
+      setIcon(template.icon);
+      setColor(template.color);
+      setStepConfigParams([...template.stepConfigParams]);
+      setStepInputValue([...template.stepInputValue]);
+      setStepOutputValue([...template.stepOutputValue]);
+    }
+  };
+
   // Reset form when editing block changes
   useEffect(() => {
     if (editingBlock) {
+      setSelectedTemplateId(null);
       setName(editingBlock.name);
       setDescription(editingBlock.description);
       setMachineId(editingBlock.machineId);
@@ -78,6 +106,7 @@ export function CustomBlockDialog({
       setStepInputValue(editingBlock.stepInputValue || []);
       setStepOutputValue(editingBlock.stepOutputValue || []);
     } else {
+      setSelectedTemplateId(null);
       setName('');
       setDescription('');
       setMachineId('');
@@ -122,16 +151,20 @@ export function CustomBlockDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{editingBlock ? 'Editar Bloco' : 'Novo Bloco Customizado'}</DialogTitle>
           <DialogDescription>
-            Crie um bloco que executa um script remotamente em uma máquina cadastrada.
+            Selecione um tipo de automação para preencher os campos automaticamente.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="basic" className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="template" className="flex-1 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="template" className="text-xs">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Tipo
+            </TabsTrigger>
             <TabsTrigger value="basic" className="text-xs">
               <Settings className="h-3 w-3 mr-1" />
               Básico
@@ -151,6 +184,72 @@ export function CustomBlockDialog({
           </TabsList>
 
           <div className="overflow-y-auto max-h-[50vh] mt-4">
+            <TabsContent value="template" className="mt-0">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Escolha um template para preencher automaticamente os campos do bloco:
+                </p>
+                <ScrollArea className="h-[350px] pr-4">
+                  <div className="space-y-4">
+                    {SCRIPT_CATEGORIES.map((category) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          {category}
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {SCRIPT_TEMPLATES.filter(t => t.category === category).map((template) => (
+                            <div
+                              key={template.id}
+                              onClick={() => handleSelectTemplate(template)}
+                              className={`
+                                relative p-3 rounded-lg border cursor-pointer transition-all
+                                ${selectedTemplateId === template.id 
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary' 
+                                  : 'border-border hover:border-primary/50 hover:bg-muted/50'}
+                              `}
+                            >
+                              {selectedTemplateId === template.id && (
+                                <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
+                              )}
+                              <div className="flex items-start gap-3">
+                                <div className={`p-2 rounded-md ${template.color}`}>
+                                  {template.icon === 'terminal' ? (
+                                    <Terminal className="h-4 w-4 text-white" />
+                                  ) : (
+                                    <Server className="h-4 w-4 text-white" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm">{template.name}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {template.description}
+                                  </p>
+                                  {template.id !== 'custom' && (
+                                    <div className="flex gap-1 mt-2 flex-wrap">
+                                      {template.stepInputValue.length > 0 && (
+                                        <Badge variant="outline" className="text-[10px]">
+                                          {template.stepInputValue.length} inputs
+                                        </Badge>
+                                      )}
+                                      {template.stepOutputValue.length > 0 && (
+                                        <Badge variant="outline" className="text-[10px]">
+                                          {template.stepOutputValue.length} outputs
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </TabsContent>
+
             <TabsContent value="basic" className="space-y-4 mt-0">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome do bloco</Label>
