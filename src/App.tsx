@@ -20,6 +20,7 @@ import Changes from "./pages/Changes";
 import ChangesInExecution from "./pages/ChangesInExecution";
 import ChangeExecution from "./pages/ChangeExecution";
 import Analyses from "./pages/Analyses";
+import Automations from "./pages/Automations";
 import Plantoes from "./pages/Plantoes";
 import SwapAlarms from "./pages/SwapAlarms";
 import CallResolution from "./pages/CallResolution";
@@ -141,6 +142,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Analyses />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/automations"
+              element={
+                <AppLayout>
+                  <Automations />
                 </AppLayout>
               }
             />

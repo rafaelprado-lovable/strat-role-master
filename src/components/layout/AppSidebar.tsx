@@ -15,6 +15,7 @@ import {
   PhoneCall,
   FileBarChart,
   Gauge,
+  Workflow,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from './Logo';
@@ -62,6 +63,12 @@ const menuItems = [
     title: 'Análises',
     url: '/analyses',
     icon: CheckCircle,
+    hasSubmenu: false,
+  },
+  {
+    title: 'Automações',
+    url: '/automations',
+    icon: Workflow,
     hasSubmenu: false,
   },
   {
