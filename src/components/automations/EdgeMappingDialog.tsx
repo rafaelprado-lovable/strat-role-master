@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -21,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowRight, Link2, Plus, Trash2 } from 'lucide-react';
+import { StepInputValue, StepOutputValue } from '@/types/automations';
 
 interface ParameterMapping {
   sourceOutput: string;
@@ -37,109 +37,106 @@ interface EdgeMappingDialogProps {
 }
 
 interface OutputDef {
-  key: string;
-  label: string;
-  required?: boolean;
+  paramName: string;
+  paramType: string;
 }
 
-// Default outputs for each block type
-const DEFAULT_OUTPUTS: Record<string, OutputDef[]> = {
+interface InputDef {
+  paramName: string;
+  paramType: string;
+  mandatory: boolean;
+}
+
+// Default outputs for each block type (now using the new schema structure)
+const DEFAULT_OUTPUTS: Record<string, StepOutputValue[]> = {
   alarm: [
-    { key: 'alarmId', label: 'ID do Alarme', required: true },
-    { key: 'alarmType', label: 'Tipo', required: true },
-    { key: 'service', label: 'Serviço', required: false },
-    { key: 'message', label: 'Mensagem', required: false },
-    { key: 'timestamp', label: 'Timestamp', required: true },
+    { paramName: 'alarmId', paramType: 'string' },
+    { paramName: 'alarmType', paramType: 'string' },
+    { paramName: 'service', paramType: 'string' },
+    { paramName: 'message', paramType: 'string' },
+    { paramName: 'timestamp', paramType: 'string' },
   ],
   incident: [
-    { key: 'incidentId', label: 'ID do Incidente', required: true },
-    { key: 'priority', label: 'Prioridade', required: true },
-    { key: 'team', label: 'Equipe', required: false },
-    { key: 'title', label: 'Título', required: true },
-    { key: 'description', label: 'Descrição', required: false },
+    { paramName: 'incidentId', paramType: 'string' },
+    { paramName: 'priority', paramType: 'string' },
+    { paramName: 'team', paramType: 'string' },
+    { paramName: 'title', paramType: 'string' },
+    { paramName: 'description', paramType: 'string' },
   ],
   rabbit_full: [
-    { key: 'queueName', label: 'Nome da Fila', required: true },
-    { key: 'messageCount', label: 'Qtd Mensagens', required: true },
-    { key: 'usagePercent', label: 'Uso (%)', required: true },
-    { key: 'threshold', label: 'Threshold', required: false },
+    { paramName: 'queueName', paramType: 'string' },
+    { paramName: 'messageCount', paramType: 'integer' },
+    { paramName: 'usagePercent', paramType: 'integer' },
+    { paramName: 'threshold', paramType: 'integer' },
   ],
   webhook: [
-    { key: 'statusCode', label: 'Status Code', required: true },
-    { key: 'responseBody', label: 'Response Body', required: false },
-    { key: 'responseHeaders', label: 'Headers', required: false },
+    { paramName: 'statusCode', paramType: 'integer' },
+    { paramName: 'responseBody', paramType: 'object' },
+    { paramName: 'responseHeaders', paramType: 'object' },
   ],
   email: [
-    { key: 'sent', label: 'Enviado', required: true },
-    { key: 'messageId', label: 'Message ID', required: false },
+    { paramName: 'sent', paramType: 'boolean' },
+    { paramName: 'messageId', paramType: 'string' },
   ],
   slack: [
-    { key: 'sent', label: 'Enviado', required: true },
-    { key: 'messageTs', label: 'Message TS', required: false },
+    { paramName: 'sent', paramType: 'boolean' },
+    { paramName: 'messageTs', paramType: 'string' },
   ],
   script: [
-    { key: 'result', label: 'Resultado', required: false },
-    { key: 'success', label: 'Sucesso', required: true },
-    { key: 'error', label: 'Erro', required: false },
+    { paramName: 'result', paramType: 'object' },
+    { paramName: 'success', paramType: 'boolean' },
+    { paramName: 'error', paramType: 'string' },
   ],
   delay: [
-    { key: 'completed', label: 'Completado', required: true },
-    { key: 'duration', label: 'Duração', required: false },
+    { paramName: 'completed', paramType: 'boolean' },
+    { paramName: 'duration', paramType: 'integer' },
   ],
   if: [
-    { key: 'result', label: 'Resultado', required: true },
-    { key: 'branch', label: 'Branch', required: true },
+    { paramName: 'result', paramType: 'boolean' },
+    { paramName: 'branch', paramType: 'string' },
   ],
   filter: [
-    { key: 'passed', label: 'Passou', required: true },
-    { key: 'data', label: 'Dados', required: false },
+    { paramName: 'passed', paramType: 'boolean' },
+    { paramName: 'data', paramType: 'object' },
   ],
   customBlock: [
-    { key: 'stdout', label: 'Stdout', required: false },
-    { key: 'stderr', label: 'Stderr', required: false },
-    { key: 'exitCode', label: 'Exit Code', required: true },
-    { key: 'result', label: 'Resultado', required: false },
+    { paramName: 'stdout', paramType: 'string' },
+    { paramName: 'stderr', paramType: 'string' },
+    { paramName: 'exitCode', paramType: 'integer' },
+    { paramName: 'result', paramType: 'object' },
   ],
 };
 
-interface InputDef {
-  key: string;
-  label: string;
-  required?: boolean;
-}
-
-// Default inputs for each block type
-const DEFAULT_INPUTS: Record<string, InputDef[]> = {
+// Default inputs for each block type (now using the new schema structure)
+const DEFAULT_INPUTS: Record<string, StepInputValue[]> = {
   webhook: [
-    { key: 'url', label: 'URL', required: true },
-    { key: 'body', label: 'Body', required: false },
-    { key: 'headers', label: 'Headers', required: false },
+    { paramName: 'url', paramType: 'string', mandatory: true },
+    { paramName: 'body', paramType: 'object', mandatory: false },
+    { paramName: 'headers', paramType: 'object', mandatory: false },
   ],
   email: [
-    { key: 'to', label: 'Destinatário', required: true },
-    { key: 'subject', label: 'Assunto', required: true },
-    { key: 'body', label: 'Corpo', required: false },
+    { paramName: 'to', paramType: 'string', mandatory: true },
+    { paramName: 'subject', paramType: 'string', mandatory: true },
+    { paramName: 'body', paramType: 'string', mandatory: false },
   ],
   slack: [
-    { key: 'channel', label: 'Canal', required: true },
-    { key: 'message', label: 'Mensagem', required: true },
+    { paramName: 'channel', paramType: 'string', mandatory: true },
+    { paramName: 'message', paramType: 'string', mandatory: true },
   ],
   script: [
-    { key: 'input', label: 'Input', required: false },
+    { paramName: 'input', paramType: 'object', mandatory: false },
   ],
   delay: [
-    { key: 'duration', label: 'Duração', required: true },
+    { paramName: 'duration', paramType: 'integer', mandatory: true },
   ],
   if: [
-    { key: 'field', label: 'Campo', required: true },
-    { key: 'value', label: 'Valor', required: true },
+    { paramName: 'field', paramType: 'string', mandatory: true },
+    { paramName: 'value', paramType: 'string', mandatory: true },
   ],
   filter: [
-    { key: 'expression', label: 'Expressão', required: true },
+    { paramName: 'expression', paramType: 'string', mandatory: true },
   ],
-  customBlock: [
-    { key: 'params', label: 'Parâmetros', required: false },
-  ],
+  customBlock: [],
 };
 
 export function EdgeMappingDialog({
@@ -154,7 +151,6 @@ export function EdgeMappingDialog({
 
   useEffect(() => {
     if (edge && open) {
-      // Load existing mappings from edge data
       const existingMappings = (edge.data?.mappings as ParameterMapping[]) || [];
       setMappings(existingMappings);
     }
@@ -167,19 +163,26 @@ export function EdgeMappingDialog({
   const sourceType = sourceData.type as string;
   const targetType = targetData.type as string;
 
-  // Get outputs from source node (custom + default)
-  const sourceConfig = (sourceData.config as Record<string, unknown>) || {};
-  const customOutputs = (sourceConfig.outputs as OutputDef[]) || [];
+  // Get outputs from source node (custom stepOutputValue + defaults)
+  const customOutputs = (sourceData.stepOutputValue as StepOutputValue[]) || [];
   const defaultOutputs = DEFAULT_OUTPUTS[sourceType] || [];
-  const sourceOutputs: OutputDef[] = [...customOutputs, ...defaultOutputs];
+  const sourceOutputs: OutputDef[] = [
+    ...customOutputs.map((o) => ({ paramName: o.paramName, paramType: o.paramType })),
+    ...defaultOutputs.map((o) => ({ paramName: o.paramName, paramType: o.paramType })),
+  ];
 
-  // Get inputs for target node
-  const targetInputs: InputDef[] = DEFAULT_INPUTS[targetType] || [];
+  // Get inputs for target node (custom stepInputValue + defaults)
+  const customInputs = (targetData.stepInputValue as StepInputValue[]) || [];
+  const defaultInputs = DEFAULT_INPUTS[targetType] || [];
+  const targetInputs: InputDef[] = [
+    ...customInputs.map((i) => ({ paramName: i.paramName, paramType: i.paramType, mandatory: i.mandatory })),
+    ...defaultInputs.map((i) => ({ paramName: i.paramName, paramType: i.paramType, mandatory: i.mandatory })),
+  ];
 
   // Check if all required inputs are mapped
-  const requiredInputs = targetInputs.filter((i) => i.required);
+  const requiredInputs = targetInputs.filter((i) => i.mandatory);
   const mappedInputs = mappings.map((m) => m.targetInput);
-  const missingRequired = requiredInputs.filter((i) => !mappedInputs.includes(i.key));
+  const missingRequired = requiredInputs.filter((i) => !mappedInputs.includes(i.paramName));
 
   const handleAddMapping = () => {
     setMappings([...mappings, { sourceOutput: '', targetInput: '' }]);
@@ -283,12 +286,12 @@ export function EdgeMappingDialog({
                               </SelectItem>
                             ) : (
                               sourceOutputs.map((output) => (
-                                <SelectItem key={output.key} value={output.key}>
+                                <SelectItem key={output.paramName} value={output.paramName}>
                                   <span className="flex items-center gap-2">
-                                    {output.label}
-                                    {output.required && (
-                                      <span className="text-[10px] text-destructive">*</span>
-                                    )}
+                                    {output.paramName}
+                                    <Badge variant="outline" className="text-[9px] px-1">
+                                      {output.paramType}
+                                    </Badge>
                                   </span>
                                 </SelectItem>
                               ))
@@ -319,10 +322,13 @@ export function EdgeMappingDialog({
                               </SelectItem>
                             ) : (
                               targetInputs.map((input) => (
-                                <SelectItem key={input.key} value={input.key}>
+                                <SelectItem key={input.paramName} value={input.paramName}>
                                   <span className="flex items-center gap-2">
-                                    {input.label}
-                                    {input.required && (
+                                    {input.paramName}
+                                    <Badge variant="outline" className="text-[9px] px-1">
+                                      {input.paramType}
+                                    </Badge>
+                                    {input.mandatory && (
                                       <span className="text-[10px] text-destructive font-bold">*</span>
                                     )}
                                   </span>
@@ -356,11 +362,11 @@ export function EdgeMappingDialog({
                 <div className="flex flex-wrap gap-1">
                   {missingRequired.map((input) => (
                     <Badge
-                      key={input.key}
+                      key={input.paramName}
                       variant="destructive"
                       className="text-xs"
                     >
-                      {input.label}
+                      {input.paramName}
                     </Badge>
                   ))}
                 </div>
@@ -371,23 +377,22 @@ export function EdgeMappingDialog({
             {sourceOutputs.length > 0 && (
               <div className="mt-4 p-3 rounded-md bg-muted/30 border">
                 <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Saídas disponíveis de "{sourceNode.data.label as string}":
+                  Saídas de "{sourceNode.data.label as string}":
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {sourceOutputs.map((output) => (
                     <Badge
-                      key={output.key}
-                      variant={output.required ? "default" : "outline"}
+                      key={output.paramName}
+                      variant="outline"
                       className="text-xs font-mono"
                     >
-                      {output.key}
-                      {output.required && <span className="ml-1">*</span>}
+                      {output.paramName}
+                      <span className="ml-1 text-[9px] text-muted-foreground">
+                        ({output.paramType})
+                      </span>
                     </Badge>
                   ))}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  * = obrigatório
-                </p>
               </div>
             )}
 
@@ -400,15 +405,21 @@ export function EdgeMappingDialog({
                 <div className="flex flex-wrap gap-1">
                   {targetInputs.map((input) => (
                     <Badge
-                      key={input.key}
-                      variant={input.required ? "default" : "outline"}
+                      key={input.paramName}
+                      variant={input.mandatory ? "default" : "outline"}
                       className="text-xs font-mono"
                     >
-                      {input.key}
-                      {input.required && <span className="ml-1">*</span>}
+                      {input.paramName}
+                      <span className="ml-1 text-[9px]">
+                        ({input.paramType})
+                      </span>
+                      {input.mandatory && <span className="ml-1">*</span>}
                     </Badge>
                   ))}
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  * = obrigatório
+                </p>
               </div>
             )}
           </div>
