@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,24 +20,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Server, Terminal } from 'lucide-react';
-
-export interface CustomBlock {
-  id: string;
-  name: string;
-  description: string;
-  machineId: string;
-  scriptPath: string;
-  icon: 'terminal' | 'server';
-  color: string;
-}
-
-export interface Machine {
-  id: string;
-  name: string;
-  host: string;
-  port: string;
-  description: string;
-}
+import { CustomBlock, Machine } from '@/types/automations';
 
 interface CustomBlockDialogProps {
   open: boolean;
