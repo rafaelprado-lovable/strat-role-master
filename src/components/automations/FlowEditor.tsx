@@ -67,6 +67,7 @@ import { EdgeMappingDialog } from '@/components/automations/EdgeMappingDialog';
 import { MachineDialog } from '@/components/automations/MachineDialog';
 import { MachinesSheet } from '@/components/automations/MachinesSheet';
 import { ScheduleDialog } from '@/components/automations/ScheduleDialog';
+import { CustomBlockDialog } from '@/components/automations/CustomBlockDialog';
 import { Automation, AutomationSchedule, Machine, CustomBlock } from '@/types/automations';
 
 interface OutputConfig {
@@ -1002,6 +1003,13 @@ export function FlowEditor({
         sourceNode={selectedEdge ? nodes.find((n) => n.id === selectedEdge.source) || null : null}
         targetNode={selectedEdge ? nodes.find((n) => n.id === selectedEdge.target) || null : null}
         onSave={handleSaveEdgeMappings}
+      />
+
+      <CustomBlockDialog
+        open={isCustomBlockDialogOpen}
+        onOpenChange={setIsCustomBlockDialogOpen}
+        machines={machines}
+        onSave={onSaveCustomBlock}
       />
     </div>
   );

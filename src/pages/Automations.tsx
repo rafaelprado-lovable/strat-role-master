@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
-import { CustomBlockDialog } from '@/components/automations/CustomBlockDialog';
 import { Automation, Machine, CustomBlock } from '@/types/automations';
 import { toast } from 'sonner';
 
@@ -68,7 +67,6 @@ export default function Automations() {
   const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
   const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isCustomBlockDialogOpen, setIsCustomBlockDialogOpen] = useState(false);
 
   const handleCreate = () => {
     setEditingAutomation(null);
@@ -181,7 +179,6 @@ export default function Automations() {
       }
       return [...prev, block];
     });
-    setIsCustomBlockDialogOpen(false);
     toast.success('Bloco customizado salvo');
   };
 
@@ -215,13 +212,6 @@ export default function Automations() {
             onDeleteCustomBlock={handleDeleteCustomBlock}
           />
         </ReactFlowProvider>
-
-        <CustomBlockDialog
-          open={isCustomBlockDialogOpen}
-          onOpenChange={setIsCustomBlockDialogOpen}
-          machines={machines}
-          onSave={handleSaveCustomBlock}
-        />
       </div>
     );
   }
