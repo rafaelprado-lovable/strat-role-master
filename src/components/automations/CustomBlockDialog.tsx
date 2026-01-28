@@ -18,9 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Server, Terminal } from 'lucide-react';
-import { CustomBlock, Machine } from '@/types/automations';
+import { Server, Terminal, Settings, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { CustomBlock, Machine, StepConfigParam, StepInputValue, StepOutputValue } from '@/types/automations';
+import { StepConfigParamsPanel } from './StepConfigParamsPanel';
+import { StepInputValuesPanel } from './StepInputValuesPanel';
+import { StepOutputValuesPanel } from './StepOutputValuesPanel';
 
 interface CustomBlockDialogProps {
   open: boolean;
@@ -46,12 +55,40 @@ export function CustomBlockDialog({
   onSave,
   editingBlock,
 }: CustomBlockDialogProps) {
-  const [name, setName] = useState(editingBlock?.name || '');
-  const [description, setDescription] = useState(editingBlock?.description || '');
-  const [machineId, setMachineId] = useState(editingBlock?.machineId || '');
-  const [scriptPath, setScriptPath] = useState(editingBlock?.scriptPath || '');
-  const [icon, setIcon] = useState<'terminal' | 'server'>(editingBlock?.icon || 'terminal');
-  const [color, setColor] = useState(editingBlock?.color || 'bg-rose-500');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [machineId, setMachineId] = useState('');
+  const [scriptPath, setScriptPath] = useState('');
+  const [icon, setIcon] = useState<'terminal' | 'server'>('terminal');
+  const [color, setColor] = useState('bg-rose-500');
+  const [stepConfigParams, setStepConfigParams] = useState<StepConfigParam[]>([]);
+  const [stepInputValue, setStepInputValue] = useState<StepInputValue[]>([]);
+  const [stepOutputValue, setStepOutputValue] = useState<StepOutputValue[]>([]);
+
+  // Reset form when editing block changes
+  useEffect(() => {
+    if (editingBlock) {
+      setName(editingBlock.name);
+      setDescription(editingBlock.description);
+      setMachineId(editingBlock.machineId);
+      setScriptPath(editingBlock.scriptPath);
+      setIcon(editingBlock.icon);
+      setColor(editingBlock.color);
+      setStepConfigParams(editingBlock.stepConfigParams || []);
+      setStepInputValue(editingBlock.stepInputValue || []);
+      setStepOutputValue(editingBlock.stepOutputValue || []);
+    } else {
+      setName('');
+      setDescription('');
+      setMachineId('');
+      setScriptPath('');
+      setIcon('terminal');
+      setColor('bg-rose-500');
+      setStepConfigParams([]);
+      setStepInputValue([]);
+      setStepOutputValue([]);
+    }
+  }, [editingBlock, open]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -75,21 +112,17 @@ export function CustomBlockDialog({
       scriptPath: scriptPath.trim(),
       icon,
       color,
+      stepConfigParams,
+      stepInputValue,
+      stepOutputValue,
     });
 
-    // Reset form
-    setName('');
-    setDescription('');
-    setMachineId('');
-    setScriptPath('');
-    setIcon('terminal');
-    setColor('bg-rose-500');
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{editingBlock ? 'Editar Bloco' : 'Novo Bloco Customizado'}</DialogTitle>
           <DialogDescription>
@@ -97,105 +130,149 @@ export function CustomBlockDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do bloco</Label>
-            <Input
-              id="name"
-              placeholder="Ex: Restart Apache"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+        <Tabs defaultValue="basic" className="flex-1 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="basic" className="text-xs">
+              <Settings className="h-3 w-3 mr-1" />
+              Básico
+            </TabsTrigger>
+            <TabsTrigger value="config" className="text-xs">
+              <Settings className="h-3 w-3 mr-1" />
+              Config
+            </TabsTrigger>
+            <TabsTrigger value="inputs" className="text-xs">
+              <ArrowDownToLine className="h-3 w-3 mr-1" />
+              Inputs
+            </TabsTrigger>
+            <TabsTrigger value="outputs" className="text-xs">
+              <ArrowUpFromLine className="h-3 w-3 mr-1" />
+              Outputs
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="overflow-y-auto max-h-[50vh] mt-4">
+            <TabsContent value="basic" className="space-y-4 mt-0">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome do bloco</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Restart Apache"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  placeholder="O que este bloco faz..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Máquina</Label>
+                <Select value={machineId} onValueChange={setMachineId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a máquina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {machines.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        Nenhuma máquina cadastrada
+                      </SelectItem>
+                    ) : (
+                      machines.map((machine) => (
+                        <SelectItem key={machine.id} value={machine.id}>
+                          {machine.name} ({machine.host})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="scriptPath">Caminho do script</Label>
+                <Input
+                  id="scriptPath"
+                  placeholder="/opt/scripts/restart-service.sh"
+                  value={scriptPath}
+                  onChange={(e) => setScriptPath(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Ícone</Label>
+                  <Select value={icon} onValueChange={(v) => setIcon(v as 'terminal' | 'server')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="terminal">
+                        <div className="flex items-center gap-2">
+                          <Terminal className="h-4 w-4" />
+                          Terminal
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="server">
+                        <div className="flex items-center gap-2">
+                          <Server className="h-4 w-4" />
+                          Servidor
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cor</Label>
+                  <Select value={color} onValueChange={setColor}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLORS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-4 w-4 rounded ${c.value}`} />
+                            {c.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="config" className="mt-0">
+              <StepConfigParamsPanel
+                params={stepConfigParams}
+                onChange={setStepConfigParams}
+              />
+            </TabsContent>
+
+            <TabsContent value="inputs" className="mt-0">
+              <StepInputValuesPanel
+                inputs={stepInputValue}
+                onChange={setStepInputValue}
+              />
+            </TabsContent>
+
+            <TabsContent value="outputs" className="mt-0">
+              <StepOutputValuesPanel
+                outputs={stepOutputValue}
+                onChange={setStepOutputValue}
+              />
+            </TabsContent>
           </div>
+        </Tabs>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              placeholder="O que este bloco faz..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Máquina</Label>
-            <Select value={machineId} onValueChange={setMachineId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a máquina" />
-              </SelectTrigger>
-              <SelectContent>
-                {machines.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    Nenhuma máquina cadastrada
-                  </SelectItem>
-                ) : (
-                  machines.map((machine) => (
-                    <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name} ({machine.host})
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="scriptPath">Caminho do script</Label>
-            <Input
-              id="scriptPath"
-              placeholder="/opt/scripts/restart-service.sh"
-              value={scriptPath}
-              onChange={(e) => setScriptPath(e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Ícone</Label>
-              <Select value={icon} onValueChange={(v) => setIcon(v as 'terminal' | 'server')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="terminal">
-                    <div className="flex items-center gap-2">
-                      <Terminal className="h-4 w-4" />
-                      Terminal
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="server">
-                    <div className="flex items-center gap-2">
-                      <Server className="h-4 w-4" />
-                      Servidor
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Cor</Label>
-              <Select value={color} onValueChange={setColor}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COLORS.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <div className="flex items-center gap-2">
-                        <div className={`h-4 w-4 rounded ${c.value}`} />
-                        {c.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

@@ -275,6 +275,10 @@ export function FlowEditor({
             color: customBlock.color,
             machineId: customBlock.machineId,
             scriptPath: customBlock.scriptPath,
+            // Propagate step parameters from block definition
+            stepConfigParams: customBlock.stepConfigParams || [],
+            stepInputValue: customBlock.stepInputValue || [],
+            stepOutputValue: customBlock.stepOutputValue || [],
             config: {},
           },
         };
@@ -683,27 +687,75 @@ export function FlowEditor({
                 className="bg-muted"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Parâmetros (JSON)</Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Use variáveis como <code className="bg-muted px-1 rounded">{'{{bloco.saída}}'}</code> para referenciar saídas de blocos anteriores
-              </p>
-              <OutputReferenceSelect
-                currentNodeId={selectedNode.id}
-                nodes={nodes}
-                edges={edges}
-                onInsert={(ref) => {
-                  const currentParams = (selectedNode.data.config?.params as string) || '';
-                  updateNodeConfig('params', currentParams + ref);
-                }}
-              />
-              <Textarea
-                placeholder='{"param1": "{{trigger-123.alarmId}}", "param2": "value"}'
-                value={(selectedNode.data.config?.params as string) || ''}
-                onChange={(e) => updateNodeConfig('params', e.target.value)}
-                className="font-mono text-sm"
-              />
-            </div>
+
+            {/* Config Params - editable values */}
+            {((selectedNode.data.stepConfigParams as any[]) || []).length > 0 && (
+              <div className="space-y-3 p-3 rounded-md border bg-muted/20">
+                <Label className="text-xs font-medium">Parâmetros de Configuração</Label>
+                {((selectedNode.data.stepConfigParams as any[]) || []).map((param: any, idx: number) => (
+                  <div key={param.paramName} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {param.paramName}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {param.paramType}
+                      </Badge>
+                    </div>
+                    <Input
+                      placeholder={param.paramExample || 'Valor...'}
+                      value={(selectedNode.data.config as any)?.[`config_${param.paramName}`] || param.paramValue || ''}
+                      onChange={(e) => updateNodeConfig(`config_${param.paramName}`, e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Show Input Values info */}
+            {((selectedNode.data.stepInputValue as any[]) || []).length > 0 && (
+              <div className="space-y-2 p-3 rounded-md border bg-blue-500/10">
+                <Label className="text-xs font-medium">Entradas esperadas</Label>
+                <div className="flex flex-wrap gap-1">
+                  {((selectedNode.data.stepInputValue as any[]) || []).map((input: any) => (
+                    <Badge
+                      key={input.paramName}
+                      variant={input.mandatory ? 'default' : 'outline'}
+                      className="text-xs font-mono"
+                    >
+                      {input.paramName}
+                      {input.mandatory && <span className="ml-1">*</span>}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Configure via mapeamento de conexão
+                </p>
+              </div>
+            )}
+
+            {/* Show Output Values info */}
+            {((selectedNode.data.stepOutputValue as any[]) || []).length > 0 && (
+              <div className="space-y-2 p-3 rounded-md border bg-green-500/10">
+                <Label className="text-xs font-medium">Saídas disponíveis</Label>
+                <div className="flex flex-wrap gap-1">
+                  {((selectedNode.data.stepOutputValue as any[]) || []).map((output: any) => (
+                    <Badge
+                      key={output.paramName}
+                      variant="outline"
+                      className="text-xs font-mono"
+                    >
+                      {output.paramName}
+                      <span className="ml-1 text-[9px] text-muted-foreground">
+                        ({output.paramType})
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Timeout (segundos)</Label>
               <Input
