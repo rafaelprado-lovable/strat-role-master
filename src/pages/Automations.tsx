@@ -58,6 +58,7 @@ import {
 } from 'lucide-react';
 import TriggerNode from '@/components/automations/TriggerNode';
 import ActionNode from '@/components/automations/ActionNode';
+import { OutputReferenceSelect } from '@/components/automations/OutputReferenceSelect';
 import ConditionNode from '@/components/automations/ConditionNode';
 import CustomBlockNode from '@/components/automations/CustomBlockNode';
 import { CustomBlockDialog, CustomBlock, Machine } from '@/components/automations/CustomBlockDialog';
@@ -623,10 +624,23 @@ function FlowEditor() {
             </div>
             <div className="space-y-2">
               <Label>Parâmetros (JSON)</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Use variáveis como <code className="bg-muted px-1 rounded">{'{{bloco.saída}}'}</code> para referenciar saídas de blocos anteriores
+              </p>
+              <OutputReferenceSelect
+                currentNodeId={selectedNode.id}
+                nodes={nodes}
+                edges={edges}
+                onInsert={(ref) => {
+                  const currentParams = (selectedNode.data.config?.params as string) || '';
+                  updateNodeConfig('params', currentParams + ref);
+                }}
+              />
               <Textarea
-                placeholder='{"param1": "value1"}'
+                placeholder='{"param1": "{{trigger-123.alarmId}}", "param2": "value"}'
                 value={(selectedNode.data.config?.params as string) || ''}
                 onChange={(e) => updateNodeConfig('params', e.target.value)}
+                className="font-mono text-sm"
               />
             </div>
             <div className="space-y-2">
