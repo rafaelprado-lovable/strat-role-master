@@ -6,7 +6,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Machine } from './CustomBlockDialog';
+import { Machine } from '@/types/automations';
 import { Edit2, Plus, Server, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
