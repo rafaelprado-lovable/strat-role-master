@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -52,24 +52,33 @@ import {
   Clock,
   Filter,
   GitBranch,
+  Server,
+  Terminal,
+  Settings,
 } from 'lucide-react';
 import TriggerNode from '@/components/automations/TriggerNode';
 import ActionNode from '@/components/automations/ActionNode';
 import ConditionNode from '@/components/automations/ConditionNode';
+import CustomBlockNode from '@/components/automations/CustomBlockNode';
+import { CustomBlockDialog, CustomBlock, Machine } from '@/components/automations/CustomBlockDialog';
+import { MachineDialog } from '@/components/automations/MachineDialog';
+import { MachinesSheet } from '@/components/automations/MachinesSheet';
 
 const nodeTypes = {
   trigger: TriggerNode,
   action: ActionNode,
   condition: ConditionNode,
+  customBlock: CustomBlockNode,
 };
 
 type TriggerType = 'alarm' | 'incident' | 'rabbit_full';
 type ActionType = 'webhook' | 'email' | 'slack' | 'script' | 'delay';
 type ConditionType = 'if' | 'switch' | 'filter';
+type CustomBlockType = 'customBlock';
 
 interface NodeData extends Record<string, unknown> {
   label: string;
-  type: TriggerType | ActionType | ConditionType;
+  type: TriggerType | ActionType | ConditionType | CustomBlockType | string;
   config?: Record<string, unknown>;
 }
 
@@ -104,6 +113,15 @@ function FlowEditor() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { screenToFlowPosition } = useReactFlow();
 
+  // Custom blocks and machines state
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
+  const [isMachinesSheetOpen, setIsMachinesSheetOpen] = useState(false);
+  const [isMachineDialogOpen, setIsMachineDialogOpen] = useState(false);
+  const [isCustomBlockDialogOpen, setIsCustomBlockDialogOpen] = useState(false);
+  const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
+  const [editingCustomBlock, setEditingCustomBlock] = useState<CustomBlock | null>(null);
+
   const onNodesChange: OnNodesChange<Node<NodeData>> = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]),
     []
@@ -136,6 +154,7 @@ function FlowEditor() {
       const type = event.dataTransfer.getData('application/reactflow-type');
       const nodeType = event.dataTransfer.getData('application/reactflow-nodeType');
       const label = event.dataTransfer.getData('application/reactflow-label');
+      const customBlockData = event.dataTransfer.getData('application/reactflow-customBlock');
 
       if (!type) return;
 
@@ -144,23 +163,87 @@ function FlowEditor() {
         y: event.clientY,
       });
 
-      const newNode: Node<NodeData> = {
-        id: `${nodeType}-${Date.now()}`,
-        type: nodeType,
-        position,
-        data: { label, type: type as TriggerType | ActionType | ConditionType, config: {} },
-      };
+      let newNode: Node<NodeData>;
+
+      if (customBlockData) {
+        const customBlock = JSON.parse(customBlockData) as CustomBlock;
+        newNode = {
+          id: `${nodeType}-${Date.now()}`,
+          type: nodeType,
+          position,
+          data: {
+            label: customBlock.name,
+            type: 'customBlock',
+            icon: customBlock.icon,
+            color: customBlock.color,
+            machineId: customBlock.machineId,
+            scriptPath: customBlock.scriptPath,
+            config: {},
+          },
+        };
+      } else {
+        newNode = {
+          id: `${nodeType}-${Date.now()}`,
+          type: nodeType,
+          position,
+          data: { label, type: type as TriggerType | ActionType | ConditionType, config: {} },
+        };
+      }
 
       setNodes((nds) => nds.concat(newNode));
     },
     [screenToFlowPosition]
   );
 
-  const onDragStart = (event: React.DragEvent, type: string, nodeType: string, label: string) => {
+  const onDragStart = (event: React.DragEvent, type: string, nodeType: string, label: string, customBlock?: CustomBlock) => {
     event.dataTransfer.setData('application/reactflow-type', type);
     event.dataTransfer.setData('application/reactflow-nodeType', nodeType);
     event.dataTransfer.setData('application/reactflow-label', label);
+    if (customBlock) {
+      event.dataTransfer.setData('application/reactflow-customBlock', JSON.stringify(customBlock));
+    }
     event.dataTransfer.effectAllowed = 'move';
+  };
+
+  // Machine handlers
+  const handleSaveMachine = (machine: Machine) => {
+    setMachines((prev) => {
+      const exists = prev.find((m) => m.id === machine.id);
+      if (exists) {
+        return prev.map((m) => (m.id === machine.id ? machine : m));
+      }
+      return [...prev, machine];
+    });
+    setEditingMachine(null);
+    toast.success(editingMachine ? 'Máquina atualizada' : 'Máquina cadastrada');
+  };
+
+  const handleDeleteMachine = (machineId: string) => {
+    setMachines((prev) => prev.filter((m) => m.id !== machineId));
+    toast.success('Máquina removida');
+  };
+
+  const handleEditMachine = (machine: Machine) => {
+    setEditingMachine(machine);
+    setIsMachineDialogOpen(true);
+  };
+
+  // Custom block handlers
+  const handleSaveCustomBlock = (block: CustomBlock) => {
+    setCustomBlocks((prev) => {
+      const exists = prev.find((b) => b.id === block.id);
+      if (exists) {
+        return prev.map((b) => (b.id === block.id ? block : b));
+      }
+      return [...prev, block];
+    });
+    setEditingCustomBlock(null);
+    toast.success(editingCustomBlock ? 'Bloco atualizado' : 'Bloco criado');
+  };
+
+  const handleDeleteCustomBlock = (blockId: string) => {
+    setCustomBlocks((prev) => prev.filter((b) => b.id !== blockId));
+    toast.success('Bloco removido');
   };
 
   const updateNodeConfig = (key: string, value: unknown) => {
@@ -520,6 +603,44 @@ function FlowEditor() {
           </>
         )}
 
+        {nodeType === 'customBlock' && (
+          <>
+            <div className="space-y-2">
+              <Label>Máquina</Label>
+              <Input
+                value={machines.find(m => m.id === selectedNode.data.machineId)?.name || 'Não definida'}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Caminho do script</Label>
+              <Input
+                value={(selectedNode.data.scriptPath as string) || ''}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Parâmetros (JSON)</Label>
+              <Textarea
+                placeholder='{"param1": "value1"}'
+                value={(selectedNode.data.config?.params as string) || ''}
+                onChange={(e) => updateNodeConfig('params', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Timeout (segundos)</Label>
+              <Input
+                type="number"
+                placeholder="30"
+                value={(selectedNode.data.config?.timeout as string) || ''}
+                onChange={(e) => updateNodeConfig('timeout', e.target.value)}
+              />
+            </div>
+          </>
+        )}
+
         <Button variant="destructive" className="w-full mt-4" onClick={deleteSelectedNode}>
           <Trash2 className="h-4 w-4 mr-2" />
           Remover bloco
@@ -540,6 +661,10 @@ function FlowEditor() {
           <Badge variant="outline">Rascunho</Badge>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsMachinesSheetOpen(true)}>
+            <Server className="h-4 w-4 mr-2" />
+            Máquinas
+          </Button>
           <Button variant="outline" onClick={saveAutomation}>
             <Save className="h-4 w-4 mr-2" />
             Salvar
@@ -614,6 +739,58 @@ function FlowEditor() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-muted-foreground">BLOCOS CUSTOMIZADOS</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    setEditingCustomBlock(null);
+                    setIsCustomBlockDialogOpen(true);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {customBlocks.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Nenhum bloco customizado
+                  </p>
+                ) : (
+                  customBlocks.map((block) => {
+                    const Icon = block.icon === 'server' ? Server : Terminal;
+                    return (
+                      <div
+                        key={block.id}
+                        className="flex items-center gap-2 p-2 rounded-md border cursor-grab hover:bg-muted/50 transition-colors group"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, 'customBlock', 'customBlock', block.name, block)}
+                      >
+                        <div className={`p-1.5 rounded ${block.color}`}>
+                          <Icon className="h-3.5 w-3.5 text-white" />
+                        </div>
+                        <span className="text-sm flex-1">{block.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCustomBlock(block.id);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -647,6 +824,33 @@ function FlowEditor() {
           <div className="mt-6">{renderConfigPanel()}</div>
         </SheetContent>
       </Sheet>
+
+      <MachinesSheet
+        open={isMachinesSheetOpen}
+        onOpenChange={setIsMachinesSheetOpen}
+        machines={machines}
+        onAddMachine={() => {
+          setEditingMachine(null);
+          setIsMachineDialogOpen(true);
+        }}
+        onEditMachine={handleEditMachine}
+        onDeleteMachine={handleDeleteMachine}
+      />
+
+      <MachineDialog
+        open={isMachineDialogOpen}
+        onOpenChange={setIsMachineDialogOpen}
+        onSave={handleSaveMachine}
+        editingMachine={editingMachine}
+      />
+
+      <CustomBlockDialog
+        open={isCustomBlockDialogOpen}
+        onOpenChange={setIsCustomBlockDialogOpen}
+        machines={machines}
+        onSave={handleSaveCustomBlock}
+        editingBlock={editingCustomBlock}
+      />
     </div>
   );
 }
