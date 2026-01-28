@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import {
   AlertTriangle,
@@ -61,10 +62,23 @@ import ActionNode from '@/components/automations/ActionNode';
 import ConditionNode from '@/components/automations/ConditionNode';
 import CustomBlockNode from '@/components/automations/CustomBlockNode';
 import { OutputReferenceSelect } from '@/components/automations/OutputReferenceSelect';
+import { OutputConfigPanel } from '@/components/automations/OutputConfigPanel';
+import { EdgeMappingDialog } from '@/components/automations/EdgeMappingDialog';
 import { MachineDialog } from '@/components/automations/MachineDialog';
 import { MachinesSheet } from '@/components/automations/MachinesSheet';
 import { ScheduleDialog } from '@/components/automations/ScheduleDialog';
 import { Automation, AutomationSchedule, Machine, CustomBlock } from '@/types/automations';
+
+interface OutputConfig {
+  key: string;
+  label: string;
+  description: string;
+}
+
+interface ParameterMapping {
+  sourceOutput: string;
+  targetInput: string;
+}
 
 const nodeTypes = {
   trigger: TriggerNode,
@@ -140,7 +154,9 @@ export function FlowEditor({
   const [isMachineDialogOpen, setIsMachineDialogOpen] = useState(false);
   const [isCustomBlockDialogOpen, setIsCustomBlockDialogOpen] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isEdgeMappingOpen, setIsEdgeMappingOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
 
   const onNodesChange: OnNodesChange<Node<NodeData>> = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]),
@@ -153,14 +169,75 @@ export function FlowEditor({
   );
 
   const onConnect: OnConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#6366f1' } }, eds)),
-    []
+    (params) => {
+      const newEdge = { ...params, animated: true, style: { stroke: '#6366f1' }, data: { mappings: [] } };
+      setEdges((eds) => addEdge(newEdge, eds));
+      
+      // Open mapping dialog after connection
+      setTimeout(() => {
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        const targetNode = nodes.find((n) => n.id === params.target);
+        if (sourceNode && targetNode) {
+          const createdEdge: Edge = {
+            id: `reactflow__edge-${params.source}${params.sourceHandle || ''}-${params.target}${params.targetHandle || ''}`,
+            source: params.source!,
+            target: params.target!,
+            sourceHandle: params.sourceHandle,
+            targetHandle: params.targetHandle,
+            animated: true,
+            style: { stroke: '#6366f1' },
+            data: { mappings: [] },
+          };
+          setSelectedEdge(createdEdge);
+          setIsEdgeMappingOpen(true);
+        }
+      }, 100);
+    },
+    [nodes]
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node<NodeData>) => {
     setSelectedNode(node);
     setIsConfigOpen(true);
   }, []);
+
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    setSelectedEdge(edge);
+    setIsEdgeMappingOpen(true);
+  }, []);
+
+  const handleSaveEdgeMappings = useCallback((edgeId: string, mappings: ParameterMapping[]) => {
+    setEdges((eds) =>
+      eds.map((e) =>
+        e.id === edgeId
+          ? { ...e, data: { ...e.data, mappings } }
+          : e
+      )
+    );
+    toast.success('Mapeamento salvo');
+  }, []);
+
+  const updateNodeOutputs = useCallback((outputs: OutputConfig[]) => {
+    if (!selectedNode) return;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === selectedNode.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: {
+                ...(node.data.config || {}),
+                outputs,
+              },
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [selectedNode]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -639,6 +716,14 @@ export function FlowEditor({
           </>
         )}
 
+        {/* Output configuration section - available for all block types */}
+        <Separator className="my-4" />
+        
+        <OutputConfigPanel
+          outputs={(selectedNode.data.config?.outputs as OutputConfig[]) || []}
+          onChange={updateNodeOutputs}
+        />
+
         <Button variant="destructive" className="w-full mt-4" onClick={deleteSelectedNode}>
           <Trash2 className="h-4 w-4 mr-2" />
           Remover bloco
@@ -805,6 +890,7 @@ export function FlowEditor({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
@@ -855,6 +941,15 @@ export function FlowEditor({
           setIsScheduleDialogOpen(false);
           toast.success('Agendamento atualizado');
         }}
+      />
+
+      <EdgeMappingDialog
+        open={isEdgeMappingOpen}
+        onOpenChange={setIsEdgeMappingOpen}
+        edge={selectedEdge}
+        sourceNode={selectedEdge ? nodes.find((n) => n.id === selectedEdge.source) || null : null}
+        targetNode={selectedEdge ? nodes.find((n) => n.id === selectedEdge.target) || null : null}
+        onSave={handleSaveEdgeMappings}
       />
     </div>
   );
