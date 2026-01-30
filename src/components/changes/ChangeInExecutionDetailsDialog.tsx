@@ -24,7 +24,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
-import { Search, CheckCircle, XCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, CheckCircle, XCircle, Download, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface Task {
@@ -33,6 +34,12 @@ interface Task {
   descricaoTarefa: string;
   tipoTarefa: string;
   statusTarefa: string;
+}
+
+interface ValidationLog {
+  timestamp: string;
+  message: string;
+  type: "info" | "success" | "error";
 }
 
 interface ChangeInExecutionDetails {
@@ -46,6 +53,14 @@ interface ChangeInExecutionDetails {
   equipesAplicacao: string;
   equipesValidacao: string;
   tarefas: Task[];
+  validacaoInsercao?: {
+    logs: ValidationLog[];
+    status: "pending" | "running" | "success" | "error";
+  };
+  validacaoExclusao?: {
+    logs: ValidationLog[];
+    status: "pending" | "running" | "success" | "error";
+  };
 }
 
 interface ChangeInExecutionDetailsDialogProps {
@@ -61,7 +76,15 @@ export function ChangeInExecutionDetailsDialog({
 }: ChangeInExecutionDetailsDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExclusaoRunning, setIsExclusaoRunning] = useState(false);
   const itemsPerPage = 10;
+
+  // Mock logs para demonstração - serão substituídos por dados reais
+  const mockInsercaoLogs: ValidationLog[] = change.validacaoInsercao?.logs || [
+    { timestamp: "30/01/2026 00:03:25", message: "Inclusão iniciada", type: "info" },
+    { timestamp: "30/01/2026 00:03:25", message: "Inclusão finalizada", type: "info" },
+    { timestamp: "30/01/2026 00:03:25", message: "Sucesso na validação da change!", type: "success" },
+  ];
 
   const filteredTasks = change.tarefas.filter((task) =>
     task.numeroTarefa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,6 +104,30 @@ export function ChangeInExecutionDetailsDialog({
     toast.error(`Tarefa ${numeroTarefa} fechada como rollback`);
   };
 
+  const handleDownloadLogs = () => {
+    const logContent = mockInsercaoLogs
+      .map((log) => `[${log.timestamp}] ${log.message}`)
+      .join("\n");
+    const blob = new Blob([logContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `logs-${change.numero}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Arquivo de logs baixado com sucesso");
+  };
+
+  const handleIniciarValidacaoExclusao = () => {
+    setIsExclusaoRunning(true);
+    toast.info("Validação de exclusão iniciada...");
+    // Simula execução
+    setTimeout(() => {
+      setIsExclusaoRunning(false);
+      toast.success("Validação de exclusão finalizada");
+    }, 3000);
+  };
+
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status.toLowerCase()) {
       case "encerrado":
@@ -93,6 +140,17 @@ export function ChangeInExecutionDetailsDialog({
         return "outline";
       default:
         return "secondary";
+    }
+  };
+
+  const getLogColor = (type: ValidationLog["type"]) => {
+    switch (type) {
+      case "success":
+        return "text-green-400";
+      case "error":
+        return "text-red-400";
+      default:
+        return "text-blue-400";
     }
   };
 
@@ -161,6 +219,52 @@ export function ChangeInExecutionDetailsDialog({
               </div>
             </CardContent>
           </Card>
+
+          {/* Validação da change (Inserção) */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Validação da change (Inserção)</h3>
+            <Card className="bg-zinc-950 border-zinc-800">
+              <CardContent className="p-0">
+                <ScrollArea className="h-48">
+                  <div className="p-4 font-mono text-sm">
+                    {mockInsercaoLogs.map((log, index) => (
+                      <div key={index} className={getLogColor(log.type)}>
+                        {log.type === "success" && "✅ "}
+                        {log.type === "info" && `Inclusão ${log.message.includes("iniciada") ? "iniciada" : "finalizada"}: `}
+                        {log.type === "info" ? log.timestamp : log.message}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+            <Button 
+              onClick={handleDownloadLogs}
+              className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Baixar arquivo de logs
+            </Button>
+          </div>
+
+          {/* Validação da change (Exclusão) */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Validação da change (Exclusão)</h3>
+            <Button 
+              onClick={handleIniciarValidacaoExclusao}
+              disabled={isExclusaoRunning}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              {isExclusaoRunning ? (
+                <>Executando validação...</>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Iniciar validação
+                </>
+              )}
+            </Button>
+          </div>
 
           {/* Tarefas da change */}
           <div>
