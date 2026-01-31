@@ -84,13 +84,28 @@ const mockChangesInExecution: ChangeInExecution[] = [
     descricaoResumida: "Projeto HUB - Liberação de clientid",
     fimExecucao: "17/11/2025 23:00:00",
     status: "Em execução",
-    tipo: "Implementação",
+    tipo: "NMWS",
     descricaoChange: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
     inicioValidacao: "17/11/2025 22:00:00",
     fimValidacao: "17/11/2025 23:00:00",
     diaSemana: "Segunda-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+    tarefas: [],
+  },
+  {
+    id: "3",
+    numero: "CHG0174920",
+    descricaoResumida: "Atualização de CEPs - Região Sul",
+    fimExecucao: "18/11/2025 22:00:00",
+    status: "Em execução",
+    tipo: "CEP",
+    descricaoChange: "Inclusão e exclusão de CEPs para a região Sul - Novos bairros e correções de faixas",
+    inicioValidacao: "18/11/2025 21:00:00",
+    fimValidacao: "18/11/2025 22:00:00",
+    diaSemana: "Terça-feira",
+    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - LOGISTICS - N3",
+    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - LOGISTICS - N3, CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3",
     tarefas: [],
   },
 ];
@@ -130,8 +145,14 @@ export default function ChangesInExecution() {
     setDetailsOpen(true);
   };
 
-  const handleExecutar = (changeId: string) => {
-    navigate(`/change-execution/${changeId}`);
+  const handleExecutar = (change: ChangeInExecution) => {
+    // Se o tipo for CEP, abre a tela de execução de CEP
+    if (change.tipo.toLowerCase() === "cep") {
+      navigate(`/change-execution-cep/${change.id}`);
+    } else {
+      // Para outros tipos (NMWS, etc.), abre a tela padrão
+      navigate(`/change-execution/${change.id}`);
+    }
   };
 
   return (
@@ -273,7 +294,7 @@ export default function ChangesInExecution() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleExecutar(change.id)}
+                          onClick={() => handleExecutar(change)}
                           title="Executar change"
                         >
                           <PlayCircle className="h-4 w-4 mr-2" />
