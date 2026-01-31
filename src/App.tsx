@@ -19,6 +19,7 @@ import BugReport from "./pages/BugReport";
 import Changes from "./pages/Changes";
 import ChangesInExecution from "./pages/ChangesInExecution";
 import ChangeExecution from "./pages/ChangeExecution";
+import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import Analyses from "./pages/Analyses";
 import Automations from "./pages/Automations";
 import Plantoes from "./pages/Plantoes";
@@ -134,6 +135,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <ChangeExecution />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/change-execution-cep/:id"
+              element={
+                <AppLayout>
+                  <ChangeExecutionCep />
                 </AppLayout>
               }
             />
