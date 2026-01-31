@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   CheckCircle2, 
   XCircle, 
@@ -12,7 +13,11 @@ import {
   MapPin,
   Terminal,
   FileCheck,
-  Trash2
+  Trash2,
+  Plus,
+  Minus,
+  Check,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,7 +27,19 @@ interface ValidationLog {
   type: "success" | "error" | "info";
 }
 
-type StepStatus = "não executado" | "executado com sucesso" | "executado com erro" | "executando";
+type CepStatus = "pendente" | "validado" | "erro" | "validando";
+type ChangeType = "inserção" | "exclusão";
+
+interface CepChange {
+  id: string;
+  cep: string;
+  logradouro: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  changeType: ChangeType;
+  status: CepStatus;
+}
 
 const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "$ pipeline-cep-insertion --validate", type: "info" },
@@ -34,8 +51,6 @@ const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "  ✓ CEP 01310-100: formato válido", type: "success" },
   { timestamp: "", message: "  ✓ CEP 04538-132: formato válido", type: "success" },
   { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
-  { timestamp: "", message: "  ✓ CEP 30130-000: formato válido", type: "success" },
-  { timestamp: "", message: "  ✓ CEP 80010-000: formato válido", type: "success" },
   { timestamp: "", message: "[STEP 2/5] Verificando duplicatas na base...", type: "info" },
   { timestamp: "", message: "  → Consultando tabela cep_master...", type: "info" },
   { timestamp: "", message: "  ✓ Nenhuma duplicata encontrada", type: "success" },
@@ -44,12 +59,10 @@ const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "  ✓ CEP 01310-100: Av. Paulista, Bela Vista - SP", type: "success" },
   { timestamp: "", message: "  ✓ CEP 04538-132: R. Funchal, Vila Olímpia - SP", type: "success" },
   { timestamp: "", message: "  ✓ CEP 22041-080: R. Barata Ribeiro, Copacabana - RJ", type: "success" },
-  { timestamp: "", message: "  ✓ CEP 30130-000: Pç. Sete de Setembro, Centro - MG", type: "success" },
-  { timestamp: "", message: "  ✓ CEP 80010-000: R. XV de Novembro, Centro - PR", type: "success" },
   { timestamp: "", message: "[STEP 4/5] Inserindo registros na base de dados...", type: "info" },
   { timestamp: "", message: "  → BEGIN TRANSACTION", type: "info" },
   { timestamp: "", message: "  → INSERT INTO cep_master (cep, logradouro, bairro, cidade, uf)...", type: "info" },
-  { timestamp: "", message: "  ✓ 5 registros inseridos com sucesso", type: "success" },
+  { timestamp: "", message: "  ✓ 3 registros inseridos com sucesso", type: "success" },
   { timestamp: "", message: "  → COMMIT", type: "info" },
   { timestamp: "", message: "[STEP 5/5] Atualizando cache de CEPs...", type: "info" },
   { timestamp: "", message: "  → Invalidando cache Redis...", type: "info" },
@@ -57,8 +70,8 @@ const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "", type: "info" },
   { timestamp: "", message: "═══════════════════════════════════════════════════════", type: "info" },
   { timestamp: "", message: "Pipeline executado com sucesso!", type: "success" },
-  { timestamp: "", message: "  Total de CEPs processados: 5", type: "info" },
-  { timestamp: "", message: "  Inseridos com sucesso: 5", type: "success" },
+  { timestamp: "", message: "  Total de CEPs processados: 3", type: "info" },
+  { timestamp: "", message: "  Inseridos com sucesso: 3", type: "success" },
   { timestamp: "", message: "  Erros: 0", type: "info" },
   { timestamp: "", message: "  Tempo total: 4.23s", type: "info" },
   { timestamp: "", message: "═══════════════════════════════════════════════════════", type: "info" },
@@ -78,7 +91,7 @@ const exclusionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "  → INSERT INTO cep_archive SELECT * FROM cep_master...", type: "info" },
   { timestamp: "", message: "  ✓ Registros arquivados", type: "success" },
   { timestamp: "", message: "[STEP 3/3] Removendo do cache...", type: "info" },
-  { timestamp: "", message: "  → DEL cep:01310-100 cep:04538-132", type: "info" },
+  { timestamp: "", message: "  → DEL cep:30130-000 cep:80010-000", type: "info" },
   { timestamp: "", message: "  ✓ Cache limpo", type: "success" },
   { timestamp: "", message: "", type: "info" },
   { timestamp: "", message: "═══════════════════════════════════════════════════════", type: "info" },
@@ -88,44 +101,34 @@ const exclusionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "═══════════════════════════════════════════════════════", type: "info" },
 ];
 
-interface CepItem {
-  id: string;
-  cep: string;
-  logradouro: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  status: StepStatus;
-}
-
-const mockCepItems: CepItem[] = [
-  { id: "1", cep: "01310-100", logradouro: "Avenida Paulista", bairro: "Bela Vista", cidade: "São Paulo", uf: "SP", status: "não executado" },
-  { id: "2", cep: "04538-132", logradouro: "Rua Funchal", bairro: "Vila Olímpia", cidade: "São Paulo", uf: "SP", status: "não executado" },
-  { id: "3", cep: "22041-080", logradouro: "Rua Barata Ribeiro", bairro: "Copacabana", cidade: "Rio de Janeiro", uf: "RJ", status: "não executado" },
-  { id: "4", cep: "30130-000", logradouro: "Praça Sete de Setembro", bairro: "Centro", cidade: "Belo Horizonte", uf: "MG", status: "não executado" },
-  { id: "5", cep: "80010-000", logradouro: "Rua XV de Novembro", bairro: "Centro", cidade: "Curitiba", uf: "PR", status: "não executado" },
+const mockCepChanges: CepChange[] = [
+  { id: "1", cep: "01310-100", logradouro: "Avenida Paulista", bairro: "Bela Vista", cidade: "São Paulo", uf: "SP", changeType: "inserção", status: "pendente" },
+  { id: "2", cep: "04538-132", logradouro: "Rua Funchal", bairro: "Vila Olímpia", cidade: "São Paulo", uf: "SP", changeType: "inserção", status: "pendente" },
+  { id: "3", cep: "22041-080", logradouro: "Rua Barata Ribeiro", bairro: "Copacabana", cidade: "Rio de Janeiro", uf: "RJ", changeType: "inserção", status: "pendente" },
+  { id: "4", cep: "30130-000", logradouro: "Praça Sete de Setembro", bairro: "Centro", cidade: "Belo Horizonte", uf: "MG", changeType: "exclusão", status: "pendente" },
+  { id: "5", cep: "80010-000", logradouro: "Rua XV de Novembro", bairro: "Centro", cidade: "Curitiba", uf: "PR", changeType: "exclusão", status: "pendente" },
 ];
 
-const getStatusIcon = (status: StepStatus) => {
+const getStatusIcon = (status: CepStatus) => {
   switch (status) {
-    case "executado com sucesso":
+    case "validado":
       return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-    case "executado com erro":
+    case "erro":
       return <XCircle className="h-4 w-4 text-destructive" />;
-    case "executando":
+    case "validando":
       return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
     default:
       return <Circle className="h-4 w-4 text-muted-foreground" />;
   }
 };
 
-const getStatusBadgeVariant = (status: StepStatus) => {
+const getStatusBadgeVariant = (status: CepStatus) => {
   switch (status) {
-    case "executado com sucesso":
+    case "validado":
       return "default";
-    case "executado com erro":
+    case "erro":
       return "destructive";
-    case "executando":
+    case "validando":
       return "secondary";
     default:
       return "outline";
@@ -144,7 +147,8 @@ const getLogColor = (type: ValidationLog["type"]) => {
 };
 
 export default function ChangeExecutionCep() {
-  const [cepItems, setCepItems] = useState<CepItem[]>(mockCepItems);
+  const [cepChanges, setCepChanges] = useState<CepChange[]>(mockCepChanges);
+  const [selectedCep, setSelectedCep] = useState<string | null>(null);
   const [insertionLogs, setInsertionLogs] = useState<ValidationLog[]>([]);
   const [exclusionLogs, setExclusionLogs] = useState<ValidationLog[]>([]);
   const [isInsertionRunning, setIsInsertionRunning] = useState(false);
@@ -153,47 +157,21 @@ export default function ChangeExecutionCep() {
   const exclusionTerminalRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Auto-scroll insertion terminal
+  const insertionCeps = cepChanges.filter(c => c.changeType === "inserção");
+  const exclusionCeps = cepChanges.filter(c => c.changeType === "exclusão");
+
+  // Auto-scroll terminals
   useEffect(() => {
     if (insertionTerminalRef.current) {
       insertionTerminalRef.current.scrollTop = insertionTerminalRef.current.scrollHeight;
     }
   }, [insertionLogs]);
 
-  // Auto-scroll exclusion terminal
   useEffect(() => {
     if (exclusionTerminalRef.current) {
       exclusionTerminalRef.current.scrollTop = exclusionTerminalRef.current.scrollHeight;
     }
   }, [exclusionLogs]);
-
-  const handleExecuteCep = (cepId: string) => {
-    setCepItems(prev => prev.map(item => {
-      if (item.id === cepId) {
-        toast({
-          title: "Executando inserção",
-          description: `Inserindo CEP ${item.cep}...`,
-        });
-        
-        setTimeout(() => {
-          setCepItems(current => current.map(i => {
-            if (i.id === cepId) {
-              return { ...i, status: "executado com sucesso" as StepStatus };
-            }
-            return i;
-          }));
-          
-          toast({
-            title: "CEP inserido",
-            description: `${item.cep} executado com sucesso!`,
-          });
-        }, 2000);
-        
-        return { ...item, status: "executando" as StepStatus };
-      }
-      return item;
-    }));
-  };
 
   const streamLogs = (
     logs: ValidationLog[], 
@@ -210,7 +188,6 @@ export default function ChangeExecutionCep() {
         setLogs(prev => [...prev, { ...log, timestamp }]);
         index++;
         
-        // Variable delay for realistic feel
         const delay = log.message.startsWith("[STEP") ? 300 : 
                       log.message.startsWith("  →") ? 200 :
                       log.message.startsWith("  ✓") ? 150 :
@@ -228,15 +205,17 @@ export default function ChangeExecutionCep() {
     setIsInsertionRunning(true);
     toast({
       title: "Iniciando pipeline",
-      description: "Executando inserção de CEPs...",
+      description: "Executando validação de inserção...",
     });
 
     streamLogs(insertionPipelineLogs, setInsertionLogs, () => {
       setIsInsertionRunning(false);
-      setCepItems(prev => prev.map(item => ({ ...item, status: "executado com sucesso" as StepStatus })));
+      setCepChanges(prev => prev.map(c => 
+        c.changeType === "inserção" ? { ...c, status: "validado" as CepStatus } : c
+      ));
       toast({
         title: "Pipeline concluído",
-        description: "Inserção de CEPs finalizada com sucesso.",
+        description: "Validação de inserção finalizada.",
       });
     });
   };
@@ -245,14 +224,17 @@ export default function ChangeExecutionCep() {
     setIsExclusionRunning(true);
     toast({
       title: "Iniciando pipeline",
-      description: "Executando exclusão de CEPs...",
+      description: "Executando validação de exclusão...",
     });
 
     streamLogs(exclusionPipelineLogs, setExclusionLogs, () => {
       setIsExclusionRunning(false);
+      setCepChanges(prev => prev.map(c => 
+        c.changeType === "exclusão" ? { ...c, status: "validado" as CepStatus } : c
+      ));
       toast({
         title: "Pipeline concluído",
-        description: "Exclusão de CEPs finalizada com sucesso.",
+        description: "Validação de exclusão finalizada.",
       });
     });
   };
@@ -268,202 +250,306 @@ export default function ChangeExecutionCep() {
     URL.revokeObjectURL(url);
   };
 
-  const completedCount = cepItems.filter(item => item.status === "executado com sucesso").length;
+  const validatedCount = cepChanges.filter(c => c.status === "validado").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Execução de Change - CEP</h2>
-          <p className="text-muted-foreground">CHG0174920 - Inserção de novos CEPs na base</p>
-        </div>
-        <Badge variant="secondary" className="text-sm">
-          {completedCount}/{cepItems.length} CEPs processados
-        </Badge>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Lista de CEPs para inserção */}
-        <Card>
-          <CardHeader>
+    <div className="flex gap-6 h-[calc(100vh-8rem)]">
+      {/* Sidebar - Lista de CEPs alterados */}
+      <Card className="w-80 flex-shrink-0 flex flex-col">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              <CardTitle>CEPs para Inserção</CardTitle>
+              <CardTitle className="text-base">CEPs Alterados</CardTitle>
             </div>
-            <CardDescription>
-              Lista de CEPs aguardando processamento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px] overflow-y-auto pr-2 space-y-3">
-              {cepItems.map((item) => (
+            <Badge variant="secondary" className="text-xs">
+              {validatedCount}/{cepChanges.length}
+            </Badge>
+          </div>
+          <CardDescription className="text-xs">
+            CHG0174920 - Alterações de CEP
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full overflow-y-auto px-4 pb-4">
+            <div className="space-y-1">
+              {cepChanges.map((cep) => (
                 <div
-                  key={item.id}
-                  className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  key={cep.id}
+                  onClick={() => setSelectedCep(cep.id)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedCep === cep.id 
+                      ? "bg-accent border-primary" 
+                      : "bg-card hover:bg-accent/50"
+                  }`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      {getStatusIcon(item.status)}
-                      <span className="font-mono font-semibold">{item.cep}</span>
-                      <Badge variant={getStatusBadgeVariant(item.status)} className="text-xs">
-                        {item.status}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>{item.logradouro}</p>
-                      <p>{item.bairro} - {item.cidade}/{item.uf}</p>
-                    </div>
+                  <div className={`p-1.5 rounded-full ${
+                    cep.changeType === "inserção" 
+                      ? "bg-green-500/10 text-green-500" 
+                      : "bg-red-500/10 text-red-500"
+                  }`}>
+                    {cep.changeType === "inserção" ? (
+                      <Plus className="h-3 w-3" />
+                    ) : (
+                      <Minus className="h-3 w-3" />
+                    )}
                   </div>
-                  {item.status === "não executado" && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleExecuteCep(item.id)}
-                      title="Executar inserção"
-                    >
-                      <Play className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium">{cep.cep}</span>
+                      {getStatusIcon(cep.status)}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {cep.bairro} - {cep.cidade}/{cep.uf}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Terminal de Validação de Inserção */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Terminal className="h-5 w-5" />
-                <CardTitle>Pipeline de Inserção</CardTitle>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadLogs(insertionLogs, "insertion-logs.txt")}
-                  disabled={insertionLogs.length === 0}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleStartInsertion}
-                  disabled={isInsertionRunning}
-                >
-                  {isInsertionRunning ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileCheck className="h-4 w-4 mr-2" />
-                  )}
-                  Executar
-                </Button>
-              </div>
-            </div>
-            <CardDescription>
-              Log em tempo real da execução do pipeline
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
-              <div 
-                ref={insertionTerminalRef}
-                className="h-[340px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
-              >
-                <div className="space-y-0.5">
-                  {insertionLogs.length === 0 && !isInsertionRunning && (
-                    <div className="text-zinc-500 flex items-center gap-2">
-                      <span className="text-green-400">$</span>
-                      <span className="animate-pulse">_</span>
-                      <span className="text-zinc-600 text-xs">Clique em "Executar" para iniciar</span>
-                    </div>
-                  )}
-                  {insertionLogs.map((log, index) => (
-                    <div key={index} className="flex gap-2 leading-relaxed">
-                      <span className="text-zinc-600 text-xs min-w-[60px]">{log.timestamp}</span>
-                      <span className={getLogColor(log.type)}>{log.message}</span>
+      {/* Área principal - Validação */}
+      <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Execução de Change - CEP</h2>
+            <p className="text-muted-foreground text-sm">Validação de inserções e exclusões</p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="insertion" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="w-fit">
+            <TabsTrigger value="insertion" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Inserção ({insertionCeps.length})
+            </TabsTrigger>
+            <TabsTrigger value="exclusion" className="gap-2">
+              <Minus className="h-4 w-4" />
+              Exclusão ({exclusionCeps.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="insertion" className="flex-1 mt-4 overflow-hidden">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full">
+              {/* Lista de CEPs para inserção */}
+              <Card className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">CEPs para Validar</CardTitle>
+                    <Badge variant="outline" className="text-xs">
+                      {insertionCeps.filter(c => c.status === "validado").length}/{insertionCeps.length} validados
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto space-y-2">
+                  {insertionCeps.map((cep) => (
+                    <div
+                      key={cep.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(cep.status)}
+                        <div>
+                          <span className="font-mono font-medium">{cep.cep}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {cep.logradouro}, {cep.bairro}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getStatusBadgeVariant(cep.status)} className="text-xs">
+                          {cep.status}
+                        </Badge>
+                        {cep.status === "validado" && (
+                          <Check className="h-4 w-4 text-green-500" />
+                        )}
+                        {cep.status === "erro" && (
+                          <X className="h-4 w-4 text-destructive" />
+                        )}
+                      </div>
                     </div>
                   ))}
-                  {isInsertionRunning && (
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <span className="animate-pulse">▌</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
 
-        {/* Terminal de Validação de Exclusão */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Trash2 className="h-5 w-5" />
-                <CardTitle>Pipeline de Exclusão</CardTitle>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadLogs(exclusionLogs, "exclusion-logs.txt")}
-                  disabled={exclusionLogs.length === 0}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={handleStartExclusion}
-                  disabled={isExclusionRunning}
-                >
-                  {isExclusionRunning ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4 mr-2" />
-                  )}
-                  Executar
-                </Button>
-              </div>
-            </div>
-            <CardDescription>
-              Log em tempo real da execução do pipeline de exclusão
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
-              <div 
-                ref={exclusionTerminalRef}
-                className="h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
-              >
-                <div className="space-y-0.5">
-                  {exclusionLogs.length === 0 && !isExclusionRunning && (
-                    <div className="text-zinc-500 flex items-center gap-2">
-                      <span className="text-green-400">$</span>
-                      <span className="animate-pulse">_</span>
-                      <span className="text-zinc-600 text-xs">Clique em "Executar" para iniciar</span>
+              {/* Terminal de inserção */}
+              <Card className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4" />
+                      <CardTitle className="text-base">Pipeline de Inserção</CardTitle>
                     </div>
-                  )}
-                  {exclusionLogs.map((log, index) => (
-                    <div key={index} className="flex gap-2 leading-relaxed">
-                      <span className="text-zinc-600 text-xs min-w-[60px]">{log.timestamp}</span>
-                      <span className={getLogColor(log.type)}>{log.message}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadLogs(insertionLogs, "insertion-logs.txt")}
+                        disabled={insertionLogs.length === 0}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Exportar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleStartInsertion}
+                        disabled={isInsertionRunning}
+                      >
+                        {isInsertionRunning ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <FileCheck className="h-3 w-3 mr-1" />
+                        )}
+                        Executar
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-hidden">
+                  <div className="bg-zinc-950 rounded-lg p-3 font-mono text-xs h-full">
+                    <div 
+                      ref={insertionTerminalRef}
+                      className="h-full overflow-y-auto"
+                    >
+                      <div className="space-y-0.5">
+                        {insertionLogs.length === 0 && !isInsertionRunning && (
+                          <div className="text-zinc-500 flex items-center gap-2">
+                            <span className="text-green-400">$</span>
+                            <span className="animate-pulse">_</span>
+                            <span className="text-zinc-600">Clique em "Executar" para iniciar</span>
+                          </div>
+                        )}
+                        {insertionLogs.map((log, index) => (
+                          <div key={index} className="flex gap-2 leading-relaxed">
+                            <span className="text-zinc-600 min-w-[50px]">{log.timestamp}</span>
+                            <span className={getLogColor(log.type)}>{log.message}</span>
+                          </div>
+                        ))}
+                        {isInsertionRunning && (
+                          <div className="flex items-center gap-2 text-zinc-400">
+                            <span className="animate-pulse">▌</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="exclusion" className="flex-1 mt-4 overflow-hidden">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full">
+              {/* Lista de CEPs para exclusão */}
+              <Card className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">CEPs para Excluir</CardTitle>
+                    <Badge variant="outline" className="text-xs">
+                      {exclusionCeps.filter(c => c.status === "validado").length}/{exclusionCeps.length} validados
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto space-y-2">
+                  {exclusionCeps.map((cep) => (
+                    <div
+                      key={cep.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(cep.status)}
+                        <div>
+                          <span className="font-mono font-medium">{cep.cep}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {cep.logradouro}, {cep.bairro}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getStatusBadgeVariant(cep.status)} className="text-xs">
+                          {cep.status}
+                        </Badge>
+                        {cep.status === "validado" && (
+                          <Check className="h-4 w-4 text-green-500" />
+                        )}
+                        {cep.status === "erro" && (
+                          <X className="h-4 w-4 text-destructive" />
+                        )}
+                      </div>
                     </div>
                   ))}
-                  {isExclusionRunning && (
-                    <div className="flex items-center gap-2 text-zinc-400">
-                      <span className="animate-pulse">▌</span>
+                </CardContent>
+              </Card>
+
+              {/* Terminal de exclusão */}
+              <Card className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4" />
+                      <CardTitle className="text-base">Pipeline de Exclusão</CardTitle>
                     </div>
-                  )}
-                </div>
-              </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadLogs(exclusionLogs, "exclusion-logs.txt")}
+                        disabled={exclusionLogs.length === 0}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Exportar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleStartExclusion}
+                        disabled={isExclusionRunning}
+                      >
+                        {isExclusionRunning ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Play className="h-3 w-3 mr-1" />
+                        )}
+                        Executar
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-hidden">
+                  <div className="bg-zinc-950 rounded-lg p-3 font-mono text-xs h-full">
+                    <div 
+                      ref={exclusionTerminalRef}
+                      className="h-full overflow-y-auto"
+                    >
+                      <div className="space-y-0.5">
+                        {exclusionLogs.length === 0 && !isExclusionRunning && (
+                          <div className="text-zinc-500 flex items-center gap-2">
+                            <span className="text-green-400">$</span>
+                            <span className="animate-pulse">_</span>
+                            <span className="text-zinc-600">Clique em "Executar" para iniciar</span>
+                          </div>
+                        )}
+                        {exclusionLogs.map((log, index) => (
+                          <div key={index} className="flex gap-2 leading-relaxed">
+                            <span className="text-zinc-600 min-w-[50px]">{log.timestamp}</span>
+                            <span className={getLogColor(log.type)}>{log.message}</span>
+                          </div>
+                        ))}
+                        {isExclusionRunning && (
+                          <div className="flex items-center gap-2 text-zinc-400">
+                            <span className="animate-pulse">▌</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
