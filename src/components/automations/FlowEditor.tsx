@@ -64,6 +64,7 @@ import CustomBlockNode from '@/components/automations/CustomBlockNode';
 import { OutputReferenceSelect } from '@/components/automations/OutputReferenceSelect';
 import { OutputConfigPanel } from '@/components/automations/OutputConfigPanel';
 import { EdgeMappingDialog } from '@/components/automations/EdgeMappingDialog';
+import { InputValueField } from '@/components/automations/InputValueField';
 import { MachineDialog } from '@/components/automations/MachineDialog';
 import { MachinesSheet } from '@/components/automations/MachinesSheet';
 import { ScheduleDialog } from '@/components/automations/ScheduleDialog';
@@ -714,31 +715,32 @@ export function FlowEditor({
               </div>
             )}
 
-            {/* Show Input Values info */}
+            {/* Input Values - editable with reference support */}
             {((selectedNode.data.stepInputValue as any[]) || []).length > 0 && (
-              <div className="space-y-2 p-3 rounded-md border bg-blue-500/10">
-                <Label className="text-xs font-medium">Entradas esperadas</Label>
-                <div className="flex flex-wrap gap-1">
-                  {((selectedNode.data.stepInputValue as any[]) || []).map((input: any) => (
-                    <Badge
-                      key={input.paramName}
-                      variant={input.mandatory ? 'default' : 'outline'}
-                      className="text-xs font-mono"
-                    >
-                      {input.paramName}
-                      {input.mandatory && <span className="ml-1">*</span>}
-                    </Badge>
-                  ))}
-                </div>
+              <div className="space-y-3 p-3 rounded-md border bg-muted/20">
+                <Label className="text-xs font-medium">Entradas (Inputs)</Label>
+                {((selectedNode.data.stepInputValue as any[]) || []).map((input: any) => (
+                  <InputValueField
+                    key={input.paramName}
+                    paramName={input.paramName}
+                    paramType={input.paramType}
+                    mandatory={input.mandatory}
+                    value={(selectedNode.data.config as any)?.[`input_${input.paramName}`] || ''}
+                    onChange={(value) => updateNodeConfig(`input_${input.paramName}`, value)}
+                    currentNodeId={selectedNode.id}
+                    nodes={nodes}
+                    edges={edges}
+                  />
+                ))}
                 <p className="text-[10px] text-muted-foreground">
-                  Configure via mapeamento de conexão
+                  Digite um valor ou use o botão para referenciar saídas de outros blocos
                 </p>
               </div>
             )}
 
             {/* Show Output Values info */}
             {((selectedNode.data.stepOutputValue as any[]) || []).length > 0 && (
-              <div className="space-y-2 p-3 rounded-md border bg-green-500/10">
+              <div className="space-y-2 p-3 rounded-md border bg-muted/30">
                 <Label className="text-xs font-medium">Saídas disponíveis</Label>
                 <div className="flex flex-wrap gap-1">
                   {((selectedNode.data.stepOutputValue as any[]) || []).map((output: any) => (
