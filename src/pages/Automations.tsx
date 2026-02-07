@@ -2,58 +2,62 @@ import { useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
-import { Automation, Machine, CustomBlock } from '@/types/automations';
+import { Workflow, Machine, TaskDefinition } from '@/types/automations';
 import { toast } from 'sonner';
 
-// Mock data for demonstration
-const MOCK_AUTOMATIONS: Automation[] = [
+// Mock data
+const MOCK_WORKFLOWS: Workflow[] = [
   {
-    id: 'auto-1',
+    id: 'wf-1',
     name: 'Alerta de Alarme Crítico',
     description: 'Envia notificação no Slack quando um alarme crítico é disparado',
     status: 'active',
     schedule: { type: 'interval', value: '5', timezone: 'America/Sao_Paulo' },
     nodes: [],
     edges: [],
+    inputs: {},
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-20T14:45:00Z',
     lastRunAt: '2024-01-28T08:30:00Z',
     runCount: 47,
   },
   {
-    id: 'auto-2',
+    id: 'wf-2',
     name: 'Limpeza de Fila RabbitMQ',
     description: 'Executa script de limpeza quando a fila atinge 90%',
     status: 'active',
     schedule: { type: 'cron', value: '0 */2 * * *', timezone: 'America/Sao_Paulo' },
     nodes: [],
     edges: [],
+    inputs: {},
     createdAt: '2024-01-10T09:00:00Z',
     updatedAt: '2024-01-25T16:20:00Z',
     lastRunAt: '2024-01-28T06:00:00Z',
     runCount: 156,
   },
   {
-    id: 'auto-3',
+    id: 'wf-3',
     name: 'Relatório Diário de Incidentes',
     description: 'Gera e envia relatório de incidentes por email',
     status: 'inactive',
     schedule: { type: 'cron', value: '0 9 * * 1-5', timezone: 'America/Sao_Paulo' },
     nodes: [],
     edges: [],
+    inputs: {},
     createdAt: '2024-01-05T11:00:00Z',
     updatedAt: '2024-01-18T10:15:00Z',
     lastRunAt: '2024-01-26T09:00:00Z',
     runCount: 23,
   },
   {
-    id: 'auto-4',
+    id: 'wf-4',
     name: 'Backup de Configurações',
     description: 'Backup automático das configurações do sistema',
     status: 'draft',
     schedule: null,
     nodes: [],
     edges: [],
+    inputs: {},
     createdAt: '2024-01-27T15:00:00Z',
     updatedAt: '2024-01-27T15:00:00Z',
     lastRunAt: null,
@@ -62,105 +66,102 @@ const MOCK_AUTOMATIONS: Automation[] = [
 ];
 
 export default function Automations() {
-  const [automations, setAutomations] = useState<Automation[]>(MOCK_AUTOMATIONS);
+  const [workflows, setWorkflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
-  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
+  const [customDefinitions, setCustomDefinitions] = useState<TaskDefinition[]>([]);
+  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   const handleCreate = () => {
-    setEditingAutomation(null);
+    setEditingWorkflow(null);
     setIsEditorOpen(true);
   };
 
-  const handleEdit = (automation: Automation) => {
-    setEditingAutomation(automation);
+  const handleEdit = (workflow: Workflow) => {
+    setEditingWorkflow(workflow);
     setIsEditorOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    setAutomations((prev) => prev.filter((a) => a.id !== id));
-    toast.success('Automação excluída');
+    setWorkflows((prev) => prev.filter((w) => w.id !== id));
+    toast.success('Workflow excluído');
   };
 
-  const handleDuplicate = (automation: Automation) => {
-    const newAutomation: Automation = {
-      ...automation,
-      id: `auto-${Date.now()}`,
-      name: `${automation.name} (Cópia)`,
+  const handleDuplicate = (workflow: Workflow) => {
+    const newWf: Workflow = {
+      ...workflow,
+      id: `wf-${Date.now()}`,
+      name: `${workflow.name} (Cópia)`,
       status: 'draft',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       lastRunAt: null,
       runCount: 0,
     };
-    setAutomations((prev) => [...prev, newAutomation]);
-    toast.success('Automação duplicada');
+    setWorkflows((prev) => [...prev, newWf]);
+    toast.success('Workflow duplicado');
   };
 
   const handleToggleStatus = (id: string) => {
-    setAutomations((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? { ...a, status: a.status === 'active' ? 'inactive' : 'active' }
-          : a
+    setWorkflows((prev) =>
+      prev.map((w) =>
+        w.id === id
+          ? { ...w, status: w.status === 'active' ? 'inactive' : 'active' }
+          : w
       )
     );
     toast.success('Status atualizado');
   };
 
   const handleRun = (id: string) => {
-    toast.info('Executando automação...');
+    toast.info('Executando workflow...');
     setTimeout(() => {
-      setAutomations((prev) =>
-        prev.map((a) =>
-          a.id === id
-            ? { ...a, lastRunAt: new Date().toISOString(), runCount: a.runCount + 1 }
-            : a
+      setWorkflows((prev) =>
+        prev.map((w) =>
+          w.id === id
+            ? { ...w, lastRunAt: new Date().toISOString(), runCount: w.runCount + 1 }
+            : w
         )
       );
-      toast.success('Automação executada com sucesso');
+      toast.success('Workflow executado com sucesso');
     }, 2000);
   };
 
-  const handleSave = (automationData: Partial<Automation>) => {
-    if (automationData.id) {
-      // Update existing
-      setAutomations((prev) =>
-        prev.map((a) =>
-          a.id === automationData.id
-            ? { ...a, ...automationData, updatedAt: new Date().toISOString() }
-            : a
+  const handleSave = (data: Partial<Workflow>) => {
+    if (data.id) {
+      setWorkflows((prev) =>
+        prev.map((w) =>
+          w.id === data.id
+            ? { ...w, ...data, updatedAt: new Date().toISOString() }
+            : w
         )
       );
-      toast.success('Automação atualizada');
+      toast.success('Workflow atualizado');
     } else {
-      // Create new
-      const newAutomation: Automation = {
-        id: `auto-${Date.now()}`,
-        name: automationData.name || 'Nova Automação',
-        description: automationData.description || '',
+      const newWf: Workflow = {
+        id: `wf-${Date.now()}`,
+        name: data.name || 'Novo Workflow',
+        description: data.description || '',
         status: 'draft',
-        schedule: automationData.schedule || null,
-        nodes: automationData.nodes || [],
-        edges: automationData.edges || [],
+        schedule: data.schedule || null,
+        nodes: data.nodes || [],
+        edges: data.edges || [],
+        inputs: data.inputs || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastRunAt: null,
         runCount: 0,
       };
-      setAutomations((prev) => [...prev, newAutomation]);
-      setEditingAutomation(newAutomation);
-      toast.success('Automação criada');
+      setWorkflows((prev) => [...prev, newWf]);
+      setEditingWorkflow(newWf);
+      toast.success('Workflow criado');
     }
   };
 
   const handleSaveMachine = (machine: Machine) => {
     setMachines((prev) => {
       const exists = prev.find((m) => m.id === machine.id);
-      if (exists) {
-        return prev.map((m) => (m.id === machine.id ? machine : m));
-      }
+      if (exists) return prev.map((m) => (m.id === machine.id ? machine : m));
       return [...prev, machine];
     });
     toast.success('Máquina salva');
@@ -171,20 +172,18 @@ export default function Automations() {
     toast.success('Máquina removida');
   };
 
-  const handleSaveCustomBlock = (block: CustomBlock) => {
-    setCustomBlocks((prev) => {
-      const exists = prev.find((b) => b.id === block.id);
-      if (exists) {
-        return prev.map((b) => (b.id === block.id ? block : b));
-      }
-      return [...prev, block];
+  const handleSaveDefinition = (def: TaskDefinition) => {
+    setCustomDefinitions((prev) => {
+      const exists = prev.find((d) => d.id === def.id);
+      if (exists) return prev.map((d) => (d.id === def.id ? def : d));
+      return [...prev, def];
     });
-    toast.success('Bloco customizado salvo');
+    toast.success('Task Definition salva');
   };
 
-  const handleDeleteCustomBlock = (id: string) => {
-    setCustomBlocks((prev) => prev.filter((b) => b.id !== id));
-    toast.success('Bloco removido');
+  const handleDeleteDefinition = (id: string) => {
+    setCustomDefinitions((prev) => prev.filter((d) => d.id !== id));
+    toast.success('Task Definition removida');
   };
 
   if (isEditorOpen) {
@@ -192,24 +191,24 @@ export default function Automations() {
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            {editingAutomation ? 'Editar Automação' : 'Nova Automação'}
+            {editingWorkflow ? 'Editar Workflow' : 'Novo Workflow'}
           </h2>
           <p className="text-muted-foreground">
-            Arraste e conecte blocos para criar o fluxo de automação
+            Arraste Task Definitions para criar instâncias no workflow
           </p>
         </div>
 
         <ReactFlowProvider>
           <FlowEditor
-            automation={editingAutomation}
+            workflow={editingWorkflow}
             machines={machines}
-            customBlocks={customBlocks}
+            customDefinitions={customDefinitions}
             onBack={() => setIsEditorOpen(false)}
             onSave={handleSave}
             onSaveMachine={handleSaveMachine}
             onDeleteMachine={handleDeleteMachine}
-            onSaveCustomBlock={handleSaveCustomBlock}
-            onDeleteCustomBlock={handleDeleteCustomBlock}
+            onSaveDefinition={handleSaveDefinition}
+            onDeleteDefinition={handleDeleteDefinition}
           />
         </ReactFlowProvider>
       </div>
@@ -221,12 +220,12 @@ export default function Automations() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Automações</h2>
         <p className="text-muted-foreground">
-          Gerencie suas automações e fluxos de trabalho
+          Gerencie seus workflows e automações
         </p>
       </div>
 
       <AutomationsTable
-        automations={automations}
+        automations={workflows}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}

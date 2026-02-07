@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Variable, ChevronDown } from 'lucide-react';
-import { StepOutputValue } from '@/types/automations';
+import { TaskDefinition } from '@/types/automations';
+import { BUILTIN_TASK_DEFINITIONS } from './taskDefinitions';
 
 interface InputValueFieldProps {
   paramName: string;
@@ -22,66 +23,6 @@ interface InputValueFieldProps {
   nodes: Node[];
   edges: Edge[];
 }
-
-// Default outputs for each block type
-const BLOCK_OUTPUTS: Record<string, { key: string; label: string; type: string }[]> = {
-  alarm: [
-    { key: 'alarmId', label: 'ID do Alarme', type: 'string' },
-    { key: 'alarmType', label: 'Tipo', type: 'string' },
-    { key: 'service', label: 'Serviço', type: 'string' },
-    { key: 'message', label: 'Mensagem', type: 'string' },
-    { key: 'timestamp', label: 'Timestamp', type: 'string' },
-  ],
-  incident: [
-    { key: 'incidentId', label: 'ID do Incidente', type: 'string' },
-    { key: 'priority', label: 'Prioridade', type: 'string' },
-    { key: 'team', label: 'Equipe', type: 'string' },
-    { key: 'title', label: 'Título', type: 'string' },
-    { key: 'description', label: 'Descrição', type: 'string' },
-  ],
-  rabbit_full: [
-    { key: 'queueName', label: 'Nome da Fila', type: 'string' },
-    { key: 'messageCount', label: 'Qtd Mensagens', type: 'integer' },
-    { key: 'usagePercent', label: 'Uso (%)', type: 'integer' },
-    { key: 'threshold', label: 'Threshold', type: 'integer' },
-  ],
-  webhook: [
-    { key: 'statusCode', label: 'Status Code', type: 'integer' },
-    { key: 'responseBody', label: 'Response Body', type: 'object' },
-    { key: 'responseHeaders', label: 'Headers', type: 'object' },
-  ],
-  email: [
-    { key: 'sent', label: 'Enviado', type: 'boolean' },
-    { key: 'messageId', label: 'Message ID', type: 'string' },
-  ],
-  slack: [
-    { key: 'sent', label: 'Enviado', type: 'boolean' },
-    { key: 'messageTs', label: 'Message TS', type: 'string' },
-  ],
-  script: [
-    { key: 'result', label: 'Resultado', type: 'object' },
-    { key: 'success', label: 'Sucesso', type: 'boolean' },
-    { key: 'error', label: 'Erro', type: 'string' },
-  ],
-  delay: [
-    { key: 'completed', label: 'Completado', type: 'boolean' },
-    { key: 'duration', label: 'Duração', type: 'integer' },
-  ],
-  if: [
-    { key: 'result', label: 'Resultado', type: 'boolean' },
-    { key: 'branch', label: 'Branch', type: 'string' },
-  ],
-  filter: [
-    { key: 'passed', label: 'Passou', type: 'boolean' },
-    { key: 'data', label: 'Dados', type: 'object' },
-  ],
-  customBlock: [
-    { key: 'stdout', label: 'Stdout', type: 'string' },
-    { key: 'stderr', label: 'Stderr', type: 'string' },
-    { key: 'exitCode', label: 'Exit Code', type: 'integer' },
-    { key: 'result', label: 'Resultado', type: 'object' },
-  ],
-};
 
 function getUpstreamNodes(
   currentNodeId: string,
@@ -100,7 +41,6 @@ function getUpstreamNodes(
   }
 
   findUpstream(currentNodeId);
-
   return nodes.filter((node) => upstreamIds.has(node.id));
 }
 
@@ -120,7 +60,6 @@ export function InputValueField({
   const upstreamNodes = getUpstreamNodes(currentNodeId, nodes, edges);
 
   const handleInsertReference = (reference: string) => {
-    // Insert at cursor position or append
     if (inputRef.current) {
       const start = inputRef.current.selectionStart || value.length;
       const end = inputRef.current.selectionEnd || value.length;
@@ -132,19 +71,16 @@ export function InputValueField({
     setOpen(false);
   };
 
-  // Check if value contains a reference
   const hasReference = value.includes('{{') && value.includes('}}');
 
-  // Get all available outputs from upstream nodes
-  const getNodeOutputs = (node: Node) => {
-    const nodeData = node.data as { type: string; stepOutputValue?: StepOutputValue[] };
-    const customOutputs = nodeData.stepOutputValue || [];
-    const defaultOutputs = BLOCK_OUTPUTS[nodeData.type] || [];
-    
-    return [
-      ...customOutputs.map((o) => ({ key: o.paramName, label: o.paramName, type: o.paramType })),
-      ...defaultOutputs,
-    ];
+  // Get outputs from upstream node's definition schema
+  const getNodeOutputs = (node: Node): { key: string; type: string }[] => {
+    const defId = node.data.definitionId as string;
+    if (!defId) return [];
+    // Search in builtin + any custom stored on node
+    const def = BUILTIN_TASK_DEFINITIONS.find((d) => d.id === defId);
+    if (!def) return [];
+    return Object.entries(def.schema.outputs).map(([key, type]) => ({ key, type }));
   };
 
   return (
@@ -180,7 +116,7 @@ export function InputValueField({
               size="sm"
               className="h-8 px-2"
               disabled={upstreamNodes.length === 0}
-              title={upstreamNodes.length === 0 ? 'Conecte blocos anteriores para usar suas saídas' : 'Inserir referência de saída'}
+              title={upstreamNodes.length === 0 ? 'Conecte blocos anteriores' : 'Inserir referência'}
             >
               <Variable className="h-3.5 w-3.5" />
               <ChevronDown className="h-3 w-3 ml-1" />
@@ -188,7 +124,7 @@ export function InputValueField({
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0" align="end">
             <div className="p-2 border-b bg-muted/30">
-              <p className="text-xs font-medium">Saídas disponíveis</p>
+              <p className="text-xs font-medium">Outputs disponíveis</p>
               <p className="text-[10px] text-muted-foreground">
                 Clique para inserir no campo
               </p>
@@ -196,15 +132,12 @@ export function InputValueField({
             <ScrollArea className="max-h-[250px]">
               <div className="p-2 space-y-3">
                 {upstreamNodes.map((node) => {
-                  const nodeData = node.data as { label: string; type: string };
                   const outputs = getNodeOutputs(node);
-
                   if (outputs.length === 0) return null;
-
                   return (
                     <div key={node.id} className="space-y-1.5">
                       <Badge variant="secondary" className="text-[10px]">
-                        {nodeData.label}
+                        {node.data.label as string}
                       </Badge>
                       <div className="space-y-0.5 ml-1">
                         {outputs.map((output) => {
@@ -215,9 +148,7 @@ export function InputValueField({
                               className="flex items-center gap-2 p-1.5 rounded hover:bg-muted cursor-pointer text-xs"
                               onClick={() => handleInsertReference(reference)}
                             >
-                              <code className="font-mono text-primary">
-                                {output.key}
-                              </code>
+                              <code className="font-mono text-primary">{output.key}</code>
                               <Badge variant="outline" className="text-[9px] ml-auto">
                                 {output.type}
                               </Badge>

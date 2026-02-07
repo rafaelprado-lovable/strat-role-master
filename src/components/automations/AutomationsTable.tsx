@@ -37,15 +37,15 @@ import {
   Search,
   Plus,
 } from 'lucide-react';
-import { Automation } from '@/types/automations';
+import { Workflow } from '@/types/automations';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface AutomationsTableProps {
-  automations: Automation[];
-  onEdit: (automation: Automation) => void;
+  automations: Workflow[];
+  onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
-  onDuplicate: (automation: Automation) => void;
+  onDuplicate: (workflow: Workflow) => void;
   onToggleStatus: (id: string) => void;
   onRun: (id: string) => void;
   onCreate: () => void;
@@ -55,12 +55,6 @@ const statusConfig = {
   active: { label: 'Ativo', variant: 'default' as const, className: 'bg-green-500' },
   inactive: { label: 'Inativo', variant: 'secondary' as const, className: '' },
   draft: { label: 'Rascunho', variant: 'outline' as const, className: '' },
-};
-
-const scheduleLabels: Record<string, string> = {
-  once: 'Uma vez',
-  interval: 'Intervalo',
-  cron: 'Cron',
 };
 
 export function AutomationsTable({
@@ -75,21 +69,21 @@ export function AutomationsTable({
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filteredAutomations = automations.filter((a) =>
+  const filtered = automations.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatSchedule = (schedule: Automation['schedule']) => {
+  const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Sem agendamento';
-    
     switch (schedule.type) {
       case 'once':
         return `Uma vez em ${format(new Date(schedule.value), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
-      case 'interval':
+      case 'interval': {
         const minutes = parseInt(schedule.value);
         if (minutes < 60) return `A cada ${minutes} minutos`;
         if (minutes < 1440) return `A cada ${Math.floor(minutes / 60)} horas`;
         return `A cada ${Math.floor(minutes / 1440)} dias`;
+      }
       case 'cron':
         return `Cron: ${schedule.value}`;
       default:
@@ -103,7 +97,7 @@ export function AutomationsTable({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar automações..."
+            placeholder="Buscar workflows..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -111,7 +105,7 @@ export function AutomationsTable({
         </div>
         <Button onClick={onCreate}>
           <Plus className="h-4 w-4 mr-2" />
-          Nova Automação
+          Novo Workflow
         </Button>
       </div>
 
@@ -128,23 +122,23 @@ export function AutomationsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAutomations.length === 0 ? (
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {search ? 'Nenhuma automação encontrada' : 'Nenhuma automação criada'}
+                  {search ? 'Nenhum workflow encontrado' : 'Nenhum workflow criado'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAutomations.map((automation) => {
-                const status = statusConfig[automation.status];
+              filtered.map((wf) => {
+                const status = statusConfig[wf.status];
                 return (
-                  <TableRow key={automation.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableRow key={wf.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
                       <div>
-                        <p className="font-medium">{automation.name}</p>
-                        {automation.description && (
+                        <p className="font-medium">{wf.name}</p>
+                        {wf.description && (
                           <p className="text-sm text-muted-foreground truncate max-w-[300px]">
-                            {automation.description}
+                            {wf.description}
                           </p>
                         )}
                       </div>
@@ -157,17 +151,17 @@ export function AutomationsTable({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{formatSchedule(automation.schedule)}</span>
+                        <span className="text-sm">{formatSchedule(wf.schedule)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {automation.lastRunAt ? (
-                        format(new Date(automation.lastRunAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                      {wf.lastRunAt ? (
+                        format(new Date(wf.lastRunAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })
                       ) : (
-                        <span className="text-muted-foreground">Nunca executada</span>
+                        <span className="text-muted-foreground">Nunca executado</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">{automation.runCount}</TableCell>
+                    <TableCell className="text-right">{wf.runCount}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -176,37 +170,27 @@ export function AutomationsTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit(automation)}>
-                            <Edit2 className="h-4 w-4 mr-2" />
-                            Editar
+                          <DropdownMenuItem onClick={() => onEdit(wf)}>
+                            <Edit2 className="h-4 w-4 mr-2" /> Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onRun(automation.id)}>
-                            <Play className="h-4 w-4 mr-2" />
-                            Executar agora
+                          <DropdownMenuItem onClick={() => onRun(wf.id)}>
+                            <Play className="h-4 w-4 mr-2" /> Executar agora
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onToggleStatus(automation.id)}>
-                            {automation.status === 'active' ? (
-                              <>
-                                <Pause className="h-4 w-4 mr-2" />
-                                Desativar
-                              </>
+                          <DropdownMenuItem onClick={() => onToggleStatus(wf.id)}>
+                            {wf.status === 'active' ? (
+                              <><Pause className="h-4 w-4 mr-2" /> Desativar</>
                             ) : (
-                              <>
-                                <Play className="h-4 w-4 mr-2" />
-                                Ativar
-                              </>
+                              <><Play className="h-4 w-4 mr-2" /> Ativar</>
                             )}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onDuplicate(automation)}>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicar
+                          <DropdownMenuItem onClick={() => onDuplicate(wf)}>
+                            <Copy className="h-4 w-4 mr-2" /> Duplicar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={() => setDeleteId(automation.id)}
+                            onClick={() => setDeleteId(wf.id)}
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
+                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -222,9 +206,9 @@ export function AutomationsTable({
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir automação?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir workflow?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A automação será permanentemente removida.
+              Esta ação não pode ser desfeita. O workflow será permanentemente removido.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

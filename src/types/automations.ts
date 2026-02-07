@@ -1,11 +1,54 @@
-export interface Automation {
+// ==========================================
+// Task Definition → Task Instance → Workflow
+// ==========================================
+
+/** Schema defining inputs and outputs for a task definition */
+export interface TaskSchema {
+  inputs: Record<string, ParamType>;   // paramName → paramType
+  outputs: Record<string, ParamType>;  // paramName → paramType
+}
+
+/** Blueprint/template for a task type */
+export interface TaskDefinition {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  schema: TaskSchema;
+  // UI metadata
+  icon?: string;
+  color?: string;
+  category?: string;
+  // For remote execution (custom blocks)
+  machineId?: string;
+  scriptPath?: string;
+}
+
+/** A node on the workflow canvas — an instance of a TaskDefinition */
+export interface WorkflowNode {
+  id: string;
+  definition_id: string;
+  config: Record<string, unknown>;     // filled input values or {{nodeId.output}} references
+  position: { x: number; y: number };
+}
+
+/** An edge connecting two nodes, optionally with a condition */
+export interface WorkflowEdge {
+  from: string;
+  to: string;
+  condition?: string;  // e.g. "task1.status == 200"
+}
+
+/** A complete workflow (formerly "Automation") */
+export interface Workflow {
   id: string;
   name: string;
   description: string;
   status: 'active' | 'inactive' | 'draft';
   schedule: AutomationSchedule | null;
-  nodes: any[];
-  edges: any[];
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  inputs: Record<string, unknown>;     // workflow-level inputs
   createdAt: string;
   updatedAt: string;
   lastRunAt: string | null;
@@ -26,69 +69,13 @@ export interface Machine {
   description: string;
 }
 
-// Step parameter structure for config params (static configuration when block is created)
-export interface StepConfigParam {
-  paramName: string;
-  paramType: 'string' | 'integer' | 'boolean' | 'array' | 'object';
-  paramExample: string;
-  paramValue: string;
-}
-
-// Step parameter structure for input values (dynamic, can come from previous steps)
-export interface StepInputValue {
-  paramName: string;
-  paramType: 'string' | 'integer' | 'boolean' | 'array' | 'object';
-  mandatory: boolean;
-}
-
-// Step parameter structure for output values (produced by the block)
-export interface StepOutputValue {
-  paramName: string;
-  paramType: 'string' | 'integer' | 'boolean' | 'array' | 'object';
-}
-
-// Step function definition
-export interface StepFunction {
-  scriptName: string;
-  scriptParams: {
-    configParams: string; // reference to stepConfigParams
-    inputParams: string; // reference to stepInputValue
-  };
-}
-
-// Complete step definition following the provided schema
-export interface StepDefinition {
-  stepName: string;
-  stepType: string;
-  stepDescription: string;
-  stepConfigParams: StepConfigParam[];
-  stepInputValue: StepInputValue[];
-  stepOutputValue: StepOutputValue[];
-  stepFunction: StepFunction;
-}
-
-// Custom block now follows the step structure
-export interface CustomBlock {
-  id: string;
-  name: string;
-  description: string;
-  machineId: string;
-  scriptPath: string;
-  icon: 'terminal' | 'server';
-  color: string;
-  // New step-based structure
-  stepConfigParams: StepConfigParam[];
-  stepInputValue: StepInputValue[];
-  stepOutputValue: StepOutputValue[];
-}
-
 // Parameter types available
 export const PARAM_TYPES = [
   { value: 'string', label: 'String' },
-  { value: 'integer', label: 'Integer' },
+  { value: 'number', label: 'Number' },
   { value: 'boolean', label: 'Boolean' },
-  { value: 'array', label: 'Array' },
   { value: 'object', label: 'Object' },
+  { value: 'array', label: 'Array' },
 ] as const;
 
 export type ParamType = typeof PARAM_TYPES[number]['value'];
