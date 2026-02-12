@@ -168,7 +168,8 @@ export function FlowEditor({
   const [edges, setEdges] = useState<Edge[]>(
     workflow ? toRFEdges(workflow.edges) : []
   );
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
   const [workflowName, setWorkflowName] = useState(workflow?.name || 'Novo Workflow');
   const [workflowDescription] = useState(workflow?.description || '');
   const [schedule, setSchedule] = useState<AutomationSchedule | null>(
@@ -246,7 +247,7 @@ export function FlowEditor({
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNode(node);
+    setSelectedNodeId(node.id);
     setIsConfigOpen(true);
   }, []);
 
@@ -319,7 +320,7 @@ export function FlowEditor({
       eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id)
     );
     setIsConfigOpen(false);
-    setSelectedNode(null);
+    setSelectedNodeId(null);
     toast.success('Bloco removido');
   }, [selectedNode]);
 
