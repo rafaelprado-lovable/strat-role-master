@@ -544,8 +544,12 @@ export function FlowEditor({
         sourceLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.from) : ''}
         targetLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.to) : ''}
         sourceDefinition={sourceDefForEdge}
-        onSave={handleSaveEdgeCondition}
-      />
+      onSave={handleSaveEdgeCondition}
+      onDelete={(edgeId) => {
+        setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+        toast.success('Conexão removida');
+      }}
+    />
 
       {/* Task Definition Dialog */}
       <TaskDefinitionDialog

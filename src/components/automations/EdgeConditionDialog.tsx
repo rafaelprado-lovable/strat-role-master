@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { ArrowRight, Link2 } from 'lucide-react';
+import { ArrowRight, Link2, Trash2 } from 'lucide-react';
 import { TaskDefinition, WorkflowEdge } from '@/types/automations';
 
 interface EdgeConditionDialogProps {
@@ -23,6 +23,7 @@ interface EdgeConditionDialogProps {
   targetLabel: string;
   sourceDefinition?: TaskDefinition;
   onSave: (edgeId: string, condition: string | undefined) => void;
+  onDelete: (edgeId: string) => void;
 }
 
 export function EdgeConditionDialog({
@@ -33,6 +34,7 @@ export function EdgeConditionDialog({
   targetLabel,
   sourceDefinition,
   onSave,
+  onDelete,
 }: EdgeConditionDialogProps) {
   const [hasCondition, setHasCondition] = useState(false);
   const [condition, setCondition] = useState('');
@@ -133,11 +135,23 @@ export function EdgeConditionDialog({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+        <DialogFooter className="flex justify-between sm:justify-between">
+          <Button
+            variant="destructive"
+            onClick={() => {
+              onDelete(edge.id);
+              onOpenChange(false);
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Remover
           </Button>
-          <Button onClick={handleSave}>Salvar</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>Salvar</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
