@@ -124,16 +124,21 @@ function toRFNodes(
 
 /** Convert WorkflowEdge[] → ReactFlow Edge[] */
 function toRFEdges(workflowEdges: WorkflowEdge[]): Edge[] {
-  return workflowEdges.map((we, i) => ({
-    id: `e-${we.from}-${we.to}-${i}`,
-    source: we.from,
-    target: we.to,
-    animated: true,
-    style: { stroke: we.condition ? '#ef4444' : '#6366f1' },
-    label: we.condition || undefined,
-    labelStyle: { fontSize: 10, fill: '#ef4444' },
-    data: { condition: we.condition },
-  }));
+  return workflowEdges.map((we, i) => {
+    const isTrue = we.condition?.includes('== true');
+    const isFalse = we.condition?.includes('== false');
+    const strokeColor = isTrue ? '#22c55e' : we.condition ? '#ef4444' : '#6366f1';
+    return {
+      id: `e-${we.from}-${we.to}-${i}`,
+      source: we.from,
+      target: we.to,
+      animated: true,
+      style: { stroke: strokeColor },
+      label: we.condition || undefined,
+      labelStyle: we.condition ? { fontSize: 10, fill: strokeColor } : undefined,
+      data: { condition: we.condition },
+    };
+  });
 }
 
 export function FlowEditor({
@@ -191,6 +196,20 @@ export function FlowEditor({
 
   const onConnect: OnConnect = useCallback(
     (params) => {
+      // Determine edge color based on source handle (condition nodes have true/false handles)
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const isConditionSource = sourceNode?.data?.type === 'condition';
+      let strokeColor = '#6366f1'; // default blue
+      let autoCondition: string | undefined;
+
+      if (isConditionSource && params.sourceHandle === 'true') {
+        strokeColor = '#22c55e'; // green
+        autoCondition = `${params.source}.result == true`;
+      } else if (isConditionSource && params.sourceHandle === 'false') {
+        strokeColor = '#ef4444'; // red
+        autoCondition = `${params.source}.result == false`;
+      }
+
       const newEdge: Edge = {
         id: `e-${params.source}-${params.target}-${Date.now()}`,
         source: params.source!,
@@ -198,22 +217,26 @@ export function FlowEditor({
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
         animated: true,
-        style: { stroke: '#6366f1' },
-        data: { condition: undefined },
+        style: { stroke: strokeColor },
+        label: autoCondition || undefined,
+        labelStyle: autoCondition ? { fontSize: 10, fill: strokeColor } : undefined,
+        data: { condition: autoCondition },
       };
       setEdges((eds) => addEdge(newEdge, eds));
 
-      // Open edge condition dialog
-      setTimeout(() => {
-        setSelectedEdgeData({
-          id: newEdge.id,
-          from: params.source!,
-          to: params.target!,
-        });
-        setIsEdgeDialogOpen(true);
-      }, 100);
+      // Only open edge condition dialog for non-condition source handles
+      if (!isConditionSource) {
+        setTimeout(() => {
+          setSelectedEdgeData({
+            id: newEdge.id,
+            from: params.source!,
+            to: params.target!,
+          });
+          setIsEdgeDialogOpen(true);
+        }, 100);
+      }
     },
-    []
+    [nodes]
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -234,21 +257,27 @@ export function FlowEditor({
   const handleSaveEdgeCondition = useCallback(
     (edgeId: string, condition: string | undefined) => {
       setEdges((eds) =>
-        eds.map((e) =>
-          e.id === edgeId
-            ? {
-                ...e,
-                data: { ...e.data, condition },
-                style: { stroke: condition ? '#ef4444' : '#6366f1' },
-                label: condition || undefined,
-                labelStyle: { fontSize: 10, fill: '#ef4444' },
-              }
-            : e
-        )
+        eds.map((e) => {
+          if (e.id !== edgeId) return e;
+          // Preserve green/red for condition node handles
+          const sourceNode = nodes.find((n) => n.id === e.source);
+          const isConditionSource = sourceNode?.data?.type === 'condition';
+          let strokeColor = condition ? '#ef4444' : '#6366f1';
+          if (isConditionSource) {
+            strokeColor = e.sourceHandle === 'true' ? '#22c55e' : '#ef4444';
+          }
+          return {
+            ...e,
+            data: { ...e.data, condition },
+            style: { stroke: strokeColor },
+            label: condition || undefined,
+            labelStyle: { fontSize: 10, fill: strokeColor },
+          };
+        })
       );
       toast.success('Edge atualizada');
     },
-    []
+    [nodes]
   );
 
   const updateNodeLabel = useCallback(
