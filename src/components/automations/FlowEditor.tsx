@@ -123,22 +123,29 @@ function toRFNodes(
 }
 
 /** Convert WorkflowEdge[] → ReactFlow Edge[] */
+/** Build consistent edge style */
+function edgeStyle(condition?: string, sourceHandle?: string) {
+  const isTrue = condition?.includes('== true');
+  const hasCondition = !!condition;
+  const strokeColor = isTrue ? '#22c55e' : hasCondition ? '#ef4444' : '#6366f1';
+  return {
+    style: { stroke: strokeColor, strokeDasharray: hasCondition ? '6 3' : undefined },
+    label: condition || undefined,
+    labelStyle: hasCondition ? { fontSize: 10, fill: strokeColor } : undefined,
+    labelBgStyle: hasCondition ? { fill: 'hsl(var(--background))', fillOpacity: 0.9 } : undefined,
+    labelBgPadding: hasCondition ? [4, 6] as [number, number] : undefined,
+  };
+}
+
 function toRFEdges(workflowEdges: WorkflowEdge[]): Edge[] {
-  return workflowEdges.map((we, i) => {
-    const isTrue = we.condition?.includes('== true');
-    const isFalse = we.condition?.includes('== false');
-    const strokeColor = isTrue ? '#22c55e' : we.condition ? '#ef4444' : '#6366f1';
-    return {
-      id: `e-${we.from}-${we.to}-${i}`,
-      source: we.from,
-      target: we.to,
-      animated: true,
-      style: { stroke: strokeColor },
-      label: we.condition || undefined,
-      labelStyle: we.condition ? { fontSize: 10, fill: strokeColor } : undefined,
-      data: { condition: we.condition },
-    };
-  });
+  return workflowEdges.map((we, i) => ({
+    id: `e-${we.from}-${we.to}-${i}`,
+    source: we.from,
+    target: we.to,
+    animated: true,
+    ...edgeStyle(we.condition),
+    data: { condition: we.condition },
+  }));
 }
 
 export function FlowEditor({
@@ -210,6 +217,7 @@ export function FlowEditor({
         autoCondition = `${params.source}.result == false`;
       }
 
+      const es = edgeStyle(autoCondition);
       const newEdge: Edge = {
         id: `e-${params.source}-${params.target}-${Date.now()}`,
         source: params.source!,
@@ -217,9 +225,7 @@ export function FlowEditor({
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
         animated: true,
-        style: { stroke: strokeColor },
-        label: autoCondition || undefined,
-        labelStyle: autoCondition ? { fontSize: 10, fill: strokeColor } : undefined,
+        ...es,
         data: { condition: autoCondition },
       };
       setEdges((eds) => addEdge(newEdge, eds));
@@ -259,19 +265,11 @@ export function FlowEditor({
       setEdges((eds) =>
         eds.map((e) => {
           if (e.id !== edgeId) return e;
-          // Preserve green/red for condition node handles
-          const sourceNode = nodes.find((n) => n.id === e.source);
-          const isConditionSource = sourceNode?.data?.type === 'condition';
-          let strokeColor = condition ? '#ef4444' : '#6366f1';
-          if (isConditionSource) {
-            strokeColor = e.sourceHandle === 'true' ? '#22c55e' : '#ef4444';
-          }
+          const es = edgeStyle(condition, e.sourceHandle ?? undefined);
           return {
             ...e,
             data: { ...e.data, condition },
-            style: { stroke: strokeColor },
-            label: condition || undefined,
-            labelStyle: { fontSize: 10, fill: strokeColor },
+            ...es,
           };
         })
       );
