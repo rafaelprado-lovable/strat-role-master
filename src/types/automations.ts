@@ -53,6 +53,7 @@ export interface Workflow {
   updatedAt: string;
   lastRunAt: string | null;
   runCount: number;
+  start_date?: string;
 }
 
 export interface AutomationSchedule {
