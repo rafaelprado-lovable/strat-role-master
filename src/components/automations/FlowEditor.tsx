@@ -417,6 +417,9 @@ export function FlowEditor({
       condition: (e.data?.condition as string) || undefined,
     }));
 
+    const now = new Date();
+    const start_date = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
     onSave({
       id: workflow?.id,
       name: workflowName,
@@ -426,6 +429,7 @@ export function FlowEditor({
       inputs: workflowInputs,
       schedule,
       status: workflow?.status || 'draft',
+      start_date,
     });
   };
 
