@@ -371,12 +371,45 @@ export function FlowEditor({
 
   // Save workflow
   const handleSave = () => {
-    const workflowNodes: WorkflowNode[] = nodes.map((n) => ({
-      id: n.id,
-      definition_id: (n.data.definitionId as string) || '',
-      config: (n.data.config as Record<string, unknown>) || {},
-      position: n.position,
-    }));
+    const workflowInputs: Record<string, Record<string, unknown>> = {};
+
+    const workflowNodes: WorkflowNode[] = nodes.map((n) => {
+      const defId = (n.data.definitionId as string) || '';
+      const allConfig = (n.data.config as Record<string, unknown>) || {};
+      const def = findDefinition(defId, BUILTIN_TASK_DEFINITIONS, customDefinitions);
+
+      if (def) {
+        const inputKeys = Object.keys(def.schema.inputs);
+        const nodeInputs: Record<string, unknown> = {};
+        const nodeConfig: Record<string, unknown> = {};
+
+        Object.entries(allConfig).forEach(([key, value]) => {
+          if (inputKeys.includes(key)) {
+            nodeInputs[key] = value;
+          } else {
+            nodeConfig[key] = value;
+          }
+        });
+
+        if (Object.keys(nodeInputs).length > 0) {
+          workflowInputs[n.id] = nodeInputs;
+        }
+
+        return {
+          id: n.id,
+          definition_id: defId,
+          config: nodeConfig,
+          position: n.position,
+        };
+      }
+
+      return {
+        id: n.id,
+        definition_id: defId,
+        config: allConfig,
+        position: n.position,
+      };
+    });
 
     const workflowEdges: WorkflowEdge[] = edges.map((e) => ({
       from: e.source,
@@ -390,6 +423,7 @@ export function FlowEditor({
       description: workflowDescription,
       nodes: workflowNodes,
       edges: workflowEdges,
+      inputs: workflowInputs,
       schedule,
       status: workflow?.status || 'draft',
     });
