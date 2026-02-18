@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,38 +29,58 @@ import { Search, CheckCircle, XCircle, Download, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface Task {
-  id: string;
-  numeroTarefa: string;
-  descricaoTarefa: string;
-  tipoTarefa: string;
-  statusTarefa: string;
-}
-
-interface ValidationLog {
-  timestamp: string;
-  message: string;
-  type: "info" | "success" | "error";
+  sys_id: string;
+  number: string;
+  description: string;
+  type: string;
+  state: string;
+  departament?: string;
 }
 
 interface ChangeInExecutionDetails {
-  id: string;
-  numero: string;
-  tipo: string;
-  descricaoChange: string;
-  inicioValidacao: string;
-  fimValidacao: string;
-  diaSemana: string;
-  equipesAplicacao: string;
-  equipesValidacao: string;
+  changeSystemData: {
+      number: string,
+      description: string,
+      teams_involved_in_execution: string[],
+      teams_involved_in_validation: string[],
+      start_date: string,
+      end_date: string,
+      week_day: string,
+      state: string
+  };
+  postChangeData: {
+      applicationStatus: string
+  },
+  changeTestData: {
+    fqa: string,
+    uat: string,
+    system_test: string,
+    no_test: string,
+  },
+  changeAproovalData: {
+    tecnology: string,
+    restart_type: boolean,
+    new_service: boolean,
+    old_service: boolean,
+    increase_volume: boolean,
+    validation_time: string,
+    validation_process: string,
+    hdc_validation: boolean,
+    validator_contact: string[],
+  }
+  changeHistory: {
+    comments_work_notes: string[],
+    comments: string[],
+    timelineAprooval: string[],
+    rejectionAprooval: string[]
+  },
+  changeServicesList: Array<{
+    service_name: string,
+    cf_production_version: string,
+    implementation_version: string,
+    pipeline_link: string
+  }>,
   tarefas: Task[];
-  validacaoInsercao?: {
-    logs: ValidationLog[];
-    status: "pending" | "running" | "success" | "error";
-  };
-  validacaoExclusao?: {
-    logs: ValidationLog[];
-    status: "pending" | "running" | "success" | "error";
-  };
 }
 
 interface ChangeInExecutionDetailsDialogProps {
@@ -74,65 +94,98 @@ export function ChangeInExecutionDetailsDialog({
   onOpenChange,
   change,
 }: ChangeInExecutionDetailsDialogProps) {
-  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isExclusaoRunning, setIsExclusaoRunning] = useState(false);
   const itemsPerPage = 10;
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Mock logs para demonstração - serão substituídos por dados reais
-  const mockInsercaoLogs: ValidationLog[] = change.validacaoInsercao?.logs || [
-    { timestamp: "30/01/2026 00:03:25", message: "Inclusão iniciada", type: "info" },
-    { timestamp: "30/01/2026 00:03:25", message: "Inclusão finalizada", type: "info" },
-    { timestamp: "30/01/2026 00:03:25", message: "Sucesso na validação da change!", type: "success" },
-  ];
+  async function getTasks() {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
 
-  const filteredTasks = change.tarefas.filter((task) =>
-    task.numeroTarefa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.descricaoTarefa.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
 
-  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+    const raw = JSON.stringify({
+      userId,
+      changeNumber: change.changeSystemData.number,
+    });
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/ctasks", {
+        method: "PATCH",
+        headers: myHeaders,
+        body: raw,
+      });
+
+      const data = await response.json();
+      console.log("TASKS RESPONSE:", data);
+
+      // AJUSTE CONFORME SUA API
+      setTasks(data.success ?? data);
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    getTasks();
+  }, []);
+
+  useEffect(() => {
+    console.log("Tasks atualizadas:", tasks);
+  }, [tasks]);
+
+
+  function isDepartmentAllowed(taskDepartment?: string) {
+    if (!taskDepartment) return false;
+
+    const departments = localStorage.getItem("departaments");
+
+    return departments.some(dep =>
+      taskDepartment.toLowerCase().includes(dep.trim().toLowerCase())
+    );
+  }
+
+
+
+  const filteredTasks = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return tasks.filter(task => {
+      console.log(task?.departament)
+      console.log(localStorage.getItem("departaments").includes(task?.departament))
+      const matchesSearch =
+        task.number?.toLowerCase().includes(term) ||
+        task.description?.toLowerCase().includes(term);
+
+      return matchesSearch && localStorage.getItem("departaments").includes(task?.departament);
+    });
+  }, [tasks, searchTerm]);
+
+
+  const totalPages = Math.ceil(filteredTasks?.length / itemsPerPage || 0);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentTasks = filteredTasks.slice(startIndex, endIndex);
+  const currentTasks = filteredTasks?.slice(startIndex, endIndex);
 
-  const handleFecharSucesso = (numeroTarefa: string) => {
-    toast.success(`Tarefa ${numeroTarefa} fechada como sucesso`);
+  const handleFecharSucesso = (number: string) => {
+    toast.success(`Tarefa ${number} fechada como sucesso`);
   };
 
-  const handleFecharRollback = (numeroTarefa: string) => {
-    toast.error(`Tarefa ${numeroTarefa} fechada como rollback`);
+  const handleFecharRollback = (number: string) => {
+    toast.error(`Tarefa ${number} fechada como rollback`);
   };
 
-  const handleDownloadLogs = () => {
-    const logContent = mockInsercaoLogs
-      .map((log) => `[${log.timestamp}] ${log.message}`)
-      .join("\n");
-    const blob = new Blob([logContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `logs-${change.numero}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Arquivo de logs baixado com sucesso");
-  };
 
-  const handleIniciarValidacaoExclusao = () => {
-    setIsExclusaoRunning(true);
-    toast.info("Validação de exclusão iniciada...");
-    // Simula execução
-    setTimeout(() => {
-      setIsExclusaoRunning(false);
-      toast.success("Validação de exclusão finalizada");
-    }, 3000);
-  };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status.toLowerCase()) {
+  const getStatusVariant = (state: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (state) {
       case "encerrado":
         return "destructive";
-      case "pendente":
+      case "3":
         return "secondary";
       case "implementação":
         return "default";
@@ -143,23 +196,33 @@ export function ChangeInExecutionDetailsDialog({
     }
   };
 
-  const getLogColor = (type: ValidationLog["type"]) => {
-    switch (type) {
-      case "success":
-        return "text-green-400";
-      case "error":
-        return "text-red-400";
+  const getStatusLabel = (state: string) => {
+    switch (state) {
+      case "3":
+        return "Encerrada";
+      case "-5":
+        return "Pendente";
       default:
-        return "text-blue-400";
+        return "Em execução";
     }
   };
+
+  const isTaskClosed = (state: string) => String(state) === "3";
+
+  const isImplementationTask = (type: string) =>
+    type?.toLowerCase() === "implementation";
+
+  const canCloseTask = (task: any) => {
+    return !isTaskClosed(task.state) && isImplementationTask(task.type);
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
-            {change.numero} - {change.tipo}
+            {change.changeSystemData.number} - {change.changeSystemData.description}
           </DialogTitle>
         </DialogHeader>
 
@@ -172,100 +235,55 @@ export function ChangeInExecutionDetailsDialog({
                   <label className="text-sm font-medium text-muted-foreground">
                     Número da change
                   </label>
-                  <p className="mt-1 text-base">{change.numero}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.number}</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Descrição da change
                   </label>
-                  <p className="mt-1 text-base">{change.descricaoChange}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.description}</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
-                    Início da validação
+                    Início da implementação
                   </label>
-                  <p className="mt-1 text-base">{change.inicioValidacao}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.start_date}</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
-                    Fim da validação
+                    Fim da implementação
                   </label>
-                  <p className="mt-1 text-base">{change.fimValidacao}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.end_date}</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
                     Dia da semana
                   </label>
-                  <p className="mt-1 text-base">{change.diaSemana}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.week_day}</p>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-muted-foreground">
                     Equipes envolvidas na aplicação
                   </label>
-                  <p className="mt-1 text-base">{change.equipesAplicacao}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.teams_involved_in_execution}</p>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-muted-foreground">
                     Equipes envolvidas na validação
                   </label>
-                  <p className="mt-1 text-base">{change.equipesValidacao}</p>
+                  <p className="mt-1 text-base">{change.changeSystemData.teams_involved_in_validation}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Validação da change (Inserção) */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Validação da change (Inserção)</h3>
-            <Card className="bg-zinc-950 border-zinc-800">
-              <CardContent className="p-0">
-                <ScrollArea className="h-48">
-                  <div className="p-4 font-mono text-sm">
-                    {mockInsercaoLogs.map((log, index) => (
-                      <div key={index} className={getLogColor(log.type)}>
-                        {log.type === "success" && "✅ "}
-                        {log.type === "info" && `Inclusão ${log.message.includes("iniciada") ? "iniciada" : "finalizada"}: `}
-                        {log.type === "info" ? log.timestamp : log.message}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-            <Button 
-              onClick={handleDownloadLogs}
-              className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Baixar arquivo de logs
-            </Button>
-          </div>
-
-          {/* Validação da change (Exclusão) */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Validação da change (Exclusão)</h3>
-            <Button 
-              onClick={handleIniciarValidacaoExclusao}
-              disabled={isExclusaoRunning}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              {isExclusaoRunning ? (
-                <>Executando validação...</>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Iniciar validação
-                </>
-              )}
-            </Button>
-          </div>
-
+        
           {/* Tarefas da change */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -282,7 +300,7 @@ export function ChangeInExecutionDetailsDialog({
             </div>
 
             <p className="text-sm text-muted-foreground mb-4">
-              Mostrando {filteredTasks.length} registros
+              Mostrando {filteredTasks?.length} registros
             </p>
 
             <Card>
@@ -299,57 +317,64 @@ export function ChangeInExecutionDetailsDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentTasks.length === 0 ? (
+                    {currentTasks?.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           Nenhuma tarefa encontrada
                         </TableCell>
                       </TableRow>
                     ) : (
-                      currentTasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell className="font-medium">{task.numeroTarefa}</TableCell>
-                          <TableCell>{task.descricaoTarefa}</TableCell>
+                      currentTasks?.map((task) => (
+                        <TableRow key={task.sys_id}>
+                          <TableCell className="font-medium">{task.number}</TableCell>
+                          <TableCell>{task.description}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{task.tipoTarefa}</Badge>
+                            <Badge variant="outline">{task.type}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusVariant(task.statusTarefa)}>
-                              {task.statusTarefa}
+                            <Badge variant={getStatusVariant(task.state)}>
+                              {getStatusLabel(task.state)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleFecharSucesso(task.numeroTarefa)}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Tarefa encerrada
-                            </Button>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleFecharRollback(task.numeroTarefa)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Tarefa encerrada
-                            </Button>
-                          </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canCloseTask(task)}
+                                onClick={() => handleFecharSucesso(task.number)}
+                                className={`text-green-600 hover:text-green-700 hover:bg-green-50 ${
+                                  !canCloseTask(task) ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Fechar como sucesso
+                              </Button>
+                            </TableCell>
+
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canCloseTask(task)}
+                                onClick={() => handleFecharRollback(task.number)}
+                                className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${
+                                  !canCloseTask(task) ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Fechar como rollback
+                              </Button>
+                            </TableCell>
                         </TableRow>
                       ))
                     )}
                   </TableBody>
                 </Table>
 
-                {filteredTasks.length > itemsPerPage && (
+                {filteredTasks?.length > itemsPerPage && (
                   <div className="p-4 flex items-center justify-between border-t">
                     <p className="text-sm text-muted-foreground">
-                      Mostrando de {startIndex + 1} a {Math.min(endIndex, filteredTasks.length)} do total de {filteredTasks.length} registros
+                      Mostrando de {startIndex + 1} a {Math.min(endIndex, filteredTasks?.length)} do total de {filteredTasks?.length} registros
                     </p>
                     <Pagination>
                       <PaginationContent>

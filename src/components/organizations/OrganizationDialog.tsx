@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -22,12 +23,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().min(1, 'Descrição é obrigatória'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,10 +45,22 @@ export function OrganizationDialog({ open, onOpenChange, organization }: Organiz
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: organization?.name || '',
-      description: organization?.description || '',
+      name: '',
     },
   });
+
+  // ✅ Atualiza o formulário quando muda a organização
+  useEffect(() => {
+    if (organization) {
+      form.reset({
+        name: organization.name ?? '',
+      });
+    } else {
+      form.reset({
+        name: '',
+      });
+    }
+  }, [organization, form]);
 
   const createMutation = useMutation({
     mutationFn: organizationApi.create,
@@ -62,11 +73,18 @@ export function OrganizationDialog({ open, onOpenChange, organization }: Organiz
       onOpenChange(false);
       form.reset();
     },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: `Erro ao criar a organização: ${error}`,
+        variant: "destructive",
+      });
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Organization> }) =>
-      organizationApi.update(id, data),
+    mutationFn: ({ data }: { data: Partial<Organization> }) =>
+      organizationApi.update(organization._id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({
@@ -79,7 +97,7 @@ export function OrganizationDialog({ open, onOpenChange, organization }: Organiz
 
   const onSubmit = (data: FormValues) => {
     if (isEditing && organization) {
-      updateMutation.mutate({ id: organization.id, data });
+      updateMutation.mutate({ data });
     } else {
       createMutation.mutate(data as Omit<Organization, 'id' | 'createdAt' | 'updatedAt'>);
     }
@@ -113,22 +131,6 @@ export function OrganizationDialog({ open, onOpenChange, organization }: Organiz
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descreva a organização"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button

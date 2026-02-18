@@ -37,7 +37,7 @@ export function DeleteOrganizationDialog({ open, onOpenChange, organization }: D
 
   const handleDelete = () => {
     if (organization) {
-      deleteMutation.mutate(organization.id);
+      deleteMutation.mutate(organization._id);
     }
   };
 

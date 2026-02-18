@@ -37,7 +37,7 @@ export function DeleteRoleDialog({ open, onOpenChange, role }: DeleteRoleDialogP
 
   const handleDelete = () => {
     if (role) {
-      deleteMutation.mutate(role.id);
+      deleteMutation.mutate(role._id);
     }
   };
 

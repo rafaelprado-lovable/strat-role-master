@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { permissionApi } from '@/services/mockApi';
 import { Permission } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -71,43 +71,87 @@ export default function Permissions() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Recurso</TableHead>
+                  <TableHead>Ações</TableHead>
+                  <TableHead>Escopos</TableHead>
                   <TableHead>Ação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {permissions?.map((permission) => (
-                  <TableRow key={permission.id}>
-                    <TableCell className="font-medium">{permission.name}</TableCell>
-                    <TableCell>{permission.description}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{permission.resource}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{permission.action}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(permission)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(permission)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {permissions?.map((permission) => {
+                  
+                  let actions: string[] = [];
+
+                  try {
+                    const normalized = permission.actions
+                      ?.replace(/'/g, '"') // troca aspas simples por duplas
+                      ?.trim();
+
+                    actions = JSON.parse(normalized || '[]');
+                  } catch {
+                    actions = [];
+                  }
+
+
+                  let scopes: string[] = [];
+
+                  try {
+                    const normalized = permission.scopes
+                      ?.replace(/'/g, '"') // troca aspas simples por duplas
+                      ?.trim();
+
+                    scopes = JSON.parse(normalized || '[]');
+                  } catch {
+                    scopes = [];
+                  }
+
+                  return (
+                    <TableRow key={permission._id}>
+                      <TableCell className="font-medium">{permission.name}</TableCell>
+
+                      <TableCell>
+                        {actions.length > 0 ? (
+                          actions.map((action, index) => (
+                            <Badge key={index} variant="outline" className="mr-1">
+                              {action}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground">Nenhuma ação</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {scopes.length > 0 ? (
+                          scopes.map((action, index) => (
+                            <Badge key={index} variant="outline" className="mr-1">
+                              {action}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground">Nenhuma ação</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(permission)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

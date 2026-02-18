@@ -1,61 +1,125 @@
 // Types for the management system
 
 export interface Organization {
-  id: string;
+  _id: string;
   name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  resource: string;
-  action: string;
-  createdAt: string;
-}
-
-export interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  organizationId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  roleId: string;
-  organizationId: string;
-  departmentIds: string[];
-  phoneNumber: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
+  organization: string;
 }
 
 export interface Department {
-  id: string;
+  _id: string;
   name: string;
-  organizationId: string;
-  createdAt: string;
-  updatedAt: string;
+  organization: string;
+  sysId: string;
+  groupName: string;
+  manager: string;
+  coordinator: string;
 }
 
-export interface Scope {
-  id: string;
+export interface Permission {
+  _id: string;
   name: string;
-  description: string;
-  organizationId: string;
-  createdAt: string;
-  updatedAt: string;
+  actions: string[];
+  scopes: string[];
+}
+
+export interface Role {
+  _id: string;
+  name: string;
+  permissions: string[];
+}
+
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  organization: string;
+  departmentIds: string[];
+  phoneNumber: string;
+}
+
+
+export interface Scope {
+  _id: string;
+  name: string;
+  type: string;
+  url: string;
+  icone: string;
+  menu: string;
+  organization: string;
+  departament: string;
+}
+
+interface HttpCodeGroup {
+  code: string;
+  total_count: number;
+  avg_time: number;
+}
+
+interface ServiceTimelinePoint {
+  timestamp: string;
+  context_info: {
+    application: string;
+    service_name: string;
+    route_path: string;
+  };
+  http_code_group: HttpCodeGroup[];
+  avg_time: number;
+}
+
+interface ServiceTimelineDay {
+  services: ServiceTimelinePoint[];
+}
+
+export interface PostChange {
+  changeSystemData: {
+      number: string,
+      description: string,
+      teams_involved_in_execution: string[],
+      teams_involved_in_validation: string[],
+      start_date: string,
+      end_date: string,
+      week_day: string,
+      state: string
+  };
+  postChangeData: {
+      applicationStatus: string
+  },
+  changeTestData: {
+    fqa: string,
+    uat: string,
+    system_test: string,
+    no_test: string,
+  },
+  changeAproovalData: {
+    tecnology: string,
+    restart_type: boolean,
+    new_service: boolean,
+    old_service: boolean,
+    increase_volume: boolean,
+    validation_time: string,
+    validation_process: string,
+    hdc_validation: boolean,
+    validator_contact: string[],
+  }
+  changeHistory: {
+    comments_work_notes: string[],
+    comments: string[],
+    timelineAprooval: string[],
+    rejectionAprooval: string[]
+  },
+  changeServicesList: Array<{
+    service_name: string,
+    cf_production_version: string,
+    implementation_version: string,
+    pipeline_link: string
+  }>,
+  serviceTimeline?: {
+    today: ServiceTimelinePoint[];
+    lastWeek?: ServiceTimelinePoint[];
+  };
 }
 
 export interface Insight {
@@ -77,7 +141,7 @@ export interface Insight {
       totalTime: number;
     }>;
   };
-  escalation: {
+  scalation: {
     '50_percent': boolean;
     '75_percent': boolean;
     '90_percent': boolean;
@@ -95,28 +159,48 @@ export interface Insight {
       RejectedByIOP?: string;
     };
   };
-  comments?: Array<{
-    created_at: string;
-    created_by: string;
-    value: string;
-  }>;
-  work_notes?: Array<{
-    created_at: string;
-    created_by: string;
-    value: string;
-    assignment_group?: string;
-  }>;
 }
 
 export interface Plantao {
-  id: string;
-  departmentId: string;
-  userId?: string;
-  customName?: string;
-  customPhone?: string;
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'scheduled' | 'completed';
-  createdAt: string;
-  updatedAt: string;
+  _id: string,
+  name: string,
+  departament: string,
+  startDatetime: string,
+  endDatetime: string,
+  phoneNumber: string,
+}
+
+
+export interface CallResolution {
+    "handlingRuleData": {
+        "id": string,
+        "created_by": string,
+        "departament": string,
+        "target_field": string,
+        "match_description": string,
+        "pendentManagerAprooval": boolean,
+        "managerAprooved": boolean
+    },
+    "incidentResolutionData": {
+        "close_code": string,
+        "platform": string,
+        "cause": string,
+        "sub_cause": string,
+        "resolution_notes": string
+    },
+    "managerAprooved": boolean,
+    "pendentManagerAprooval": boolean
+}
+
+
+export interface CallResolutionCreate {
+  created_by: string,
+  departament: string,
+  target_field: string,
+  match_description: string,
+  close_code: string,
+  platform: string,
+  cause: string,
+  sub_cause: string,
+  resolution_notes: string,
 }

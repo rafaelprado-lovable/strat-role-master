@@ -29,24 +29,22 @@ export const BUILTIN_TASK_DEFINITIONS: TaskDefinition[] = [
     },
   },
   {
-    id: 'trigger_incident',
-    name: 'Incidente',
+    id: 'get_specific_incident_v1',
+    name: 'Verificar um incidente',
     type: 'trigger',
-    description: 'Dispara quando um incidente é criado',
+    description: 'Dispara quando identifica um chamado com a descrição, na fila especifica',
     icon: 'bug',
     color: 'bg-red-500',
     category: 'Gatilhos',
     schema: {
       inputs: {
-        priority: 'string',
-        team: 'string',
+        departament: 'string',
+        description: 'string',
+        descriptionType: 'object',
+        state: 'string'
       },
       outputs: {
-        incidentId: 'string',
-        priority: 'string',
-        team: 'string',
-        title: 'string',
-        description: 'string',
+        'response.incidents': 'array',
       },
     },
   },
@@ -74,19 +72,17 @@ export const BUILTIN_TASK_DEFINITIONS: TaskDefinition[] = [
 
   // ── Actions ──
   {
-    id: 'action_webhook',
-    name: 'Webhook',
+    id: 'send_whatsapp_message_v1',
+    name: 'Whatsapp',
     type: 'action',
-    description: 'Faz uma chamada HTTP',
+    description: 'Envia uma mensagem no Whatsapp',
     icon: 'webhook',
     color: 'bg-blue-500',
     category: 'Ações',
     schema: {
       inputs: {
-        url: 'string',
-        method: 'string',
-        headers: 'object',
-        body: 'object',
+        phone: 'string',
+        message: 'string',
       },
       outputs: {
         statusCode: 'number',

@@ -129,6 +129,7 @@ export default function Automations() {
 
   const handleSave = (data: Partial<Workflow>) => {
     if (data.id) {
+      console.log(data)
       setWorkflows((prev) =>
         prev.map((w) =>
           w.id === data.id
@@ -152,6 +153,7 @@ export default function Automations() {
         lastRunAt: null,
         runCount: 0,
       };
+      console.log(newWf)
       setWorkflows((prev) => [...prev, newWf]);
       setEditingWorkflow(newWf);
       toast.success('Workflow criado');

@@ -35,12 +35,14 @@ export default function Settings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const name = localStorage.getItem("userName");
+  const email = localStorage.getItem("userEmail");
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: 'Rafael Prado',
-      email: 'rafael.prado@eng.com',
+      name: name,
+      email: email,
       role: 'Administrador',
       organization: 'Eng Corporation',
     },
@@ -87,7 +89,7 @@ export default function Settings() {
               <Avatar className="h-24 w-24">
                 <AvatarImage src={avatarUrl} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  RP
+                  
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
@@ -122,7 +124,7 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Nome completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Seu nome" {...field} />
+                        <Input placeholder="Seu nome" value={name} disabled/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,7 +138,7 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="seu@email.com" {...field} />
+                        <Input type="email" placeholder="seu@email.com" value={email} disabled/>
                       </FormControl>
                       <FormDescription>
                         Este email será usado para notificações
@@ -146,38 +148,9 @@ export default function Settings() {
                   )}
                 />
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Função</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Sua função" {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="organization"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organização</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Sua organização" {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
                 <div className="flex justify-end pt-4">
-                  <Button type="submit">Salvar alterações</Button>
+                  <Button type="submit" disabled>Salvar alterações</Button>
                 </div>
               </form>
             </Form>

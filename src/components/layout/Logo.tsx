@@ -1,37 +1,10 @@
 export function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <svg
-        className="h-8 w-8 text-white"
-        viewBox="0 0 48 48"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Barco/Vela */}
-        <path
-          d="M24 8L14 28h20L24 8z"
-          fill="currentColor"
-        />
-        <path
-          d="M24 8L34 28H24V8z"
-          fill="currentColor"
-          opacity="0.7"
-        />
-        <path
-          d="M12 28h24l-4 8H16l-4-8z"
-          fill="currentColor"
-          opacity="0.5"
-        />
-        <line
-          x1="24"
-          y1="8"
-          x2="24"
-          y2="36"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-      </svg>
-      <span className="text-xl font-semibold text-white">eng</span>
+      <img
+        className="h-10"
+        src="data:image/png;base64,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"
+      />
     </div>
   );
 }

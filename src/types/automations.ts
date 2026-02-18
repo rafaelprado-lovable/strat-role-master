@@ -8,6 +8,7 @@ export interface TaskSchema {
   outputs: Record<string, ParamType>;  // paramName → paramType
 }
 
+
 /** Blueprint/template for a task type */
 export interface TaskDefinition {
   id: string;
@@ -16,6 +17,7 @@ export interface TaskDefinition {
   description?: string;
   schema: TaskSchema;
   // UI metadata
+  preConfig?: object;
   icon?: string;
   color?: string;
   category?: string;

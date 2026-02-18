@@ -28,7 +28,7 @@ interface HttpCodeGroup {
   avg_time: number;
 }
 
-interface ServiceDataPoint {
+export interface ServiceDataPoint {
   timestamp: string;
   context_info: {
     application: string;
@@ -39,17 +39,12 @@ interface ServiceDataPoint {
   avg_time: number;
 }
 
-interface ServiceDayData {
-  day_key: string;
-  services: ServiceDataPoint[];
-}
-
 export interface ServiceTimelineData {
-  today: ServiceDayData[];
-  lastWeek: ServiceDayData[];
+  today: ServiceDataPoint[];
+  lastWeek?: ServiceDataPoint[];
 }
 
-interface ServiceTimelineChartProps {
+export interface ServiceTimelineChartProps {
   data: ServiceTimelineData;
 }
 
@@ -79,34 +74,42 @@ const formatDate = (dayKey: string) => {
 };
 
 // Calculate totals for a day's data by service
-function calculateServiceTotals(dayData: ServiceDayData[]) {
-  const serviceTotals = new Map<string, { 
-    serviceName: string;
-    application: string;
-    httpCodes: Map<string, { count: number; avgTime: number; points: number }>;
-  }>();
+function calculateServiceTotals(dayData: ServiceDataPoint[]) {
+  const serviceTotals = new Map<
+    string,
+    {
+      serviceName: string;
+      application: string;
+      httpCodes: Map<string, { count: number; avgTime: number; points: number }>;
+    }
+  >();
 
-  dayData.forEach((day) => {
-    day.services.forEach((service) => {
-      const key = service.context_info.service_name;
-      if (!serviceTotals.has(key)) {
-        serviceTotals.set(key, {
-          serviceName: service.context_info.service_name,
-          application: service.context_info.application,
-          httpCodes: new Map(),
+  dayData.forEach((service) => {
+    const key = service.context_info.service_name;
+
+    if (!serviceTotals.has(key)) {
+      serviceTotals.set(key, {
+        serviceName: key,
+        application: service.context_info.application,
+        httpCodes: new Map(),
+      });
+    }
+
+    const serviceData = serviceTotals.get(key)!;
+
+    service.http_code_group.forEach((httpGroup) => {
+      if (!serviceData.httpCodes.has(httpGroup.code)) {
+        serviceData.httpCodes.set(httpGroup.code, {
+          count: 0,
+          avgTime: 0,
+          points: 0,
         });
       }
-      
-      const serviceData = serviceTotals.get(key)!;
-      service.http_code_group.forEach((httpGroup) => {
-        if (!serviceData.httpCodes.has(httpGroup.code)) {
-          serviceData.httpCodes.set(httpGroup.code, { count: 0, avgTime: 0, points: 0 });
-        }
-        const codeData = serviceData.httpCodes.get(httpGroup.code)!;
-        codeData.count += httpGroup.total_count;
-        codeData.avgTime += httpGroup.avg_time;
-        codeData.points += 1;
-      });
+
+      const codeData = serviceData.httpCodes.get(httpGroup.code)!;
+      codeData.count += httpGroup.total_count;
+      codeData.avgTime += httpGroup.avg_time;
+      codeData.points += 1;
     });
   });
 
@@ -172,17 +175,15 @@ interface CriticalAlert {
 }
 
 interface ComparisonSummaryProps {
-  todayData: ServiceDayData[];
-  lastWeekData: ServiceDayData[];
+  todayData: ServiceDataPoint[];
+  lastWeekData?: ServiceDataPoint[];
 }
 
-function ComparisonSummary({ todayData, lastWeekData }: ComparisonSummaryProps) {
+function ComparisonSummary({ todayData, lastWeekData = [] }: ComparisonSummaryProps) {
   const todayTotals = calculateServiceTotals(todayData);
   const lastWeekTotals = calculateServiceTotals(lastWeekData);
 
-  if (todayTotals.size === 0 && lastWeekTotals.size === 0) {
-    return null;
-  }
+  if (todayTotals.size === 0 && lastWeekTotals.size === 0) return null;
 
   // Get all unique services and HTTP codes
   const allServices = new Set([...todayTotals.keys(), ...lastWeekTotals.keys()]);
@@ -345,52 +346,46 @@ function ComparisonSummary({ todayData, lastWeekData }: ComparisonSummaryProps) 
 }
 
 interface TimelineChartSectionProps {
-  dayData: ServiceDayData[];
+  dayData: ServiceDataPoint[];
   title: string;
   icon: React.ReactNode;
 }
 
 function TimelineChartSection({ dayData, title, icon }: TimelineChartSectionProps) {
-  // Group services by service_name across all days
-  const serviceGroups = new Map<string, { 
-    serviceName: string; 
-    application: string; 
-    routePath: string; 
-    dataPoints: Array<{ timestamp: string; http_code_group: HttpCodeGroup[]; avg_time: number }> 
-  }>();
+  const serviceGroups = new Map<
+    string,
+    {
+      serviceName: string;
+      application: string;
+      routePath: string;
+      dataPoints: ServiceDataPoint[];
+    }
+  >();
 
-  dayData.forEach((day) => {
-    day.services.forEach((service) => {
-      const key = service.context_info.service_name;
-      if (!serviceGroups.has(key)) {
-        serviceGroups.set(key, {
-          serviceName: service.context_info.service_name,
-          application: service.context_info.application,
-          routePath: service.context_info.route_path,
-          dataPoints: [],
-        });
-      }
-      serviceGroups.get(key)!.dataPoints.push({
-        timestamp: service.timestamp,
-        http_code_group: service.http_code_group,
-        avg_time: service.avg_time,
+  dayData.forEach((service) => {
+    const key = service.context_info.service_name;
+
+    if (!serviceGroups.has(key)) {
+      serviceGroups.set(key, {
+        serviceName: key,
+        application: service.context_info.application,
+        routePath: service.context_info.route_path,
+        dataPoints: [],
       });
-    });
+    }
+
+    serviceGroups.get(key)!.dataPoints.push(service);
   });
 
-  // Sort data points by timestamp for each service
-  serviceGroups.forEach((group) => {
-    group.dataPoints.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-  });
-
-  const dateLabel = dayData.length > 0 ? formatDate(dayData[0].day_key) : "";
+  serviceGroups.forEach((group) =>
+    group.dataPoints.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {icon}
         <span className="font-medium">{title}</span>
-        {dateLabel && <span>- {dateLabel}</span>}
       </div>
 
       {Array.from(serviceGroups.entries()).map(([serviceName, group]) => {

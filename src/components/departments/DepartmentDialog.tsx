@@ -2,9 +2,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { departmentApi, organizationApi } from '@/services/mockApi';
+import { departmentApi, organizationApi, userApi } from '@/services/mockApi';
 import { Department } from '@/types';
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,8 +33,13 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, 'Nome é obrigatório'),
-  organizationId: z.string().min(1, 'Organização é obrigatória'),
+  organization: z.string().min(1, 'Organização é obrigatória'),
+  groupName: z.string().min(1, 'Grupo é obrigatória'),
+  sysId: z.string().min(1, 'SysId é obrigatório'),
+  manager: z.string().min(1, 'SysId é obrigatório'),
+  coordinator: z.string().min(1, 'SysId é obrigatório'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -54,11 +60,21 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
     queryFn: organizationApi.getAll,
   });
 
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: userApi.getAll,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      id: department?._id || '',
       name: department?.name || '',
-      organizationId: department?.organizationId || '',
+      organization: department?.organization || '',
+      groupName: department?.groupName || '',
+      sysId: department?.sysId || '',
+      manager: department?.manager || '',
+      coordinator: department?.coordinator || '',
     },
   });
 
@@ -90,11 +106,38 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
 
   const onSubmit = (data: FormValues) => {
     if (isEditing && department) {
-      updateMutation.mutate({ id: department.id, data });
+      updateMutation.mutate({ id: department._id, data });
     } else {
       createMutation.mutate(data as Omit<Department, 'id' | 'createdAt' | 'updatedAt'>);
     }
   };
+
+
+  useEffect(() => {
+    if (department) {
+      form.reset({
+        id: department._id ?? '',
+        name: department.name ?? '',
+        organization: department.organization ?? '',
+        groupName: department.groupName ?? '',
+        sysId: department.sysId ?? '',
+        manager: department.manager ?? '',
+        coordinator: department.coordinator ?? '',
+        
+      });
+    } else {
+      form.reset({
+        id: '',
+        name: '',
+        organization: '',
+        groupName: '',
+        sysId: '',
+        coordinator: '',
+        manager: '',
+      });
+    }
+  }, [department, form]);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,11 +169,89 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
 
             <FormField
               control={form.control}
-              name="organizationId"
+              name="sysId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SysId no Service Now</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: eabf34b2db10d1549c4087b304961909" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="groupName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do grupo no Whatsapp</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: ENG Produção  - TIM" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="manager"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gerente</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um Gerente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {users?.map((manager) => (
+                        <SelectItem key={manager._id} value={manager._id}>
+                          {manager.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="coordinator"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Coordenador</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um coordenador" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {users?.map((user) => (
+                        <SelectItem key={user._id} value={user._id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="organization"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Organização</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma organização" />
@@ -138,7 +259,7 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
                     </FormControl>
                     <SelectContent>
                       {organizations?.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
+                        <SelectItem key={org._id} value={org.name}>
                           {org.name}
                         </SelectItem>
                       ))}

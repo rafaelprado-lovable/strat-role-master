@@ -70,19 +70,13 @@ export default function Organizations() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {organizations?.map((org) => (
-                  <TableRow key={org.id}>
+                  <TableRow key={org._id}>
                     <TableCell className="font-medium">{org.name}</TableCell>
-                    <TableCell>{org.description}</TableCell>
-                    <TableCell>
-                      {new Date(org.createdAt).toLocaleDateString('pt-BR')}
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button

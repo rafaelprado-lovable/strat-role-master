@@ -64,28 +64,10 @@ export default function Index() {
             <CardDescription>Navegue para as principais seções</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link to="/organizations">
+            <Link to="/incidents">
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Building2 className="h-4 w-4" />
-                Organizações
-              </Button>
-            </Link>
-            <Link to="/users">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Users className="h-4 w-4" />
-                Usuários
-              </Button>
-            </Link>
-            <Link to="/roles">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <UserCog className="h-4 w-4" />
-                Funções
-              </Button>
-            </Link>
-            <Link to="/permissions">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Shield className="h-4 w-4" />
-                Permissões
+                Incidentes
               </Button>
             </Link>
           </CardContent>

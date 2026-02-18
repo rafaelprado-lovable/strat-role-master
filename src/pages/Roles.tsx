@@ -71,22 +71,19 @@ export default function Roles() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
                   <TableHead>Permissões</TableHead>
-                  <TableHead>Data de Criação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {roles?.map((role) => (
-                  <TableRow key={role.id}>
+                  <TableRow key={role._id}>
                     <TableCell className="font-medium">{role.name}</TableCell>
-                    <TableCell>{role.description}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{role.permissions.length} permissões</Badge>
+                      <Badge variant="secondary">
+                        {role.permission?.length ?? 0} permissões
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(role.createdAt).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

@@ -22,21 +22,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  organizationId: z.string().min(1, 'Organização é obrigatória'),
   permissions: z.array(z.string()).min(1, 'Selecione pelo menos uma permissão'),
 });
 
@@ -53,11 +43,6 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
   const queryClient = useQueryClient();
   const isEditing = !!role;
 
-  const { data: organizations } = useQuery({
-    queryKey: ['organizations'],
-    queryFn: organizationApi.getAll,
-  });
-
   const { data: permissions } = useQuery({
     queryKey: ['permissions'],
     queryFn: permissionApi.getAll,
@@ -67,8 +52,6 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: role?.name || '',
-      description: role?.description || '',
-      organizationId: role?.organizationId || '',
       permissions: role?.permissions || [],
     },
   });
@@ -101,7 +84,7 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
 
   const onSubmit = (data: FormValues) => {
     if (isEditing && role) {
-      updateMutation.mutate({ id: role.id, data });
+      updateMutation.mutate({ id: role._id, data });
     } else {
       createMutation.mutate(data as Omit<Role, 'id' | 'createdAt' | 'updatedAt'>);
     }
@@ -135,47 +118,6 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descreva as responsabilidades desta função"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="organizationId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organização</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma organização" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {organizations?.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
@@ -186,18 +128,18 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
                   <div className="space-y-2 border rounded-md p-4 max-h-[200px] overflow-y-auto">
                     {permissions?.map((permission) => (
                       <FormField
-                        key={permission.id}
+                        key={permission._id}
                         control={form.control}
                         name="permissions"
                         render={({ field }) => (
                           <FormItem className="flex items-start space-x-3 space-y-0">
                             <FormControl>
                               <Checkbox
-                                checked={field.value?.includes(permission.id)}
+                                checked={field.value?.includes(permission._id)}
                                 onCheckedChange={(checked) => {
                                   const updatedValue = checked
-                                    ? [...field.value, permission.id]
-                                    : field.value?.filter((id) => id !== permission.id);
+                                    ? [...field.value, permission._id]
+                                    : field.value?.filter((id) => id !== permission._id);
                                   field.onChange(updatedValue);
                                 }}
                               />
@@ -206,9 +148,6 @@ export function RoleDialog({ open, onOpenChange, role }: RoleDialogProps) {
                               <FormLabel className="font-normal cursor-pointer">
                                 {permission.name}
                               </FormLabel>
-                              <p className="text-sm text-muted-foreground">
-                                {permission.description}
-                              </p>
                             </div>
                           </FormItem>
                         )}

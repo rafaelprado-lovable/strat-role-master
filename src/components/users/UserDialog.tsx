@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi, organizationApi, roleApi, departmentApi } from '@/services/mockApi';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ const formSchema = z.object({
   email: z.string().email('Email inválido'),
   organizationId: z.string().min(1, 'Organização é obrigatória'),
   roleId: z.string().min(1, 'Função é obrigatória'),
+  password: z.string().min(8, 'Minimo de 8 caracteres'),
   departmentIds: z.array(z.string()).min(1, 'Selecione pelo menos um departamento'),
   phoneNumber: z.string().min(1, 'Telefone é obrigatório'),
   status: z.enum(['active', 'inactive']),
@@ -75,13 +77,43 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      organizationId: user?.organizationId || '',
-      roleId: user?.roleId || '',
+      organizationId: user?.organization || '',
+      roleId: user?.role || '',
       departmentIds: user?.departmentIds || [],
-      phoneNumber: user?.phoneNumber || '',
-      status: user?.status || 'active',
+      phoneNumber: user?.phoneNumber || ''
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      // transforma a string separada por vírgula em array de IDs
+      const departmentIds = user.departament
+        ? user.departament.split(',').map((id: string) => id.trim())
+        : [];
+
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        organizationId: user.organization?._id || user.organization || '',
+        roleId: user.role?._id || user.role || '',
+        departmentIds, // 👈 agora o react-hook-form entende os checkboxes
+        phoneNumber: user.phoneNumber || '',
+        password: user.password
+      });
+    } else {
+      form.reset({
+        name: '',
+        email: '',
+        organizationId: '',
+        roleId: '',
+        departmentIds: [],
+        phoneNumber: '',
+        password: '',
+        status: 'active',
+      });
+    }
+  }, [user, form]);
+
 
   const createMutation = useMutation({
     mutationFn: userApi.create,
@@ -111,7 +143,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
 
   const onSubmit = (data: FormValues) => {
     if (isEditing && user) {
-      updateMutation.mutate({ id: user.id, data });
+      updateMutation.mutate({ id: user._id, data });
     } else {
       createMutation.mutate(data as Omit<User, 'id' | 'createdAt' | 'updatedAt'>);
     }
@@ -131,83 +163,115 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: João Silva" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: João Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="joao@exemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="joao@exemplo.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="organizationId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organização</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma organização" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {organizations?.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="roleId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Função</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma função" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {roles?.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="organizationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organização</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma organização" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {organizations?.map((org) => (
+                            <SelectItem key={org._id} value={org.name}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="roleId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Função</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma função" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {roles?.map((role) => (
+                            <SelectItem key={role._id} value={role._id}>
+                              {role.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: 5511981289919" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+            </div>
 
             <FormField
               control={form.control}
@@ -220,24 +284,24 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
                     {departments?.map((dept) => (
                       <FormField
-                        key={dept.id}
+                        key={dept._id}
                         control={form.control}
                         name="departmentIds"
                         render={({ field }) => {
                           return (
                             <FormItem
-                              key={dept.id}
+                              key={dept._id}
                               className="flex flex-row items-start space-x-3 space-y-0"
                             >
                               <FormControl>
                                 <Checkbox
-                                  checked={field.value?.includes(dept.id)}
+                                  checked={field.value?.includes(dept._id)}
                                   onCheckedChange={(checked) => {
                                     return checked
-                                      ? field.onChange([...field.value, dept.id])
+                                      ? field.onChange([...field.value, dept._id])
                                       : field.onChange(
                                           field.value?.filter(
-                                            (value) => value !== dept.id
+                                            (value) => value !== dept._id
                                           )
                                         );
                                   }}
@@ -252,42 +316,6 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                       />
                     ))}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 5511981289919" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

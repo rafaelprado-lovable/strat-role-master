@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from '@tanstack/react-query';
+import { changesApi, departmentApi } from '@/services/mockApi';
 import {
   Table,
   TableBody,
@@ -22,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChangeInExecutionDetailsDialog } from "@/components/changes/ChangeInExecutionDetailsDialog";
 import { useNavigate } from "react-router-dom";
+import ChangeExecutionCep from "./ChangeExecutionCep";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface Task {
   id: string;
@@ -32,19 +36,52 @@ interface Task {
 }
 
 interface ChangeInExecution {
-  id: string;
-  numero: string;
-  descricaoResumida: string;
-  fimExecucao: string;
-  status: string;
-  tipo: string;
-  descricaoChange: string;
-  inicioValidacao: string;
-  fimValidacao: string;
-  diaSemana: string;
-  equipesAplicacao: string;
-  equipesValidacao: string;
-  tarefas: Task[];
+  changeSystemData: {
+      number: string,
+      description: string,
+      teams_involved_in_execution: string[],
+      teams_involved_in_validation: string[],
+      start_date: string,
+      end_date: string,
+      week_day: string,
+      state: string
+  };
+  postChangeData: {
+      applicationStatus: string
+  },
+  changeTestData: {
+    fqa: string,
+    uat: string,
+    system_test: string,
+    no_test: string,
+  },
+  changeAproovalData: {
+    tecnology: string,
+    restart_type: boolean,
+    new_service: boolean,
+    old_service: boolean,
+    increase_volume: boolean,
+    validation_time: string,
+    validation_process: string,
+    hdc_validation: boolean,
+    validator_contact: string[],
+  }
+  changeHistory: {
+    comments_work_notes: string[],
+    comments: string[],
+    timelineAprooval: string[],
+    rejectionAprooval: string[]
+  },
+  changeServicesList: Array<{
+    service_name: string,
+    cf_production_version: string,
+    implementation_version: string,
+    pipeline_link: string
+  }>,
+  serviceTimeline?: {
+    today: ServiceTimelinePoint[];
+    lastWeek?: ServiceTimelinePoint[];
+  };
 }
 
 const mockChangesInExecution: ChangeInExecution[] = [
@@ -84,28 +121,13 @@ const mockChangesInExecution: ChangeInExecution[] = [
     descricaoResumida: "Projeto HUB - Liberação de clientid",
     fimExecucao: "17/11/2025 23:00:00",
     status: "Em execução",
-    tipo: "NMWS",
+    tipo: "Implementação",
     descricaoChange: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
     inicioValidacao: "17/11/2025 22:00:00",
     fimValidacao: "17/11/2025 23:00:00",
     diaSemana: "Segunda-feira",
     equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
     equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    tarefas: [],
-  },
-  {
-    id: "3",
-    numero: "CHG0174920",
-    descricaoResumida: "Atualização de CEPs - Região Sul",
-    fimExecucao: "18/11/2025 22:00:00",
-    status: "Em execução",
-    tipo: "CEP",
-    descricaoChange: "Inclusão e exclusão de CEPs para a região Sul - Novos bairros e correções de faixas",
-    inicioValidacao: "18/11/2025 21:00:00",
-    fimValidacao: "18/11/2025 22:00:00",
-    diaSemana: "Terça-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - LOGISTICS - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - LOGISTICS - N3, CTIO IT - DIGITAL SALES OPERATIONS - ECOMMERCE - N3",
     tarefas: [],
   },
 ];
@@ -119,18 +141,25 @@ export default function ChangesInExecution() {
   const [fimExecucaoFilter, setFimExecucaoFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedChange, setSelectedChange] = useState<ChangeInExecution | null>(null);
+  const [executingChange, setExecutingChange] = useState<ChangeInExecution | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const itemsPerPage = 10;
 
-  const filteredChanges = mockChangesInExecution.filter((change) => {
-    const matchesSearch =
-      change.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      change.descricaoResumida.toLowerCase().includes(searchTerm.toLowerCase());
+  const { data: changes = [] } = useQuery({
+    queryKey: ['changes'],
+    queryFn: changesApi.getExecutionChanges
+  });
 
-    const matchesNumero = numeroFilter === "all" || change.numero === numeroFilter;
-    const matchesDescricao = descricaoFilter === "all" || change.descricaoResumida.includes(descricaoFilter);
-    const matchesFimExecucao = fimExecucaoFilter === "all" || change.fimExecucao === fimExecucaoFilter;
-    const matchesStatus = statusFilter === "all" || change.status === statusFilter;
+
+  const filteredChanges = changes.filter((change) => {
+    const matchesSearch =
+      change.changeSystemData.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      change.changeSystemData.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesNumero = numeroFilter === "all" || change.changeSystemData.number === numeroFilter;
+    const matchesDescricao = descricaoFilter === "all" || change.changeSystemData.description.includes(descricaoFilter);
+    const matchesFimExecucao = fimExecucaoFilter === "all" || change.changeSystemData.end_date === fimExecucaoFilter;
+    const matchesStatus = statusFilter === "all" || change.changeSystemData.state === statusFilter;
 
     return matchesSearch && matchesNumero && matchesDescricao && matchesFimExecucao && matchesStatus;
   });
@@ -146,14 +175,16 @@ export default function ChangesInExecution() {
   };
 
   const handleExecutar = (change: ChangeInExecution) => {
-    // Se o tipo for CEP, abre a tela de execução de CEP
-    if (change.tipo.toLowerCase() === "cep") {
-      navigate(`/change-execution-cep/${change.id}`);
+    console.log(change);
+
+    if (change?.changeAproovalData?.tecnology?.toLowerCase() === "nmws") {
+      setExecutingChange(change);
+
     } else {
-      // Para outros tipos (NMWS, etc.), abre a tela padrão
-      navigate(`/change-execution/${change.id}`);
+      setExecutingChange(change);
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -191,8 +222,8 @@ export default function ChangesInExecution() {
                 <SelectContent>
                   <SelectItem value="all">Todos os números</SelectItem>
                   {mockChangesInExecution.map((change) => (
-                    <SelectItem key={change.id} value={change.numero}>
-                      {change.numero}
+                    <SelectItem key={change.id} value={change?.changeSystemData?.number}>
+                      {change?.changeSystemData?.number}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -275,8 +306,8 @@ export default function ChangesInExecution() {
               ) : (
                 currentChanges.map((change) => (
                   <TableRow key={change.id}>
-                    <TableCell className="font-medium">{change.numero}</TableCell>
-                    <TableCell>{change.descricaoResumida}</TableCell>
+                    <TableCell className="font-medium">{change?.changeSystemData?.number}</TableCell>
+                    <TableCell>{change.changeSystemData.description}</TableCell>
                     <TableCell className="whitespace-nowrap">{change.fimExecucao}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{change.status}</Badge>
@@ -341,6 +372,14 @@ export default function ChangesInExecution() {
           change={selectedChange}
         />
       )}
+
+      <Dialog open={!!executingChange} onOpenChange={() => setExecutingChange(null)}>
+        <DialogContent className="max-w-[95vw] h-[95vh] p-0">
+          {executingChange && (
+            <ChangeExecutionCep change={executingChange} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function DeleteDepartmentDialog({ open, onOpenChange, department }: Delet
 
   const handleDelete = () => {
     if (department) {
-      deleteMutation.mutate(department.id);
+      deleteMutation.mutate(department._id);
     }
   };
 

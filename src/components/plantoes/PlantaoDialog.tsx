@@ -36,7 +36,6 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
   const [customPhone, setCustomPhone] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [status, setStatus] = useState<Plantao['status']>('scheduled');
 
   const { data: users } = useQuery({
     queryKey: ['users'],
@@ -50,18 +49,17 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
 
   useEffect(() => {
     if (plantao) {
-      setDepartmentId(plantao.departmentId);
-      setStartDate(plantao.startDate.slice(0, 16));
-      setEndDate(plantao.endDate.slice(0, 16));
-      setStatus(plantao.status);
+      setDepartmentId(plantao.departament);
+      setStartDate(plantao.startDatetime.slice(0, 16));
+      setEndDate(plantao.endDatetime.slice(0, 16));
       
-      if (plantao.userId) {
+      if (plantao.name) {
         setMode('user');
-        setUserId(plantao.userId);
+        setUserId(plantao.name);
       } else {
         setMode('custom');
-        setCustomName(plantao.customName || '');
-        setCustomPhone(plantao.customPhone || '');
+        setCustomName(plantao.name || '');
+        setCustomPhone(plantao.phoneNumber || '');
       }
     } else {
       setMode('user');
@@ -71,7 +69,6 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
       setCustomPhone('');
       setStartDate('');
       setEndDate('');
-      setStatus('scheduled');
     }
   }, [plantao, open]);
 
@@ -92,28 +89,41 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
     }
 
     try {
-      const data = {
-        departmentId,
-        userId: mode === 'user' ? userId : undefined,
-        customName: mode === 'custom' ? customName : undefined,
-        customPhone: mode === 'custom' ? customPhone : undefined,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        status,
+      // Se for modo USER → buscar dados do usuário selecionado
+      let finalName = customName;
+      let finalPhone = customPhone;
+
+      if (mode === 'user') {
+        const selectedUser = users?.find((u) => u._id === userId);
+        if (!selectedUser) {
+          toast.error('Usuário inválido selecionado.');
+          return;
+        }
+        finalName = selectedUser._id;
+        finalPhone = selectedUser.phoneNumber;
+      }
+
+      const payload = {
+        name: finalName,
+        departament: departmentId,
+        phoneNumber: finalPhone,
+        startDatetime: new Date(startDate).toISOString(),
+        endDatetime: new Date(endDate).toISOString(),
       };
 
       if (plantao) {
-        await plantaoApi.update(plantao.id, data);
-        toast.success('Plantão atualizado com sucesso!');
+        await plantaoApi.update(plantao._id, payload);
+        toast.success("Plantão atualizado com sucesso!");
       } else {
-        await plantaoApi.create(data);
-        toast.success('Plantão criado com sucesso!');
+        await plantaoApi.create(payload);
+        toast.success("Plantão criado com sucesso!");
       }
 
-      queryClient.invalidateQueries({ queryKey: ['plantoes'] });
+      queryClient.invalidateQueries({ queryKey: ["plantoes"] });
       onOpenChange(false);
+
     } catch (error) {
-      toast.error('Erro ao salvar plantão.');
+      toast.error("Erro ao salvar plantão.");
     }
   };
 
@@ -136,7 +146,7 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
               </SelectTrigger>
               <SelectContent>
                 {departments?.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id}>
+                  <SelectItem key={dept._id} value={dept._id}>
                     {dept.name}
                   </SelectItem>
                 ))}
@@ -173,7 +183,7 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
                 </SelectTrigger>
                 <SelectContent>
                   {users?.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
+                    <SelectItem key={user._id} value={user._id}>
                       {user.name} - {user.phoneNumber}
                     </SelectItem>
                   ))}
@@ -208,32 +218,52 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
               <Input
                 type="datetime-local"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                min={new Date().toISOString().slice(0,16)}  // bloqueia datas anteriores
+                onChange={(e) => {
+                  const newStart = e.target.value;
+
+                  // valida se escolhida < agora
+                  if (new Date(newStart) < new Date()) {
+                    toast.error("A data/hora de início não pode ser no passado.");
+                    return;
+                  }
+
+                  // se já existe fim e ele ficou inválido
+                  if (endDate && new Date(endDate) <= new Date(newStart)) {
+                    toast.error("A data/hora de fim deve ser maior que a de início.");
+                    setEndDate(""); // limpa campo inválido
+                  }
+
+                  setStartDate(newStart);
+                }}
               />
             </div>
+
             <div className="space-y-2">
               <Label>Data/Hora Fim *</Label>
               <Input
                 type="datetime-local"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || new Date().toISOString().slice(0,16)} // fim só pode ser ≥ início
+                onChange={(e) => {
+                  const newEnd = e.target.value;
+
+                  // Se não escolheu início ainda
+                  if (!startDate) {
+                    toast.error("Escolha primeiro a data/hora de início.");
+                    return;
+                  }
+
+                  // valida end > start
+                  if (new Date(newEnd) <= new Date(startDate)) {
+                    toast.error("A data/hora de fim deve ser maior que a de início.");
+                    return;
+                  }
+
+                  setEndDate(newEnd);
+                }}
               />
             </div>
-          </div>
-
-          {/* Status */}
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as Plantao['status'])}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="scheduled">Agendado</SelectItem>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Ações */}

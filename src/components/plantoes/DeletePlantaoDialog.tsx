@@ -30,7 +30,7 @@ export function DeletePlantaoDialog({
     if (!plantao) return;
 
     try {
-      await plantaoApi.delete(plantao.id);
+      await plantaoApi.delete(plantao._id);
       toast.success('Plantão excluído com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['plantoes'] });
       onOpenChange(false);

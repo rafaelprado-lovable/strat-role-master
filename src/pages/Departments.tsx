@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { departmentApi } from '@/services/mockApi';
+import { departmentApi, userApi } from '@/services/mockApi';
 import { Department } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,16 @@ export default function Departments() {
     queryKey: ['departments'],
     queryFn: departmentApi.getAll,
   });
+  
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: userApi.getAll,
+  });
+
+  const usersById = useMemo(() => {
+    if (!users) return {};
+    return Object.fromEntries(users.map((u) => [u._id, u]));
+  }, [users]);
 
   const handleCreate = () => {
     setSelectedDepartment(undefined);
@@ -70,16 +80,33 @@ export default function Departments() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Data de Criação</TableHead>
+                  <TableHead>Organização</TableHead>
+                  <TableHead>SysId</TableHead>
+                  <TableHead>Grupo</TableHead>
+                  <TableHead>Gerente</TableHead>
+                  <TableHead>Coordenador</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {departments?.map((department) => (
-                  <TableRow key={department.id}>
+                  <TableRow key={department._id}>
                     <TableCell className="font-medium">{department.name}</TableCell>
                     <TableCell>
-                      {new Date(department.createdAt).toLocaleDateString('pt-BR')}
+                      {department.organization}
+                    </TableCell>
+                    <TableCell>
+                      {department.sysId}
+                    </TableCell>
+                    <TableCell>
+                      {department.groupName}
+                    </TableCell>
+                    <TableCell>
+                      {usersById[department.manager]?.name || "—"}
+                    </TableCell>
+
+                    <TableCell>
+                      {usersById[department.coordinator]?.name || "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

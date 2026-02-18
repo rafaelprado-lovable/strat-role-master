@@ -54,21 +54,30 @@ export default function Plantoes() {
     setIsDeleteDialogOpen(true);
   };
 
-  const getUserName = (userId?: string) => {
-    if (!userId) return null;
-    return users?.find((u) => u.id === userId)?.name || userId;
-  };
+function getPlantaoDisplayName(plantao: Plantao, users: any[]) {
+  // Se é nome manual
+  if (plantao.name && !plantao.name) {
+    return plantao.name;
+  }
 
+  // Se é name → buscar usuário
+  if (plantao.name) {
+    const user = users?.find(u => u._id === plantao.name);
+    return user ? user.name : plantao.name;
+  }
+
+  return "Nome não informado";
+}
   const getUserPhone = (userId?: string) => {
     if (!userId) return null;
-    return users?.find((u) => u.id === userId)?.phoneNumber || '';
+    return users?.find((u) => u._id === userId)?.phoneNumber || '';
   };
 
   const getDepartmentName = (departmentId: string) => {
-    return departments?.find((d) => d.id === departmentId)?.name || departmentId;
+    return departments?.find((d) => d._id === departmentId)?.name || departmentId;
   };
 
-  const getStatusBadge = (status: Plantao['status']) => {
+  const getStatusBadge = (status: Plantao['departament']) => {
     const variants = {
       active: 'default',
       scheduled: 'secondary',
@@ -86,22 +95,22 @@ export default function Plantoes() {
 
   // Filter plantões by selected department
   const filteredPlantoes = plantoes?.filter((plantao) => 
-    selectedDepartmentId === 'all' || plantao.departmentId === selectedDepartmentId
+    selectedDepartmentId === 'all' || plantao.departament === selectedDepartmentId
   ) || [];
 
   // Group plantões by department
   const plantoesByDepartment = filteredPlantoes.reduce((acc, plantao) => {
-    if (!acc[plantao.departmentId]) {
-      acc[plantao.departmentId] = [];
+    if (!acc[plantao.departament]) {
+      acc[plantao.departament] = [];
     }
-    acc[plantao.departmentId].push(plantao);
+    acc[plantao.departament].push(plantao);
     return acc;
   }, {} as Record<string, Plantao[]>);
 
   // Sort plantões by start date within each department
   Object.keys(plantoesByDepartment).forEach((deptId) => {
     plantoesByDepartment[deptId].sort(
-      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      (a, b) => new Date(a.startDatetime).getTime() - new Date(b.startDatetime).getTime()
     );
   });
 
@@ -132,7 +141,7 @@ export default function Plantoes() {
             <SelectContent>
               <SelectItem value="all">Todos os Departamentos</SelectItem>
               {departments?.map((dept) => (
-                <SelectItem key={dept.id} value={dept.id}>
+                <SelectItem key={dept._id} value={dept._id}>
                   {dept.name}
                 </SelectItem>
               ))}
@@ -164,7 +173,7 @@ export default function Plantoes() {
                 <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-border" />
                 
                 {deptPlantoes.map((plantao, index) => (
-                  <div key={plantao.id} className="relative">
+                  <div key={plantao._id} className="relative">
                     {/* Timeline dot */}
                     <div className="absolute -left-[29px] top-2 w-4 h-4 rounded-full bg-primary border-4 border-background" />
                     
@@ -172,15 +181,14 @@ export default function Plantoes() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-3 flex-1">
                           <div className="flex items-center gap-3 flex-wrap">
-                            {getStatusBadge(plantao.status)}
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="h-4 w-4" />
                               <span className="font-medium">
-                                {format(new Date(plantao.startDate), 'dd/MM/yyyy HH:mm', {
+                                {format(new Date(plantao.startDatetime), 'dd/MM/yyyy HH:mm', {
                                   locale: ptBR,
                                 })}{' '}
                                 até{' '}
-                                {format(new Date(plantao.endDate), 'dd/MM/yyyy HH:mm', {
+                                {format(new Date(plantao.endDatetime), 'dd/MM/yyyy HH:mm', {
                                   locale: ptBR,
                                 })}
                               </span>
@@ -191,17 +199,13 @@ export default function Plantoes() {
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium text-foreground">
-                                {plantao.userId
-                                  ? getUserName(plantao.userId)
-                                  : plantao.customName}
+                                {getPlantaoDisplayName(plantao, users)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Phone className="h-4 w-4 text-muted-foreground" />
                               <span className="text-muted-foreground">
-                                {plantao.userId
-                                  ? getUserPhone(plantao.userId)
-                                  : plantao.customPhone}
+                                {plantao.phoneNumber}
                               </span>
                             </div>
                           </div>

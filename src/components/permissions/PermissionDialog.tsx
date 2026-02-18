@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { permissionApi } from '@/services/mockApi';
 import { Permission } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from "@/components/ui/checkbox"
+import { scopeApi } from '@/services/mockApi';
 import {
   Dialog,
   DialogContent,
@@ -22,21 +24,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  resource: z.string().min(1, 'Recurso é obrigatório'),
-  action: z.string().min(1, 'Ação é obrigatória'),
+    name: z.string().min(1, 'Nome é obrigatório'),
+    actions: z.array(z.string()).min(1, 'Selecione pelo menos uma ação'),
+    scopes: z.array(z.string()).min(1, 'Selecione pelo menos um escopo'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,21 +41,24 @@ interface PermissionDialogProps {
   permission?: Permission;
 }
 
-const resources = ['organizations', 'users', 'roles', 'permissions'];
 const actions = ['create', 'read', 'update', 'delete'];
 
 export function PermissionDialog({ open, onOpenChange, permission }: PermissionDialogProps) {
   const { toast } = useToast();
+  const { data: scopes, isLoading } = useQuery({
+    queryKey: ['scopes'],
+    queryFn: scopeApi.getAll,
+  });
+
   const queryClient = useQueryClient();
   const isEditing = !!permission;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: permission?.name || '',
-      description: permission?.description || '',
-      resource: permission?.resource || '',
-      action: permission?.action || '',
+      name: '',
+      scopes: [],
+      actions: [],
     },
   });
 
@@ -93,7 +90,7 @@ export function PermissionDialog({ open, onOpenChange, permission }: PermissionD
 
   const onSubmit = (data: FormValues) => {
     if (isEditing && permission) {
-      updateMutation.mutate({ id: permission.id, data });
+      updateMutation.mutate({ id: permission._id, data });
     } else {
       createMutation.mutate(data as Omit<Permission, 'id' | 'createdAt'>);
     }
@@ -110,6 +107,7 @@ export function PermissionDialog({ open, onOpenChange, permission }: PermissionD
         </DialogHeader>
 
         <Form {...form}>
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
@@ -125,72 +123,75 @@ export function PermissionDialog({ open, onOpenChange, permission }: PermissionD
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descreva a permissão"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>Escopos</FormLabel>
+              <div className="space-y-2">
+                {scopes?.filter((scope) =>
+                  ["api", "submenu", "guia_unica"].includes(scope.type)
+                )
+                .map((scope) => (
+                  <FormField
+                    key={scope.url}
+                    control={form.control}
+                    name="scopes"
+                    render={({ field }) => {
+                      return (
+                        <FormItem className="flex flex-row items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              onCheckedChange={(checked) => {
+                                const newValue = checked
+                                  ? [...field.value, scope.url]
+                                  : field.value.filter((v: string) => v !== scope.url);
+                                field.onChange(newValue);
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal capitalize">
+                            {scope.url}
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            </FormItem>
 
-            <FormField
-              control={form.control}
-              name="resource"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recurso</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um recurso" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {resources.map((resource) => (
-                        <SelectItem key={resource} value={resource}>
-                          {resource}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="action"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ação</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma ação" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {actions.map((action) => (
-                        <SelectItem key={action} value={action}>
-                          {action}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>Ações</FormLabel>
+              <div className="space-y-2">
+                {actions.map((action) => (
+                  <FormField
+                    key={action}
+                    control={form.control}
+                    name="actions"
+                    render={({ field }) => {
+                      const checked = field.value?.includes(action);
+                      return (
+                        <FormItem className="flex flex-row items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(checked) => {
+                                const newValue = checked
+                                  ? [...field.value, action]
+                                  : field.value.filter((v: string) => v !== action);
+                                field.onChange(newValue);
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal capitalize">
+                            {action}
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            </FormItem>
 
             <DialogFooter>
               <Button

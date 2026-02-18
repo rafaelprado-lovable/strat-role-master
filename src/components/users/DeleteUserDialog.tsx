@@ -37,7 +37,7 @@ export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogP
 
   const handleDelete = () => {
     if (user) {
-      deleteMutation.mutate(user.id);
+      deleteMutation.mutate(user._id);
     }
   };
 

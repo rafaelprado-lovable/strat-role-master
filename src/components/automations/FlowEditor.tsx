@@ -429,7 +429,7 @@ export function FlowEditor({
       inputs: workflowInputs,
       schedule,
       status: workflow?.status || 'draft',
-      start_date,
+      start_date
     });
   };
 

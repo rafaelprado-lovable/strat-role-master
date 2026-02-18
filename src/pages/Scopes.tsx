@@ -70,19 +70,25 @@ export default function Scopes() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Data de Criação</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>URL</TableHead>
+                  <TableHead>Icone</TableHead>
+                  <TableHead>Menu</TableHead>
+                  <TableHead>Organização</TableHead>
+                  <TableHead>Departamento</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {scopes?.map((scope) => (
-                  <TableRow key={scope.id}>
+                  <TableRow key={scope._id}>
                     <TableCell className="font-medium">{scope.name}</TableCell>
-                    <TableCell>{scope.description}</TableCell>
-                    <TableCell>
-                      {new Date(scope.createdAt).toLocaleDateString('pt-BR')}
-                    </TableCell>
+                    <TableCell>{scope.type}</TableCell>
+                    <TableCell>{scope.url}</TableCell>
+                    <TableCell>{scope.icone}</TableCell>
+                    <TableCell>{scope.menu}</TableCell>
+                    <TableCell>{scope.organization}</TableCell>
+                    <TableCell>{scope.departament}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button

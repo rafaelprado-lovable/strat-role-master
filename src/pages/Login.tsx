@@ -15,16 +15,54 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock login/signup
-    toast({
-      title: isLogin ? 'Login realizado' : 'Conta criada',
-      description: isLogin ? 'Bem-vindo ao Heimdall!' : 'Sua conta foi criada com sucesso.',
-    });
-    
-    navigate('/');
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/create/authorization/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      // Aqui pegamos o resultado da API
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || "Falha ao autenticar");
+      }
+
+      // Exemplo: salvar o token localmente (se vier)
+      if (data.userToken) {
+        localStorage.setItem("userToken", data.userToken);
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("userName", data.name);
+        localStorage.setItem("userEmail", data.email);
+        localStorage.setItem("departaments", data.departament);
+      }
+
+      // Exibe o toast de sucesso
+      toast({
+        title: 'Login realizado',
+        description: `Bem-vindo ao Heimdall, ${data.name}!`,
+      });
+
+      // Redireciona para a home
+      navigate('/');
+
+    } catch (error: any) {
+      console.error("Erro no login:", error);
+      toast({
+        title: "Erro no login",
+        description: error.message || "Verifique suas credenciais e tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -39,30 +77,15 @@ export default function Login() {
             />
           </div>
           <CardTitle className="text-2xl">
-            {isLogin ? 'Bem-vindo de volta' : 'Criar conta'}
+            {isLogin ? 'Bem-vindo ao Heimdall' : 'Criar conta'}
           </CardTitle>
           <CardDescription>
-            {isLogin 
-              ? 'Entre com suas credenciais para acessar o sistema' 
-              : 'Preencha os dados para criar sua conta'}
+            Entre com suas credenciais para acessar o sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome completo</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Seu nome"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required={!isLogin}
-                />
-              </div>
-            )}
-            
+           
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -102,18 +125,6 @@ export default function Login() {
               {isLogin ? 'Entrar' : 'Criar conta'}
             </Button>
 
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">
-                {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-              </span>{' '}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
-              >
-                {isLogin ? 'Criar conta' : 'Fazer login'}
-              </button>
-            </div>
           </form>
         </CardContent>
       </Card>

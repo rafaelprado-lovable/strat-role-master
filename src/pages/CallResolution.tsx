@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { departmentApi, incidentResolutionApi } from '@/services/mockApi';
+import { useQuery } from '@tanstack/react-query';
+import { Clock, CheckCircle, XCircle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -20,128 +24,166 @@ import {
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+
 interface Resolution {
   id: string;
-  descricaoAlvo: string;
-  codigoResolucao: string;
-  causa: string;
-  campoAlvo: string;
-  notaFechamento: string;
-  plataforma: string;
-  subCausa: string;
+  match_description: string;
+  close_code: string;
+  cause: string;
+  target_field: string;
+  resolution_notes: string;
+  platform: string;
+  sub_cause: string;
 }
 
-const mockResolutions: Resolution[] = [
-  {
-    id: "1",
-    descricaoAlvo: "ACUMULO DE REGISTROS FILA KAFKA",
-    codigoResolucao: "RES001",
-    causa: "Alta utilização",
-    campoAlvo: "Descrição resumida",
-    notaFechamento: "Foi necessário realizar o restart dos consumidores da fila kafka. Situação normalizada e ambiente validado.",
-    plataforma: "Kafka",
-    subCausa: "Consumidores travados",
-  },
-  {
-    id: "2",
-    descricaoAlvo: "AdditionalInfo: Alta Utilização de Memória",
-    codigoResolucao: "RES002",
-    causa: "Memory Leak",
-    campoAlvo: "Descrição",
-    notaFechamento: "#VASINTERNAL#MEMORIA#AMBIENTENORMALIZADO",
-    plataforma: "VAS Internal",
-    subCausa: "Vazamento de memória",
-  },
-  {
-    id: "3",
-    descricaoAlvo: "AdditionalInfo: PMID - Alarme PMID: AUMENTO DE REGISTROS FILA RABBIT PMID",
-    codigoResolucao: "RES003",
-    causa: "Fila acumulada",
-    campoAlvo: "Descrição",
-    notaFechamento: "Foi necessário verificar os serviços do ambiente PMID, serviços verificados e ambiente validado.",
-    plataforma: "PMID",
-    subCausa: "RabbitMQ congestionado",
-  },
-  {
-    id: "4",
-    descricaoAlvo: "AdditionalInfo: PMID - Alarme PMID: Deployment bi-queue-notify-billing-type favor analisar pode ter sido deletado teste - Funcionalidade: PMID - DescErro: Hostname: tim-pmid-prd-prometheus",
-    codigoResolucao: "RES004",
-    causa: "Deployment deletado",
-    campoAlvo: "Descrição",
-    notaFechamento: "Foi necessário verificar os serviços do ambiente PMID, serviços verificados e ambiente validado.",
-    plataforma: "PMID",
-    subCausa: "Configuração incorreta",
-  },
-  {
-    id: "5",
-    descricaoAlvo: "Alarme Ambiente GEMFIRE",
-    codigoResolucao: "RES005",
-    causa: "Instabilidade",
-    campoAlvo: "Descrição resumida",
-    notaFechamento: "#GEMFIRE#NIFI#KAFKA",
-    plataforma: "GEMFIRE",
-    subCausa: "Cache corrompido",
-  },
-];
 
 export default function CallResolution() {
-  const [resolutions, setResolutions] = useState<Resolution[]>(mockResolutions);
+  const userFunction = localStorage.getItem("userFunction"); // use a mesma chave que você usa no login
+  const allowedDepartments = new Set(
+    localStorage.getItem("departaments")?.split(",") ?? []
+  );
+
+
+
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const itemsPerPage = 5;
+  const queryClient = useQueryClient();
+
+  const handleSelectDepartment = (value: string | null) => {
+    setSelectedDepartment(value);
+    setFormData(prev => ({
+      ...prev,
+      target_field: value ?? "",
+    }));
+  };
+
+  const { data: resolutions = [] } = useQuery({
+    queryKey: ['resolutions'],
+    queryFn: incidentResolutionApi.getAll
+  });
+
 
   const [formData, setFormData] = useState({
-    descricaoAlvo: "",
-    codigoResolucao: "",
-    causa: "",
-    campoAlvo: "",
-    notaFechamento: "",
-    plataforma: "",
-    subCausa: "",
+    match_description: "",
+    close_code: "",
+    cause: "",
+    target_field: "",
+    resolution_notes: "",
+    platform: "",
+    sub_cause: "",
+    departament: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.descricaoAlvo || !formData.notaFechamento) {
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll
+  });
+
+  const stringAllowedDepartments = (
+    localStorage.getItem("departaments") ?? ""
+  ).split(",");
+
+  const allowedDepartmentsList = departments.filter((dept) =>
+    stringAllowedDepartments.includes(dept._id)
+  );
+
+  const allowedDepartmentNames = new Set(
+    departments
+      .filter((dept) => stringAllowedDepartments.includes(dept._id))
+      .map((dept) => dept.name)
+  );
+
+  const handleSubmit = async () => {
+    if (!formData.match_description || !formData.resolution_notes) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
-    const newResolution: Resolution = {
-      id: Date.now().toString(),
-      ...formData,
-    };
+    try {
+      await incidentResolutionApi.create(formData);
 
-    setResolutions(prev => [newResolution, ...prev]);
-    setFormData({
-      descricaoAlvo: "",
-      codigoResolucao: "",
-      causa: "",
-      campoAlvo: "",
-      notaFechamento: "",
-      plataforma: "",
-      subCausa: "",
-    });
-    toast.success("Resolução cadastrada com sucesso!");
+      toast.success("Resolução cadastrada com sucesso!");
+
+      setFormData({
+        match_description: "",
+        close_code: "",
+        cause: "",
+        target_field: "",
+        resolution_notes: "",
+        platform: "",
+        sub_cause: "",
+        departament: "",
+      });
+
+      // 🔄 Recarrega a lista
+      queryClient.invalidateQueries({ queryKey: ["resolutions"] });
+
+    } catch (error) {
+      toast.error("Erro ao cadastrar resolução");
+      console.error(error);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setResolutions(prev => prev.filter(r => r.id !== id));
-    toast.success("Resolução removida com sucesso!");
-  };
 
   const filteredResolutions = resolutions.filter(res =>
-    res.descricaoAlvo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.campoAlvo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.notaFechamento.toLowerCase().includes(searchTerm.toLowerCase())
+    res.handlingRuleData.match_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    res.handlingRuleData.target_field.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    res.incidentResolutionData.resolution_notes.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredResolutions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedResolutions = filteredResolutions.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleApprove = async (resolution: CallResolution) => {
+    try {
+      await incidentResolutionApi.aprooveSolicitation({
+        id: resolution.handlingRuleData.id,
+        aprooval: true,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["resolutions"] });
+
+      console.log("Aprovado:", resolution.handlingRuleData.id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleReject = async (resolution: CallResolution) => {
+    try {
+      await incidentResolutionApi.aprooveSolicitation({
+        id: resolution.handlingRuleData.id,
+        aprooval: false,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["resolutions"] });
+
+      console.log("Rejeitado:", resolution.handlingRuleData.id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await incidentResolutionApi.delete({ id });
+
+      await queryClient.invalidateQueries({ queryKey: ["resolutions"] });
+
+      console.log("Deletado:", id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  
 
   return (
     <div className="space-y-6">
@@ -152,20 +194,20 @@ export default function CallResolution() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="descricaoAlvo">Descrição alvo</Label>
+              <Label htmlFor="match_description">Descrição alvo</Label>
               <Input
-                id="descricaoAlvo"
-                value={formData.descricaoAlvo}
-                onChange={(e) => handleInputChange("descricaoAlvo", e.target.value)}
+                id="match_description"
+                value={formData.match_description}
+                onChange={(e) => handleInputChange("match_description", e.target.value)}
                 placeholder="Descrição alvo"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notaFechamento">Nota de fechamento</Label>
+              <Label htmlFor="resolution_notes">Nota de fechamento</Label>
               <Input
-                id="notaFechamento"
-                value={formData.notaFechamento}
-                onChange={(e) => handleInputChange("notaFechamento", e.target.value)}
+                id="resolution_notes"
+                value={formData.resolution_notes}
+                onChange={(e) => handleInputChange("resolution_notes", e.target.value)}
                 placeholder="Nota de fechamento"
               />
             </div>
@@ -173,20 +215,35 @@ export default function CallResolution() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="codigoResolucao">Código de resolução</Label>
-              <Input
-                id="codigoResolucao"
-                value={formData.codigoResolucao}
-                onChange={(e) => handleInputChange("codigoResolucao", e.target.value)}
-                placeholder="Código de resolução"
-              />
+              <Label htmlFor="close_code">Código de resolução</Label>
+              <select
+                id="close_code"
+                value={formData.close_code}
+                onChange={(e) =>
+                  handleInputChange("close_code", e.target.value)
+                }
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value=""></option>
+                <option value="Solucionado(Contorno)">Solucionado(Contorno)</option>
+                <option value="solved">Solucionado (Contorno)</option>
+                <option value="solved2">Solucionado (Permanentemente)</option>
+                <option value="remotely">Solucionado Remotamente (Contorno)</option>
+                <option value="remotely2">Solucionado Remotamente (Permanentemente)</option>
+                <option value="reproducible">Não Solucionado (Não Reproduzível)</option>
+                <option value="costly">Não Solucionado (Muito caro)</option>
+                <option value="caller">Encerrado/Solucionado pelo solicitante</option>
+                <option value="not_solved_not_applicable">Não Solucionado (Improcedente)</option>
+                <option value="Change_Execution_Scenario_Unfounded">Cenário de execução de change (Improcedente)</option>
+              </select>
+
             </div>
             <div className="space-y-2">
-              <Label htmlFor="plataforma">Plataforma</Label>
+              <Label htmlFor="platform">Plataforma</Label>
               <Input
-                id="plataforma"
-                value={formData.plataforma}
-                onChange={(e) => handleInputChange("plataforma", e.target.value)}
+                id="platform"
+                value={formData.platform}
+                onChange={(e) => handleInputChange("platform", e.target.value)}
                 placeholder="Plataforma"
               />
             </div>
@@ -194,34 +251,61 @@ export default function CallResolution() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="causa">Causa</Label>
+              <Label htmlFor="cause">Causa</Label>
               <Input
-                id="causa"
-                value={formData.causa}
-                onChange={(e) => handleInputChange("causa", e.target.value)}
+                id="cause"
+                value={formData.cause}
+                onChange={(e) => handleInputChange("cause", e.target.value)}
                 placeholder="Causa"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="subCausa">Sub causa</Label>
+              <Label htmlFor="sub_cause">Sub cause</Label>
               <Input
-                id="subCausa"
-                value={formData.subCausa}
-                onChange={(e) => handleInputChange("subCausa", e.target.value)}
-                placeholder="Sub causa"
+                id="sub_cause"
+                value={formData.sub_cause}
+                onChange={(e) => handleInputChange("sub_cause", e.target.value)}
+                placeholder="Sub cause"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="campoAlvo">Campo alvo</Label>
-            <Textarea
-              id="campoAlvo"
-              value={formData.campoAlvo}
-              onChange={(e) => handleInputChange("campoAlvo", e.target.value)}
-              placeholder="Campo alvo"
-              rows={3}
-            />
+            <Label htmlFor="target_field">Campo alvo</Label>
+            <select
+              id="target_field"
+              value={formData.target_field}
+              onChange={(e) =>
+                handleInputChange("target_field", e.target.value)
+              }
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value=""></option>
+              <option value="descricao_resumida">Descrição resumida</option>
+              <option value="descricao">Descrição</option>
+            </select>
+          </div>
+
+          {/* departaments */}
+          <div className="space-y-2">
+            <Label htmlFor="department">Departamento</Label>
+
+            <select
+              id="departament"
+              value={formData.departament}
+              onChange={(e) => handleInputChange("departament", e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value=""></option>
+
+              {departments
+                .filter((dept) => stringAllowedDepartments.includes(dept._id))
+                .map((dept) => (
+                  <option key={dept._id} value={dept.name}>
+                    {dept.name}
+                  </option>
+                ))}
+            </select>
           </div>
 
           <Button onClick={handleSubmit} className="w-full">
@@ -250,30 +334,85 @@ export default function CallResolution() {
             <TableHeader>
               <TableRow>
                 <TableHead>DESCRIÇÃO ALVO</TableHead>
-                <TableHead>CAMPO ALVO</TableHead>
-                <TableHead>NOTA DE FECHAMENTO</TableHead>
+                <TableHead>departament</TableHead>
                 <TableHead className="w-20">AÇÃO</TableHead>
+                {userFunction === "gerente" && (
+                  <TableHead className="w-20">Aprovar gerencial</TableHead>
+                )}
+                <TableHead className="w-20">Aprovado gerencialmente</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedResolutions.map((resolution) => (
-                <TableRow key={resolution.id}>
-                  <TableCell className="font-medium">
-                    {resolution.descricaoAlvo}
-                  </TableCell>
-                  <TableCell>{resolution.campoAlvo}</TableCell>
-                  <TableCell>{resolution.notaFechamento}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(resolution.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+              {paginatedResolutions
+                .filter((resolution) =>
+                  allowedDepartmentNames.has(resolution.handlingRuleData.departament)
+                )
+                .map((resolution) => (
+                  <TableRow key={resolution.handlingRuleData.id}>
+                    <TableCell className="font-medium">
+                      {resolution.handlingRuleData.match_description}
+                    </TableCell>
+
+                    <TableCell>
+                      {resolution.handlingRuleData.departament}
+                    </TableCell>
+
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(resolution.handlingRuleData.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+
+                    {userFunction === "gerente" && (
+                      <TableCell className="font-medium">
+                        {resolution.handlingRuleData.pendentManagerAprooval ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleReject(resolution)}
+                            >
+                              Rejeitar
+                            </Button>
+
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleApprove(resolution)}
+                            >
+                              Aprovar
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    )}
+
+                    <TableCell>
+                      {resolution.handlingRuleData.pendentManagerAprooval ? (
+                        <span className="flex items-center gap-2 text-yellow-600">
+                          <Clock className="h-4 w-4" />
+                          Pendente
+                        </span>
+                      ) : resolution.handlingRuleData.managerAprooved ? (
+                        <span className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          Aprovado
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2 text-red-600">
+                          <XCircle className="h-4 w-4" />
+                          Rejeitado
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
               ))}
             </TableBody>
           </Table>

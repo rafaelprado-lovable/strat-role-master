@@ -37,7 +37,7 @@ export function DeletePermissionDialog({ open, onOpenChange, permission }: Delet
 
   const handleDelete = () => {
     if (permission) {
-      deleteMutation.mutate(permission.id);
+      deleteMutation.mutate(permission._id);
     }
   };
 

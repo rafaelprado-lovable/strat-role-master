@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
@@ -14,21 +15,20 @@ import Roles from "./pages/Roles";
 import Users from "./pages/Users";
 import Scopes from "./pages/Scopes";
 import Departments from "./pages/Departments";
+import Settings from "./pages/Settings";
 import Insights from "./pages/Insights";
-import BugReport from "./pages/BugReport";
+import NotFound from "./pages/NotFound";
 import Changes from "./pages/Changes";
+import Analyses from "./pages/Analyses";
+import Plantoes from "./pages/Plantoes";
+import CallResolution from "./pages/CallResolution";
 import ChangesInExecution from "./pages/ChangesInExecution";
+import SwapAlarms from "./pages/SwapAlarms";
+import PostChange from "./pages/PostChange";
+import Automations from "./pages/Automations";
 import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
-import Analyses from "./pages/Analyses";
-import Automations from "./pages/Automations";
-import Plantoes from "./pages/Plantoes";
-import SwapAlarms from "./pages/SwapAlarms";
-import CallResolution from "./pages/CallResolution";
-import PostChange from "./pages/PostChange";
 import SanityCheck from "./pages/SanityCheck";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -43,90 +43,30 @@ const App = () => (
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route
+              path="/incidents"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Insights />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/"
               element={
-                <AppLayout>
-                  <Index />
-                </AppLayout>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Index />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/organizations"
+              path="/automations"
               element={
                 <AppLayout>
-                  <Organizations />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/permissions"
-              element={
-                <AppLayout>
-                  <Permissions />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/roles"
-              element={
-                <AppLayout>
-                  <Roles />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <AppLayout>
-                  <Users />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/scopes"
-              element={
-                <AppLayout>
-                  <Scopes />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/departments"
-              element={
-                <AppLayout>
-                  <Departments />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/insights"
-              element={
-                <AppLayout>
-                  <Insights />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/bug-report"
-              element={
-                <AppLayout>
-                  <BugReport />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/changes"
-              element={
-                <AppLayout>
-                  <Changes />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/changes-in-execution"
-              element={
-                <AppLayout>
-                  <ChangesInExecution />
+                  <Automations />
                 </AppLayout>
               }
             />
@@ -139,6 +79,16 @@ const App = () => (
               }
             />
             <Route
+              path="/organizations"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Organizations />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/change-execution-cep/:id"
               element={
                 <AppLayout>
@@ -147,39 +97,77 @@ const App = () => (
               }
             />
             <Route
-              path="/analyses"
+              path="/permissions"
               element={
-                <AppLayout>
-                  <Analyses />
-                </AppLayout>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Permissions />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/automations"
+              path="/roles"
               element={
-                <AppLayout>
-                  <Automations />
-                </AppLayout>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Roles />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/plantoes"
+              path="/users"
               element={
-                <AppLayout>
-                  <Plantoes />
-                </AppLayout>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Users />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/swap-alarms"
+              path="/scopes"
               element={
-                <AppLayout>
-                  <SwapAlarms />
-                </AppLayout>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Scopes />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/call-resolution"
+              path="/departments"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Departments />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Settings />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pre/change"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Changes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/call/resolution"
               element={
                 <AppLayout>
                   <CallResolution />
@@ -187,10 +175,10 @@ const App = () => (
               }
             />
             <Route
-              path="/post-change"
+              path="/execution/changes"
               element={
                 <AppLayout>
-                  <PostChange />
+                  <ChangesInExecution />
                 </AppLayout>
               }
             />
@@ -203,11 +191,45 @@ const App = () => (
               }
             />
             <Route
-              path="/settings"
+              path="/post/change"
               element={
                 <AppLayout>
-                  <Settings />
+                  <PostChange />
                 </AppLayout>
+              }
+            />
+            <Route
+              path="/plantoes"
+              element={
+                <AppLayout>
+                  <Plantoes />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/clear/swap/mw"
+              element={
+                <AppLayout>
+                  <SwapAlarms />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/incident/resolution"
+              element={
+                <AppLayout>
+                  <CallResolution />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/incident/analyse/mw"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Analyses />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -54,9 +54,6 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
   // Pre-fill fields when incident is provided
   useEffect(() => {
     if (incident && open) {
-      setDescricaoResumida(`Incidente ${incident.incident_data.number}`);
-      setDataHora(new Date(incident.engineering_sla.entry_time[0]).toLocaleString('pt-BR'));
-      setContexto(`Incidente reportado: ${incident.incident_data.number}\nPrioridade: ${incident.incident_data.priority}\nEstado: ${incident.incident_data.state}`);
     }
   }, [incident, open]);
 
@@ -113,7 +110,7 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
       justificativa,
     });
 
-    onOpenChange(false);
+    //onOpenChange(false);
   };
 
   return (

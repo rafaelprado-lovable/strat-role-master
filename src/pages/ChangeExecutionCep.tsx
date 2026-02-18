@@ -24,6 +24,61 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+
+interface ChangeInExecution {
+
+  cepsInclude: CepChange[];
+  cepsExclude: CepChange[];
+
+  changeSystemData: {
+      number: string,
+      description: string,
+      teams_involved_in_execution: string[],
+      teams_involved_in_validation: string[],
+      start_date: string,
+      end_date: string,
+      week_day: string,
+      state: string
+  };
+  postChangeData: {
+      applicationStatus: string
+  },
+  changeTestData: {
+    fqa: string,
+    uat: string,
+    system_test: string,
+    no_test: string,
+  },
+  changeAproovalData: {
+    tecnology: string,
+    restart_type: boolean,
+    new_service: boolean,
+    old_service: boolean,
+    increase_volume: boolean,
+    validation_time: string,
+    validation_process: string,
+    hdc_validation: boolean,
+    validator_contact: string[],
+  }
+  changeHistory: {
+    comments_work_notes: string[],
+    comments: string[],
+    timelineAprooval: string[],
+    rejectionAprooval: string[]
+  },
+  changeServicesList: Array<{
+    service_name: string,
+    cf_production_version: string,
+    implementation_version: string,
+    pipeline_link: string
+  }>,
+  serviceTimeline?: {
+    today: ServiceTimelinePoint[];
+    lastWeek?: ServiceTimelinePoint[];
+  };
+}
+
+
 interface ValidationLog {
   timestamp: string;
   message: string;
@@ -36,11 +91,10 @@ type ChangeType = "inserção" | "exclusão";
 interface CepChange {
   id: string;
   cep: string;
-  logradouro: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-  changeType: ChangeType;
+  infraco: string;
+  tecnologia: string;
+  prioridade: string;
+  changeType: string;
   status: CepStatus;
 }
 
@@ -54,6 +108,20 @@ const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "  ✓ CEP 01310-100: formato válido", type: "success" },
   { timestamp: "", message: "  ✓ CEP 04538-132: formato válido", type: "success" },
   { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: formato válido", type: "success" },
   { timestamp: "", message: "[STEP 2/5] Verificando duplicatas na base...", type: "info" },
   { timestamp: "", message: "  → Consultando tabela cep_master...", type: "info" },
   { timestamp: "", message: "  ✓ Nenhuma duplicata encontrada", type: "success" },
@@ -64,7 +132,7 @@ const insertionPipelineLogs: ValidationLog[] = [
   { timestamp: "", message: "  ✓ CEP 22041-080: R. Barata Ribeiro, Copacabana - RJ", type: "success" },
   { timestamp: "", message: "[STEP 4/5] Inserindo registros na base de dados...", type: "info" },
   { timestamp: "", message: "  → BEGIN TRANSACTION", type: "info" },
-  { timestamp: "", message: "  → INSERT INTO cep_master (cep, logradouro, bairro, cidade, uf)...", type: "info" },
+  { timestamp: "", message: "  → INSERT INTO cep_master (cep, infraco, bairro, cidade, uf)...", type: "info" },
   { timestamp: "", message: "  ✓ 3 registros inseridos com sucesso", type: "success" },
   { timestamp: "", message: "  → COMMIT", type: "info" },
   { timestamp: "", message: "[STEP 5/5] Atualizando cache de CEPs...", type: "info" },
@@ -113,6 +181,40 @@ const validationInsertionLogs: ValidationLog[] = [
   { timestamp: "", message: "  ✓ CEP 01310-100: encontrado na base", type: "success" },
   { timestamp: "", message: "  ✓ CEP 04538-132: encontrado na base", type: "success" },
   { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
+  { timestamp: "", message: "  ✓ CEP 22041-080: encontrado na base", type: "success" },
   { timestamp: "", message: "[STEP 2/3] Validando integridade dos dados...", type: "info" },
   { timestamp: "", message: "  → Verificando campos obrigatórios...", type: "info" },
   { timestamp: "", message: "  ✓ Todos os campos preenchidos corretamente", type: "success" },
@@ -150,13 +252,6 @@ const validationExclusionLogs: ValidationLog[] = [
   { timestamp: "", message: "═══════════════════════════════════════════════════════", type: "info" },
 ];
 
-const mockCepChanges: CepChange[] = [
-  { id: "1", cep: "01310-100", logradouro: "Avenida Paulista", bairro: "Bela Vista", cidade: "São Paulo", uf: "SP", changeType: "inserção", status: "pendente" },
-  { id: "2", cep: "04538-132", logradouro: "Rua Funchal", bairro: "Vila Olímpia", cidade: "São Paulo", uf: "SP", changeType: "inserção", status: "pendente" },
-  { id: "3", cep: "22041-080", logradouro: "Rua Barata Ribeiro", bairro: "Copacabana", cidade: "Rio de Janeiro", uf: "RJ", changeType: "inserção", status: "pendente" },
-  { id: "4", cep: "30130-000", logradouro: "Praça Sete de Setembro", bairro: "Centro", cidade: "Belo Horizonte", uf: "MG", changeType: "exclusão", status: "pendente" },
-  { id: "5", cep: "80010-000", logradouro: "Rua XV de Novembro", bairro: "Centro", cidade: "Curitiba", uf: "PR", changeType: "exclusão", status: "pendente" },
-];
 
 const getStatusIcon = (status: CepStatus) => {
   switch (status) {
@@ -195,8 +290,12 @@ const getLogColor = (type: ValidationLog["type"]) => {
   }
 };
 
-export default function ChangeExecutionCep() {
-  const [cepChanges, setCepChanges] = useState<CepChange[]>(mockCepChanges);
+interface ChangeExecutionCepProps {
+  change: ChangeInExecution;
+}
+
+export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) {
+  const [cepChanges, setCepChanges] = useState<CepChange[]>(change.cepsInclude);
   const [selectedCep, setSelectedCep] = useState<string | null>(null);
   const [insertionLogs, setInsertionLogs] = useState<ValidationLog[]>([]);
   const [exclusionLogs, setExclusionLogs] = useState<ValidationLog[]>([]);
@@ -211,22 +310,142 @@ export default function ChangeExecutionCep() {
   const exclusionTerminalRef = useRef<HTMLDivElement>(null);
   const validationInsTerminalRef = useRef<HTMLDivElement>(null);
   const validationExcTerminalRef = useRef<HTMLDivElement>(null);
+  const deleteEventSourceRef = useRef<EventSource | null>(null);
+  const insertEventSourceRef = useRef<EventSource | null>(null);
   const { toast } = useToast();
-
-  const insertionCeps = cepChanges.filter(c => c.changeType === "inserção");
-  const exclusionCeps = cepChanges.filter(c => c.changeType === "exclusão");
+  const insertionCeps = change.cepsInclude;
+  const exclusionCeps = change.cepsExclude;
   
   const filteredInsertionCeps = insertionCeps.filter(c => 
     c.cep.includes(searchTerm) || 
-    c.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.bairro.toLowerCase().includes(searchTerm.toLowerCase())
+    c.tecnologia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.infraco.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const filteredExclusionCeps = exclusionCeps.filter(c => 
     c.cep.includes(searchTerm) || 
-    c.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.bairro.toLowerCase().includes(searchTerm.toLowerCase())
+    c.tecnologia.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.infraco.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const MAX_DELETE_LINES = 300;
+
+  const startDelete = (changeNumber: string) => {
+    // Cancela execução se já estiver rodando
+    if (deleteEventSourceRef.current) {
+      deleteEventSourceRef.current.close();
+      deleteEventSourceRef.current = null;
+      setIsExclusionRunning(false);
+      return;
+    }
+
+    setIsExclusionRunning(true);
+    setExclusionLogs([]); // limpa terminal
+
+    const es = new EventSource(
+      `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=exclusion`
+    );
+
+    deleteEventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      const timestamp = new Date().toISOString().slice(11, 19);
+
+      setExclusionLogs(prev => {
+        const next = [
+          ...prev,
+          {
+            timestamp,
+            message: e.data,
+            type: "info",
+          },
+        ];
+
+        // Limite de linhas (igual seu código antigo)
+        if (next.length > MAX_DELETE_LINES) {
+          return next.slice(next.length - MAX_DELETE_LINES);
+        }
+
+        return next;
+      });
+    };
+
+    es.onerror = (err) => {
+      console.error("Erro na conexão do SSE de deleção", err);
+
+      es.close();
+      deleteEventSourceRef.current = null;
+      setIsExclusionRunning(false);
+
+      setExclusionLogs(prev => [
+        ...prev,
+        {
+          timestamp: new Date().toISOString().slice(11, 19),
+          message: "Conexão encerrada.",
+          type: "error",
+        },
+      ]);
+    };
+  };
+
+  const startInsert = (changeNumber: string) => {
+    // Cancela execução se já estiver rodando
+    if (insertEventSourceRef.current) {
+      insertEventSourceRef.current.close();
+      insertEventSourceRef.current = null;
+      setIsInsertionRunning(false);
+      return;
+    }
+
+    setIsInsertionRunning(true);
+    setInsertionLogs([]); // limpa terminal
+
+    const es = new EventSource(
+      `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=inclusion`
+    );
+
+    insertEventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      const timestamp = new Date().toISOString().slice(11, 19);
+
+      setInsertionLogs(prev => {
+        const next = [
+          ...prev,
+          {
+            timestamp,
+            message: e.data,
+            type: "info",
+          },
+        ];
+
+        // Limite de linhas (igual seu código antigo)
+        if (next.length > MAX_DELETE_LINES) {
+          return next.slice(next.length - MAX_DELETE_LINES);
+        }
+
+        return next;
+      });
+    };
+
+    es.onerror = (err) => {
+      console.error("Erro na conexão do SSE de deleção", err);
+
+      es.close();
+      insertEventSourceRef.current = null;
+      setIsInsertionRunning(false);
+
+      setInsertionLogs(prev => [
+        ...prev,
+        {
+          timestamp: new Date().toISOString().slice(11, 19),
+          message: "Conexão encerrada.",
+          type: "error",
+        },
+      ]);
+    };
+  };
+
 
   // Auto-scroll terminals
   useEffect(() => {
@@ -362,7 +581,7 @@ export default function ChangeExecutionCep() {
     URL.revokeObjectURL(url);
   };
 
-  const validatedCount = cepChanges.filter(c => c.status === "validado").length;
+  const validatedCount = [];
 
   return (
     <div className="flex gap-6 h-[calc(100vh-8rem)]">
@@ -378,14 +597,14 @@ export default function ChangeExecutionCep() {
               {validatedCount}/{cepChanges.length}
             </Badge>
           </div>
-          <CardDescription className="text-xs">
-            CHG0174920 - Alterações de CEP
-          </CardDescription>
+            <CardDescription className="text-xs">
+              {change.changeSystemData.number} - Alterações de CEP
+            </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           <div className="h-full overflow-y-auto px-4 pb-4">
             <div className="space-y-1">
-              {cepChanges.map((cep) => (
+              {change.cepsInclude.map((cep) => (
                 <div
                   key={cep.id}
                   onClick={() => setSelectedCep(cep.id)}
@@ -395,16 +614,8 @@ export default function ChangeExecutionCep() {
                       : "bg-card hover:bg-accent/50"
                   }`}
                 >
-                  <div className={`p-1.5 rounded-full ${
-                    cep.changeType === "inserção" 
-                      ? "bg-green-500/10 text-green-500" 
-                      : "bg-red-500/10 text-red-500"
-                  }`}>
-                    {cep.changeType === "inserção" ? (
+                  <div className={`p-1.5 rounded-full bg-green-500/10 text-green-500`}>
                       <Plus className="h-3 w-3" />
-                    ) : (
-                      <Minus className="h-3 w-3" />
-                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -412,7 +623,32 @@ export default function ChangeExecutionCep() {
                       {getStatusIcon(cep.status)}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {cep.bairro} - {cep.cidade}/{cep.uf}
+                      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {change.cepsExclude.map((cep) => (
+                <div
+                  key={cep.id}
+                  onClick={() => setSelectedCep(cep.id)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedCep === cep.id 
+                      ? "bg-accent border-primary" 
+                      : "bg-card hover:bg-accent/50"
+                  }`}
+                >
+                  <div className='p-1.5 rounded-full bg-red-500/10 text-red-500'>
+
+                      <Minus className="h-3 w-3" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium">{cep.cep}</span>
+                      {getStatusIcon(cep.status)}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
                     </p>
                   </div>
                 </div>
@@ -431,7 +667,7 @@ export default function ChangeExecutionCep() {
           </div>
         </div>
 
-        <Tabs defaultValue="insertion" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="insertion" className="flex-1 flex flex-col min-h-0">
           <TabsList className="w-fit">
             <TabsTrigger value="insertion" className="gap-2">
               <Plus className="h-4 w-4" />
@@ -447,10 +683,10 @@ export default function ChangeExecutionCep() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="insertion" className="flex-1 mt-4 overflow-hidden">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full">
+          <TabsContent value="insertion" className="flex-1 mt-4 min-h-0">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full min-h-0">
               {/* Lista de CEPs para inserção */}
-              <Card className="flex flex-col">
+              <Card className="flex flex-col min-h-0">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">CEPs para Validar</CardTitle>
@@ -459,7 +695,7 @@ export default function ChangeExecutionCep() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto space-y-2">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-2">
                   {insertionCeps.map((cep) => (
                     <div
                       key={cep.id}
@@ -470,7 +706,7 @@ export default function ChangeExecutionCep() {
                         <div>
                           <span className="font-mono font-medium">{cep.cep}</span>
                           <p className="text-xs text-muted-foreground">
-                            {cep.logradouro}, {cep.bairro}
+                            {cep.infraco} - {cep.tecnologia}
                           </p>
                         </div>
                       </div>
@@ -491,7 +727,7 @@ export default function ChangeExecutionCep() {
               </Card>
 
               {/* Terminal de inserção */}
-              <Card className="flex flex-col">
+              <Card className="flex flex-col min-h-0">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -510,15 +746,17 @@ export default function ChangeExecutionCep() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={handleStartInsertion}
-                        disabled={isInsertionRunning}
+                        variant="destructive"
+                        onClick={() =>
+                          startInsert(change.changeSystemData.number)
+                        }
                       >
-                        {isInsertionRunning ? (
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        ) : (
-                          <FileCheck className="h-3 w-3 mr-1" />
-                        )}
-                        Executar
+                      {isInsertionRunning ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Play className="h-3 w-3 mr-1" />
+                      )}
+                      {isInsertionRunning ? "Cancelando..." : "Executar"}
                       </Button>
                     </div>
                   </div>
@@ -556,10 +794,10 @@ export default function ChangeExecutionCep() {
             </div>
           </TabsContent>
 
-          <TabsContent value="exclusion" className="flex-1 mt-4 overflow-hidden">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full">
+          <TabsContent value="exclusion" className="flex-1 mt-4 overflow-hidden max-h-[90%]">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-full min-h-0">
               {/* Lista de CEPs para exclusão */}
-              <Card className="flex flex-col">
+              <Card className="flex flex-col min-h-0">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">CEPs para Excluir</CardTitle>
@@ -568,7 +806,7 @@ export default function ChangeExecutionCep() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto space-y-2">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-2">
                   {exclusionCeps.map((cep) => (
                     <div
                       key={cep.id}
@@ -579,7 +817,7 @@ export default function ChangeExecutionCep() {
                         <div>
                           <span className="font-mono font-medium">{cep.cep}</span>
                           <p className="text-xs text-muted-foreground">
-                            {cep.logradouro}, {cep.bairro}
+                            {cep.infraco}, {cep.tecnologia}
                           </p>
                         </div>
                       </div>
@@ -600,7 +838,7 @@ export default function ChangeExecutionCep() {
               </Card>
 
               {/* Terminal de exclusão */}
-              <Card className="flex flex-col">
+              <Card className="flex flex-col min-h-0">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -620,15 +858,16 @@ export default function ChangeExecutionCep() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={handleStartExclusion}
-                        disabled={isExclusionRunning}
+                        onClick={() =>
+                          startDelete(change.changeSystemData.number)
+                        }
                       >
                         {isExclusionRunning ? (
                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                         ) : (
                           <Play className="h-3 w-3 mr-1" />
                         )}
-                        Executar
+                        {isExclusionRunning ? "Cancelando..." : "Executar"}
                       </Button>
                     </div>
                   </div>
@@ -709,7 +948,7 @@ export default function ChangeExecutionCep() {
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
                         <span className="font-mono font-medium">{cep.cep}</span>
                         <span className="text-muted-foreground truncate">
-                          {cep.cidade}/{cep.uf}
+                          {cep.infraco}/{cep.tecnologia}
                         </span>
                       </div>
                     ))}
@@ -798,7 +1037,7 @@ export default function ChangeExecutionCep() {
                         <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                         <span className="font-mono font-medium">{cep.cep}</span>
                         <span className="text-muted-foreground truncate">
-                          {cep.cidade}/{cep.uf}
+                          {cep.infraco}/{cep.tecnologia}
                         </span>
                       </div>
                     ))}

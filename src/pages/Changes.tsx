@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangeDetailsDialog } from "@/components/changes/ChangeDetailsDialog";
+import { changesApi, departmentApi } from '@/services/mockApi';
+import { useQuery } from '@tanstack/react-query';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -19,363 +22,240 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search, CalendarIcon, Users, FileText } from "lucide-react";
+import { CheckSquare, Eye, Send, Search, CalendarIcon, X, Users, FileText} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { Changes } from '@/types';
 
-interface Change {
-  id: string;
-  numero: string;
-  descricao: string;
-  dataExecucao: string;
-  sistema: string;
-  status: string;
-  changeformAnexado: boolean;
-  preAnalise: boolean;
-  inicioValidacao: string;
-  fimValidacao: string;
-  diaSemana: string;
-  equipesAplicacao: string;
-  equipesValidacao: string;
-  changeForm: {
-    tecnologia: string;
-    tipoRestart: string;
-    possuiServicoNovo: string;
-    possuiServicoReuso: string;
-    validacaoDurante: string;
-    validacaoHDC: string;
-    aumentoVolumetria: string;
-    impactoVendas: string;
-    houveUAT: string;
-    houveFQA: string;
-    systemTest: string;
-    semTestes: string;
-  };
-  servicos: Array<{
-    nome: string;
-    versaoProducao: string;
-    versaoCF: string;
-    versaoInstalacao: string;
-    clientsId: string;
-  }>;
-}
 
-const mockChanges: Change[] = [
-  {
-    id: "1",
-    numero: "CHG0173972",
-    descricao: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
-    dataExecucao: "17/11/2025 22:00:00",
-    sistema: "Autorizar",
-    status: "PMID",
-    changeformAnexado: true,
-    preAnalise: true,
-    inicioValidacao: "17/11/2025 22:00:00",
-    fimValidacao: "17/11/2025 23:00:00",
-    diaSemana: "Segunda-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    changeForm: {
-      tecnologia: "PMID",
-      tipoRestart: "N/A",
-      possuiServicoNovo: "Não",
-      possuiServicoReuso: "Não",
-      validacaoDurante: "Sim",
-      validacaoHDC: "Sim",
-      aumentoVolumetria: "Não",
-      impactoVendas: "Não",
-      houveUAT: "Sim",
-      houveFQA: "Sim",
-      systemTest: "Sim",
-      semTestes: "Não",
-    },
-    servicos: [],
-  },
-  {
-    id: "2",
-    numero: "CHG0174528",
-    descricao: "Projeto HUB - Liberação da nova API de recarga do TIMWE",
-    dataExecucao: "17/11/2025 22:00:00",
-    sistema: "Autorizar",
-    status: "PMID",
-    changeformAnexado: false,
-    preAnalise: true,
-    inicioValidacao: "17/11/2025 22:00:00",
-    fimValidacao: "17/11/2025 23:00:00",
-    diaSemana: "Segunda-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
-    changeForm: {
-      tecnologia: "PMID",
-      tipoRestart: "N/A",
-      possuiServicoNovo: "Sim",
-      possuiServicoReuso: "Não",
-      validacaoDurante: "Sim",
-      validacaoHDC: "Sim",
-      aumentoVolumetria: "Não",
-      impactoVendas: "Não",
-      houveUAT: "Sim",
-      houveFQA: "Sim",
-      systemTest: "Sim",
-      semTestes: "Não",
-    },
-    servicos: [],
-  },
-  {
-    id: "3",
-    numero: "CHG0174549",
-    descricao: "[DM25863179 RSA ] - Otimização de Fluxo de Aprovisionamento RSA - ID 6993.",
-    dataExecucao: "09/12/2025 23:00:00",
-    sistema: "Novo",
-    status: "NMWS",
-    changeformAnexado: false,
-    preAnalise: true,
-    inicioValidacao: "09/12/2025 23:00:00",
-    fimValidacao: "10/12/2025 01:00:00",
-    diaSemana: "Quarta-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO OPS - CORE SERVICES - VAS - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3, CTIO IT - CORPORATE SOLUTIONS OPERATIONS - E2B MOVEL - N3, CTIO IT - APP & DIGITAL PRODUCTS OPERATIONS - WEB PORTALS - N3, CTIO IT - CUSTOMER CARE & COGN. DIGITAL OPERATIONS",
-    changeForm: {
-      tecnologia: "NMWS",
-      tipoRestart: "N/A",
-      possuiServicoNovo: "Sem informação",
-      possuiServicoReuso: "Sem informação",
-      validacaoDurante: "Sem informação",
-      validacaoHDC: "Sem informação",
-      aumentoVolumetria: "Sem informação",
-      impactoVendas: "Verificar documentação",
-      houveUAT: "Não",
-      houveFQA: "Sim",
-      systemTest: "Não",
-      semTestes: "Não",
-    },
-    servicos: [],
-  },
-  {
-    id: "4",
-    numero: "CHG0174551",
-    descricao: "[DM25863179 RSA ] - Otimização de Fluxo de Aprovisionamento RSA",
-    dataExecucao: "10/12/2025 00:00:00",
-    sistema: "Novo",
-    status: "PMID",
-    changeformAnexado: false,
-    preAnalise: true,
-    inicioValidacao: "10/12/2025 00:00:00",
-    fimValidacao: "10/12/2025 01:00:00",
-    diaSemana: "Quarta-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
-    changeForm: {
-      tecnologia: "PMID",
-      tipoRestart: "N/A",
-      possuiServicoNovo: "Não",
-      possuiServicoReuso: "Não",
-      validacaoDurante: "Sim",
-      validacaoHDC: "Sim",
-      aumentoVolumetria: "Não",
-      impactoVendas: "Não",
-      houveUAT: "Sim",
-      houveFQA: "Sim",
-      systemTest: "Sim",
-      semTestes: "Não",
-    },
-    servicos: [],
-  },
-  {
-    id: "5",
-    numero: "CHG0175151",
-    descricao: "Projeto HUB - Liberação de clientid na API r-access-data (ABR)",
-    dataExecucao: "18/11/2025 22:00:00",
-    sistema: "Autorizar",
-    status: "PMID",
-    changeformAnexado: false,
-    preAnalise: true,
-    inicioValidacao: "18/11/2025 22:00:00",
-    fimValidacao: "18/11/2025 23:00:00",
-    diaSemana: "Segunda-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3",
-    changeForm: {
-      tecnologia: "PMID",
-      tipoRestart: "N/A",
-      possuiServicoNovo: "Não",
-      possuiServicoReuso: "Não",
-      validacaoDurante: "Sim",
-      validacaoHDC: "Sim",
-      aumentoVolumetria: "Não",
-      impactoVendas: "Não",
-      houveUAT: "Sim",
-      houveFQA: "Sim",
-      systemTest: "Sim",
-      semTestes: "Não",
-    },
-    servicos: [],
-  },
-];
-
-export default function Changes() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedChange, setSelectedChange] = useState<Change | null>(null);
+export default function ChangesPage() {
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [searchNumber, setSearchNumber] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedChange, setSelectedChange] = useState<Changes | null>(null);
+
   const itemsPerPage = 10;
 
-  const filteredChanges = mockChanges.filter((change) => {
-    const matchesSearch =
-      change.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      change.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      change.sistema.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const changeDate = new Date(change.dataExecucao.split(" ")[0].split("/").reverse().join("-"));
-    const matchesStartDate = !startDate || changeDate >= startDate;
-    const matchesEndDate = !endDate || changeDate <= endDate;
-
-    const matchesDepartment = departmentFilter === "all" || change.sistema === departmentFilter;
-    const matchesStatus = statusFilter === "all" || change.status === statusFilter;
-
-    return matchesSearch && matchesStartDate && matchesEndDate && matchesDepartment && matchesStatus;
+  const { data: changes = [] } = useQuery({
+    queryKey: ['changes'],
+    queryFn: changesApi.getPreChanges
   });
 
-  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentChanges = filteredChanges.slice(startIndex, endIndex);
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll
+  });
 
-  const handlePreAnalise = (numero: string) => {
-    toast.success(`Pré-análise realizada para ${numero}`);
+  const stateLabels: Record<string, string> = {
+    'Novo': 'Novo',
+    'Avaliar': 'Avaliar',
+    'Autorizar': 'Autorizar',
   };
 
-  const handleVisualizar = (change: Change) => {
+  const toggleDepartment = (id: string) => {
+    setSelectedDepartments((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleStatus = (id: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleVisualizar = (change: Changes) => {
+    console.log(change)
     setSelectedChange(change);
     setDetailsOpen(true);
   };
 
-  const handleEnviarRelatorio = (numero: string) => {
-    toast.success(`Relatório enviado para ${numero}`);
+  const filteredChanges = useMemo(() => {
+    return changes.filter((c: Changes) => {
+      const cs = c.changeSystemData;
+      if (!cs) return false;
+
+      // --- Número sempre tratado como string segura ---
+      const number = typeof cs.number === "string" ? cs.number.toLowerCase() : "";
+
+      // --- Busca também segura ---
+      const search = searchNumber.toLowerCase();
+
+      // --- FILTRO POR NÚMERO (agora aceita letras sem erro) ---
+      if (searchNumber && !number.includes(search)) {
+        return false;
+      }
+
+      // --- FILTRO POR DEPARTAMENTOS ---
+      const teams = Array.isArray(cs.teams_involved_in_validation)
+        ? cs.teams_involved_in_validation
+        : [];
+
+      if (selectedDepartments.length > 0) {
+        const match = teams.some((team) => selectedDepartments.includes(team));
+        if (!match) return false;
+      }
+
+      // --- FILTRO POR STATUS ---
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(cs.state)) return false;
+      }
+
+      return true;
+    });
+  }, [
+    changes,
+    startDate,
+    endDate,
+    searchNumber,
+    selectedDepartments,
+    selectedStatuses,
+  ]);
+
+
+  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
+  const start = (currentPage - 1) * itemsPerPage;
+  const currentItems = filteredChanges.slice(start, start + itemsPerPage);
+
+  const handlePreAnalise = (numero: string) => toast.success(`Pré-análise realizada para ${numero}`);
+  const handleEnviarRelatorio = (numero: string) => toast.success(`Relatório enviado para ${numero}`);
+
+  const handleUpdateChange = (updated: Changes) => {
+    setSelectedChange(updated);
   };
+
+  const formatDate = (date?: Date) =>
+    date ? date.toLocaleDateString('pt-BR') : '—';
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Pré validação de changes - MIDDLEWARE</h2>
-          <p className="text-muted-foreground">Gerencie e valide changes do sistema middleware</p>
-        </div>
-      </div>
-
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Data de Início */}
+          <div className="grid gap-4 md:grid-cols-5">
+
+            {/* Data Início */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Data de Início</label>
+              <Label>Data de Início</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant="outline" className={cn("w-full justify-start", !startDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yyyy") : "Selecionar"}
+                    {startDate ? formatDate(startDate) : "Selecionar"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Data de Fim */}
+            {/* Data Fim */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Data de Fim</label>
+              <Label>Data de Fim</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant="outline" className={cn("w-full justify-start", !endDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "dd/MM/yyyy") : "Selecionar"}
+                    {endDate ? formatDate(endDate) : "Selecionar"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Número do Incidente */}
+            {/* Número da Change */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Número do Incidente</label>
+              <Label>Número da Change</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por número..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  value={searchNumber}
+                  onChange={(e) => setSearchNumber(e.target.value)}
+                  className="pl-8"
                 />
               </div>
             </div>
 
             {/* Departamentos */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Departamentos</label>
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os departamentos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os departamentos</SelectItem>
-                  <SelectItem value="Autorizar">Autorizar</SelectItem>
-                  <SelectItem value="Novo">Novo</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Departamentos</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {selectedDepartments.length > 0
+                      ? `${selectedDepartments.length} selecionado(s)`
+                      : "Todos os departamentos"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4">
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {selectedDepartments.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => setSelectedDepartments([])}>
+                        <X className="mr-2 h-4 w-4" />
+                        Limpar seleção
+                      </Button>
+                    )}
+
+                    {departments.map((dept) => (
+                      <div key={dept._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedDepartments.includes(dept.name)}
+                          onCheckedChange={() => toggleDepartment(dept.name)}
+                        />
+                        <Label>{dept.name}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Status */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="PMID">PMID</SelectItem>
-                  <SelectItem value="NMWS">NMWS</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Status</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {selectedStatuses.length > 0
+                      ? `${selectedStatuses.length} selecionado(s)`
+                      : "Todos os status"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4">
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {selectedStatuses.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => setSelectedStatuses([])}>
+                        <X className="mr-2 h-4 w-4" />
+                        Limpar seleção
+                      </Button>
+                    )}
+
+                    {Object.keys(stateLabels).map((state) => (
+                      <div key={state} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedStatuses.includes(state)}
+                          onCheckedChange={() => toggleStatus(state)}
+                        />
+                        <Label>{state}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
+
           </div>
         </CardContent>
       </Card>
@@ -389,7 +269,7 @@ export default function Changes() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="w-full">
+          <ScrollArea className="w-screen max-w-screen max-h-[70vh] max-w-[162vh] overflow-x-auto overflow-y-hidden">
             <div className="flex gap-4 pb-4">
               {filteredChanges.length === 0 ? (
                 <div className="w-full text-center py-8 text-muted-foreground">
@@ -397,11 +277,9 @@ export default function Changes() {
                 </div>
               ) : (
                 filteredChanges.map((change, index) => {
-                  const parsedDate = change.dataExecucao.split(" ")[0].split("/");
-                  const formattedDate = `${parsedDate[0]}/${parsedDate[1]}/${parsedDate[2]}`;
-                  
+                 
                   return (
-                    <div key={change.id} className="relative flex flex-col items-center">
+                    <div key={change.changeSystemData.number} className="relative flex flex-col items-center">
                       {/* Timeline connector */}
                       {index < filteredChanges.length - 1 && (
                         <div className="absolute top-4 left-[calc(50%+80px)] w-8 h-0.5 bg-border" />
@@ -418,14 +296,14 @@ export default function Changes() {
                         <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
-                              {change.numero}
+                              {change.changeSystemData.number}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
-                              {change.status}
+                              {change.changeSystemData.state}
                             </Badge>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {formattedDate} - {change.diaSemana}
+                            {change.changeSystemData.start_date} - {change.changeSystemData.week_day}
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0 space-y-3">
@@ -434,7 +312,7 @@ export default function Changes() {
                               <FileText className="h-3 w-3" />
                               <span>Descrição</span>
                             </div>
-                            <p className="text-sm line-clamp-2">{change.descricao}</p>
+                            <p className="text-sm line-clamp-2">{change.changeSystemData.description}</p>
                           </div>
                           
                           <div className="space-y-1">
@@ -443,19 +321,10 @@ export default function Changes() {
                               <span>Equipe na Implementação</span>
                             </div>
                             <p className="text-xs line-clamp-2 text-muted-foreground">
-                              {change.equipesAplicacao || "Não informado"}
+                              {change.changeSystemData.teams_involved_in_execution || "Não informado"}
                             </p>
                           </div>
-                          
-                          <div className="flex items-center gap-2 pt-2 border-t">
-                            <Badge 
-                              variant={change.changeformAnexado ? "default" : "destructive"} 
-                              className="text-xs"
-                            >
-                              {change.changeformAnexado ? "CF Anexado" : "Sem CF"}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">{change.sistema}</span>
-                          </div>
+                        
                         </CardContent>
                       </Card>
                     </div>
@@ -468,123 +337,104 @@ export default function Changes() {
         </CardContent>
       </Card>
 
+      {/* TABELA */}
       <Card>
         <CardHeader>
           <CardTitle>Lista de Changes</CardTitle>
-          <CardDescription>
-            Visualize e gerencie todas as changes cadastradas
-          </CardDescription>
+          <CardDescription>Visualize e gerencie todas as changes para avaliação</CardDescription>
         </CardHeader>
+
         <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Data Execução</TableHead>
-                  <TableHead>Sistema</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Changeform</TableHead>
-                  <TableHead className="text-center">Ações</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Número</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Data Execução</TableHead>
+                <TableHead>Equipes Aplicação</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-center">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {currentItems.map((c) => (
+                <TableRow key={c.changeSystemData.number}>
+                  <TableCell>{c.changeSystemData.number}</TableCell>
+                  <TableCell>{c.changeSystemData.description}</TableCell>
+                  <TableCell>{c.changeSystemData.start_date}</TableCell>
+                  <TableCell>{c.changeSystemData.teams_involved_in_execution.join(", ")}</TableCell>
+                  <TableCell>
+                    <Badge>{c.changeSystemData.state}</Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex justify-center gap-2">
+
+                      <Button variant="ghost" size="icon" onClick={() => handleVisualizar(c)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+
+                      <Button variant="ghost" size="icon" onClick={() => handleEnviarRelatorio(c.changeSystemData.number)}>
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentChanges.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Nenhuma change encontrada
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  currentChanges.map((change) => (
-                    <TableRow key={change.id}>
-                      <TableCell className="font-medium">{change.numero}</TableCell>
-                      <TableCell className="max-w-md">{change.descricao}</TableCell>
-                      <TableCell className="whitespace-nowrap">{change.dataExecucao}</TableCell>
-                      <TableCell>{change.sistema}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{change.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={change.changeformAnexado ? "default" : "destructive"}>
-                          {change.changeformAnexado ? "Sim" : "Não"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handlePreAnalise(change.numero)}
-                            title="Pré-análise"
-                          >
-                            <CheckSquare className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleVisualizar(change)}
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEnviarRelatorio(change.numero)}
-                            title="Enviar relatório"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+              ))}
 
-            {filteredChanges.length > itemsPerPage && (
-              <div className="mt-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {currentItems.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Nenhuma change encontrada para avaliação
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
-        {selectedChange && (
-          <ChangeDetailsDialog
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-            change={selectedChange}
-          />
-        )}
-      </div>
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={page === currentPage}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext
+                    className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedChange && (
+        <ChangeDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          change={selectedChange}
+          onUpdateChange={handleUpdateChange}
+        />
+      )}
+    </div>
   );
 }

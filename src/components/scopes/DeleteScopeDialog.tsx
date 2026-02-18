@@ -36,8 +36,9 @@ export function DeleteScopeDialog({ open, onOpenChange, scope }: DeleteScopeDial
   });
 
   const handleDelete = () => {
+    console.log(scope)
     if (scope) {
-      deleteMutation.mutate(scope.id);
+      deleteMutation.mutate(scope._id);
     }
   };
 

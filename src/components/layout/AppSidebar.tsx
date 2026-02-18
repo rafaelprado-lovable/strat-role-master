@@ -1,24 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
-  CheckCircle,
-  Headphones,
-  ShieldCheck,
-  Rocket,
   Settings,
+  Rocket,
+  PhoneCallIcon,
+  ChartAreaIcon,
   LogOut,
   ChevronDown,
-  Menu,
-  GitPullRequest,
-  Activity,
-  AlertTriangle,
-  PhoneCall,
-  FileBarChart,
-  Gauge,
-  Workflow,
-} from 'lucide-react';
-import { NavLink } from '@/components/NavLink';
-import { Logo } from './Logo';
+} from "lucide-react";
+import { NavLink } from "@/components/NavLink";
+import { Logo } from "./Logo";
 import {
   Sidebar,
   SidebarContent,
@@ -29,152 +20,145 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+} from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const menuItems = [
-  {
-    title: 'Visão Geral',
-    url: '/',
-    icon: LayoutDashboard,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Changes',
-    url: '/changes',
-    icon: GitPullRequest,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Changes em Execução',
-    url: '/changes-in-execution',
-    icon: Activity,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Pós Change',
-    url: '/post-change',
-    icon: FileBarChart,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Análises',
-    url: '/analyses',
-    icon: CheckCircle,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Automações',
-    url: '/automations',
-    icon: Workflow,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Alarmes de SWAP',
-    url: '/swap-alarms',
-    icon: AlertTriangle,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Sanity Check',
-    url: '/sanity-check',
-    icon: Gauge,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Resolução de Chamados',
-    url: '/call-resolution',
-    icon: PhoneCall,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Qualidade',
-    url: '/quality',
-    icon: CheckCircle,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Suporte',
-    url: '/support',
-    icon: Headphones,
-    hasSubmenu: false,
-  },
-  {
-    title: 'Área de Qualidade',
-    icon: ShieldCheck,
-    hasSubmenu: true,
-    submenu: [
-      { title: 'Organizações', url: '/organizations' },
-      { title: 'Permissões', url: '/permissions' },
-      { title: 'Funções', url: '/roles' },
-      { title: 'Usuários', url: '/users' },
-      { title: 'Departamentos', url: '/departments' },
-      { title: 'Escopos', url: '/scopes' },
-      { title: 'Plantões', url: '/plantoes' },
-    ],
-  },
-  {
-    title: 'Produção',
-    url: '/production',
-    icon: Rocket,
-    hasSubmenu: true,
-    submenu: [
-      { title: 'Insights', url: '/insights' },
-      { title: 'Abertura de Bug', url: '/bug-report' },
-    ],
-  },
-];
+// Mapa de ícones (string → componente real)
+const iconMap: Record<string, React.ElementType> = {
+  settings: Settings,
+  rocket: Rocket,
+  phone: PhoneCallIcon,
+  chart: ChartAreaIcon,
+  dashboard: LayoutDashboard,
+};
 
 export function AppSidebar() {
-  const { open, toggleSidebar } = useSidebar();
-  const [expandedItem, setExpandedItem] = useState<string>('Área de Qualidade');
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [expandedItem, setExpandedItem] = useState<string>("");
+  const handleLogout = () => {
+    console.log("clicou em sair");
+    localStorage.clear(); // limpa tudo
+    window.location.href = '/login';
+  };
+  // 🔹 Simula se o usuário é admin (pode vir de API ou auth context)
+  const isAdmin = true; // <-- depois substituímos por um dado real
+
+  useEffect(() => {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    const userId = localStorage.getItem('userId');
+
+    fetch(
+      "http://10.151.1.54:8000/v1/read/menu/list?userId=" + userId,
+      { method: "GET", headers: myHeaders }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        let items: any[] = [];
+
+        // 1️⃣ Processa menus e submenus normais
+        const menuItems = data.menu.map((menu: any) => {
+          const submenus = data.submenu.filter(
+            (sub: any) => sub.menu === menu.name
+          );
+
+          return {
+            title: menu.name,
+            url: menu.url || "/",        // menus normais podem ter ou não url
+            icon: iconMap[menu.icone?.toLowerCase()] || LayoutDashboard,
+            hasSubmenu: submenus.length > 0,
+            submenu: submenus.map((sub: any) => ({
+              title: sub.name,
+              url: sub.url
+            }))
+          };
+        });
+
+        items = [...menuItems];
+
+        // 2️⃣ Processa GUIA ÚNICA (sempre link direto, sem submenu)
+        const guiaUnicaItems = data.guia_unica.map((g: any) => ({
+          title: g.name,
+          url: g.url,
+          icon: iconMap[g.icone?.toLowerCase()] || LayoutDashboard,
+          hasSubmenu: false,
+          submenu: []
+        }));
+
+        items = [...items, ...guiaUnicaItems];
+
+        // 3️⃣ Processa APIs (opcional: quer mostrar? Se sim, como guia única)
+        const apiItems = data.api.map((api: any) => ({
+          title: api.name,
+          url: api.url,
+          icon: iconMap[api.icone?.toLowerCase()] || Settings,
+          hasSubmenu: false,
+          submenu: []
+        }));
+
+        // Se quiser exibir APIs como menus diretos
+        // items = [...items, ...apiItems];
+
+        // 4️⃣ Admin (se for admin)
+        if (isAdmin) {
+          items.push({
+            title: "Administração",
+            url: "/production",
+            icon: Rocket,
+            hasSubmenu: true,
+            submenu: [
+              { title: "Organizações", url: "/organizations" },
+              { title: "Escopos", url: "/scopes" },
+              { title: "Permissões", url: "/permissions" },
+              { title: "Funções", url: "/roles" },
+              { title: "Departamentos", url: "/departments" },
+              { title: "Usuários", url: "/users" }
+            ]
+          });
+        }
+
+        setMenuItems(items);
+      })
+      .catch((error) => console.error("Erro ao carregar menu:", error));
+  }, []);
 
   return (
     <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
+      {/* HEADER */}
+      <SidebarHeader className="border-b border-sidebar-border p-5">
         <div className="flex items-center justify-between">
           <Logo />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSidebar}
-            className="h-8 w-8 text-sidebar-foreground hover:text-sidebar-primary"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
         </div>
       </SidebarHeader>
 
+      {/* CONTEÚDO */}
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.hasSubmenu && item.submenu ? (
+                  {item.hasSubmenu ? (
                     <Collapsible
                       open={expandedItem === item.title}
                       onOpenChange={(isOpen) =>
-                        setExpandedItem(isOpen ? item.title : '')
+                        setExpandedItem(isOpen ? item.title : "")
                       }
                     >
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent hover:text-sidebar-primary">
                           <div className="flex items-center gap-3">
                             <item.icon className="h-4 w-4" />
-                            {open && <span>{item.title}</span>}
+                            <span>{item.title}</span>
                           </div>
-                          {open && (
-                            <ChevronDown
-                              className={`h-4 w-4 transition-transform ${
-                                expandedItem === item.title ? 'rotate-180' : ''
-                              }`}
-                            />
-                          )}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                              expandedItem === item.title ? "rotate-180" : ""
+                            }`}
+                          />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
+
                       {item.submenu.length > 0 && (
                         <CollapsibleContent className="ml-6 mt-1 space-y-1">
                           {item.submenu.map((subitem) => (
@@ -184,7 +168,7 @@ export function AppSidebar() {
                               className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
                               activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                             >
-                              {open && <span>{subitem.title}</span>}
+                              <span>{subitem.title}</span>
                             </NavLink>
                           ))}
                         </CollapsibleContent>
@@ -193,12 +177,12 @@ export function AppSidebar() {
                   ) : (
                     <SidebarMenuButton asChild>
                       <NavLink
-                        to={item.url || '#'}
+                        to={item.url || "#"}
                         className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
                         <item.icon className="h-4 w-4" />
-                        {open && <span>{item.title}</span>}
+                        <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   )}
@@ -209,6 +193,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* FOOTER */}
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -219,14 +204,14 @@ export function AppSidebar() {
                 activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
               >
                 <Settings className="h-4 w-4" />
-                {open && <span>Configurações</span>}
+                <span>Configurações</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton className="hover:bg-sidebar-accent hover:text-destructive">
+            <SidebarMenuButton className="hover:bg-sidebar-accent hover:text-destructive" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
-              {open && <span>Sair</span>}
+              <span>Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

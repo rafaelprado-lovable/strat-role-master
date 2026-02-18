@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { userApi, departmentApi } from '@/services/mockApi';
+import { userApi } from '@/services/mockApi';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,11 +27,6 @@ export default function Users() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: userApi.getAll,
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ['departments'],
-    queryFn: departmentApi.getAll,
   });
 
   const handleCreate = () => {
@@ -78,19 +73,16 @@ export default function Users() {
                 <TableRow>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Departamentos</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data de Criação</TableHead>
+                  <TableHead>Organização</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users?.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar} />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {user.name
                               .split(' ')
@@ -103,26 +95,7 @@ export default function Users() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.departmentIds.map((deptId) => {
-                          const dept = departments?.find(d => d.id === deptId);
-                          return dept ? (
-                            <Badge key={deptId} variant="outline" className="text-xs">
-                              {dept.name}
-                            </Badge>
-                          ) : null;
-                        })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                        {user.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString('pt-BR')}
-                    </TableCell>
+                    <TableCell>{user.organization}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button

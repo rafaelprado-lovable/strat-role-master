@@ -1,26 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "@/components/ui/use-toast";
+import { de } from "date-fns/locale";
 
 type AnalysisType = "incidente" | "tid-producao" | "";
 
 type AnalysisResult = {
-  success: {
-    tipo_erro: string;
-    info_erro: {
-      uri_falha: string;
-      data_hora: string;
-      request: any;
-      response: any;
-      motivo_erro: string;
-      corretion_suject: string;
-    };
-  };
+  analise_log_api: {
+    data_ocorrencia_aproximada: String;
+    codigo_status_http_retornado: String;
+    TID: String;
+    mensagem_erro_principal: String;
+    causa_raiz_sugerida: String;
+    tipo_do_erro: String;
+    endpoint_do_provedor: String;
+    request_ao_provedor: String;
+    response_do_provedor: String;
+    Direcionar_para_fila: String;
+    tagueamento_de_controle: String;
+  }
+};
+
+type Department = {
+  sysId: string;
+  name: string;
 };
 
 export default function Analyses() {
@@ -33,126 +41,261 @@ export default function Analyses() {
   const [method, setMethod] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [departaments, setDepartaments] = useState<Department[]>([]);
+  const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
+  const [selectedDepartmentSysId, setSelectedDepartmentSysId] = useState("");
 
   const handleIncidentAnalysis = async () => {
     setIsLoading(true);
-    
-    // Mock API call
-    setTimeout(() => {
-      const mockResult: AnalysisResult = {
-        success: {
-          tipo_erro: "erro tecnico",
-          info_erro: {
-            uri_falha: "orch-r-customers-pending-requests",
-            data_hora: "2025-11-20 22:49:39",
-            request: {
-              incident: incidentNumber,
-              timestamp: new Date().toISOString()
-            },
-            response: {
-              description: "Generic Error",
-              provider: {
-                serviceName: "incident-analysis-service",
-                errorCode: "550",
-                errorMessage: "Generic Error"
-              }
-            },
-            motivo_erro: "The external service returned a non-standard HTTP 550 status code with a 'Generic Error' message, indicating an internal issue or unhandled exception during processing.",
-            corretion_suject: "Investigate the incident analysis service for internal errors, unhandled exceptions, or misconfigurations that lead to a generic 550 error."
-          }
-        }
+
+    try {
+      setAnalysisResult(null);
+      const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
+      const userId = localStorage.getItem("userId"); // use a mesma chave que você usa no login
+
+      const myHeaders = new Headers();
+      myHeaders.append('Content-Type', 'application/json');
+      myHeaders.append('Authorization', `Bearer ${userToken}`);
+
+      const raw = JSON.stringify({
+        userId: userId,
+        incidentNumber: incidentNumber,
+      });
+
+      const requestOptions: RequestInit = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow",
       };
-      
-      setAnalysisResult(mockResult);
+
+      const response = await fetch(
+        "http://10.151.1.54:8000/v1/analyse/ticket",
+        requestOptions
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Ajuste conforme o formato do backend:
+      setAnalysisResult(result);
+
+      toast({
+        title: "Sucesso",
+        description: "Sucesso ao analisar o incidente",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao analisar o incidente",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      toast.success("Análise concluída");
-    }, 1500);
+    }
   };
 
-  const handleTidAnalysis = async () => {
-    setIsLoading(true);
-    
-    // Mock API call
-    setTimeout(() => {
-      const mockResult: AnalysisResult = {
-        success: {
-          tipo_erro: "erro tecnico",
-          info_erro: {
-            uri_falha: uri || "orch-r-customers-pending-requests",
-            data_hora: dateTime || "2025-11-20 22:49:39",
-            request: {
-              channel: "APP",
-              contract: {
-                msisdn: "21986509060"
-              },
-              customer: {
-                socialSecNo: "16091160702"
-              },
-              interaction: {
-                calleds: [
-                  {
-                    status: "PENDING"
-                  },
-                  {
-                    status: "WAITING"
-                  }
-                ],
-                document: {
-                  number: "16091160702"
-                },
-                msisdn: "21986509060"
-              },
-              serviceRequest: {
-                login: "BFFDIGITAL",
-                reason1: "Solicitação",
-                reason2: "Plano",
-                reason3: "Troca",
-                status: "Fechado"
-              },
-              services: [
-                {
-                  product: {
-                    action: "Activate",
-                    commercialCode: "PLN537"
-                  }
-                },
-                {
-                  product: {
-                    action: "Activate",
-                    commercialCode: "DSC511"
-                  }
-                },
-                {
-                  product: {
-                    action: "Activate",
-                    commercialCode: "PCT552"
-                  }
-                }
-              ],
-              type: "1",
-              platform,
-              messageId,
-              method
-            },
-            response: {
-              description: "Generic Error",
-              provider: {
-                serviceName: uri || "orch-r-customers-pending-requests",
-                errorCode: "550",
-                errorMessage: "Generic Error"
-              }
-            },
-            motivo_erro: "The external service 'orch-r-customers-pending-requests' returned a non-standard HTTP 550 status code with a 'Generic Error' message, indicating an internal issue or unhandled exception during processing.",
-            corretion_suject: "Investigate the 'orch-r-customers-pending-requests' service for internal errors, unhandled exceptions, or misconfigurations that lead to a generic 550 error. Check its logs, dependencies, and business logic for the given request parameters."
-          }
+  const handlePostComment = async (comment: string) => {
+    try {
+      const userToken = localStorage.getItem("userToken");
+      const userId = localStorage.getItem("userId");
+
+      if (!userToken || !userId) throw new Error("Usuário não autenticado");
+
+      const response = await fetch(
+        "http://10.151.1.33:8000/v1/create/incident/comment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
+          },
+          body: JSON.stringify({
+            userId,
+            incidentNumber,
+            incidentComment: comment,
+          }),
         }
-      };
-      
-      setAnalysisResult(mockResult);
-      setIsLoading(false);
-      toast.success("Análise concluída");
-    }, 1500);
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao postar comentário");
+      }
+
+      const result = await response.json();
+      console.log("Comentário enviado:", result);
+    } catch (err) {
+      console.error("Erro ao comentar incidente:", err);
+    }
   };
+
+
+  const handleTrammitIncident = async () => {
+    try {
+      const userToken = localStorage.getItem("userToken");
+      const userId = localStorage.getItem("userId");
+
+      if (!incidentNumber || !selectedDepartmentSysId) {
+        toast({
+          title: "Erro",
+          description: "Selecione a fila antes de encaminhar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(
+        "http://10.151.1.54:8000/v1/change/incident/assignment/group",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
+          },
+          body: JSON.stringify({
+            userId,
+            incidentNumber,
+            assignmentGroup: selectedDepartmentSysId,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Erro ao encaminhar incidente");
+
+      toast({
+        title: "Incidente encaminhado",
+        description: `Incidente ${incidentNumber} encaminhado com sucesso.`,
+      });
+
+      // Comentário automático ITIL style
+      const autoComment = `Prezados, poderiam verificar o motivo do retorno abaixo:
+Apontamento: 
+${analysisResult.analise_log_api.endpoint_do_provedor}
+Request:
+${JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
+Response: 
+${JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
+Motivo do erro:
+${analysisResult.analise_log_api.causa_raiz_sugerida}
+`;
+
+      await handlePostComment(autoComment);
+
+    } catch (error) {
+      console.error(error);
+
+      toast({
+        title: "Erro",
+        description: "Não foi possível encaminhar o incidente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  const handleEncerrarIncidente = async () => {
+    console.log(analysisResult)
+    
+    try {
+      const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
+      const userId = localStorage.getItem("userId"); // use a mesma chave que você usa no login
+
+      const myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      myHeaders.append("Authorization", `Bearer ${userToken}`);
+
+      const resolutionNotes = `${JSON.stringify(analysisResult.analise_log_api, null, 2)}`
+
+
+      const raw = JSON.stringify({
+        userId: userId,
+        incidentNumber: incidentNumber,
+        closeCode: "not_solved_not_applicable",
+        platform: "PMID",
+        cause: "Solicitação de Analise",
+        subCause: "IMPROCEDENTE - REGRA DE NEGÓCIO",
+        closeNotes: resolutionNotes
+      });
+
+      const requestOptions = {
+        method: "PATCH",
+        headers: myHeaders,
+        body: raw,
+      };
+
+      const response = await fetch(
+        "http://10.151.1.54:8000/v1/resolve/incident",
+        requestOptions
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao resolver incidente");
+      }
+
+      toast({
+        title: "Incidente resolvido",
+        description: `Incidente ${incidentNumber} marcado como resolvido`,
+      });
+
+    } catch (error) {
+      console.error(error);
+
+      toast({
+        title: "Erro",
+        description: "Não foi possível resolver o incidente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getDepartaments = async () => {
+    try {
+      const userToken = localStorage.getItem("userToken");
+
+      const response = await fetch("http://10.151.1.33:8000/v1/read/assignment/group", {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+
+      const result = await response.json();
+
+      setDepartaments(result);
+      console.log("Departamentos carregados:", result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
+  useEffect(() => {
+    getDepartaments();
+  }, []);
+  
+  const uniqueDepartments = departaments.filter(
+    (dept, index, self) =>
+      index === self.findIndex(d => d.sysId === dept.sysId)
+  );
+
+  useEffect(() => {
+    const fila = analysisResult?.analise_log_api?.Direcionar_para_fila;
+    if (fila) {
+      console.log("Fila recebida da análise:", fila);
+      setSelectedDepartmentName(fila);
+    }
+  }, [analysisResult]);
+
+  useEffect(() => {
+    if (!selectedDepartmentName || departaments.length === 0) return;
+
+    const dep = departaments.find(d => d.name === selectedDepartmentName);
+    if (dep) setSelectedDepartmentSysId(dep.sysId);
+  }, [selectedDepartmentName, departaments]);
+
 
   return (
     <div className="space-y-6">
@@ -175,7 +318,7 @@ export default function Analyses() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="incidente">Análise de incidente</SelectItem>
-                <SelectItem value="tid-producao">Análise de TID em produção</SelectItem>
+                <SelectItem value="tid-producao">TID em ambiente de produção</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -213,55 +356,94 @@ export default function Analyses() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="platform">Plataforma</Label>
-                    <Input
-                      id="platform"
-                      placeholder="PMID"
-                      value={platform}
-                      onChange={(e) => setPlatform(e.target.value)}
-                    />
+                    <Select value={platform} onValueChange={setPlatform}>
+                      <SelectTrigger id="platform">
+                        <SelectValue placeholder="Selecione a plataforma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NMWS">NMWS</SelectItem>
+                        <SelectItem value="PMID">PMID</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="uri">URI</Label>
-                    <Input
-                      id="uri"
-                      placeholder="access/v4/offers"
-                      value={uri}
-                      onChange={(e) => setUri(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="messageId">Message Id</Label>
-                    <Input
-                      id="messageId"
-                      placeholder="Message Id"
-                      value={messageId}
-                      onChange={(e) => setMessageId(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dateTime">data e hora</Label>
-                    <Input
-                      id="dateTime"
-                      type="datetime-local"
-                      value={dateTime}
-                      onChange={(e) => setDateTime(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="method">Método</Label>
-                    <Input
-                      id="method"
-                      placeholder="POST"
-                      value={method}
-                      onChange={(e) => setMethod(e.target.value)}
-                    />
+                </div>
+                <div className="space-y-4">
+                  <div className="border-t pt-4">
+                    {/* SE FOR NMWS → só TID + Data */}
+                    {platform === "NMWS" ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="messageId">TID</Label>
+                          <Input
+                            id="messageId"
+                            placeholder="TID"
+                            value={messageId}
+                            onChange={(e) => setMessageId(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="dateTime">Data e hora</Label>
+                          <Input
+                            id="dateTime"
+                            type="datetime-local"
+                            value={dateTime}
+                            onChange={(e) => setDateTime(e.target.value)}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* SE NÃO FOR NMWS → mostra tudo */}
+
+                        <div className="space-y-2">
+                          <Label htmlFor="uri">URI</Label>
+                          <Input
+                            id="uri"
+                            placeholder="access/v4/offers"
+                            value={uri}
+                            onChange={(e) => setUri(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="messageId">Message Id</Label>
+                          <Input
+                            id="messageId"
+                            placeholder="Message Id"
+                            value={messageId}
+                            onChange={(e) => setMessageId(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="dateTime">Data e hora</Label>
+                          <Input
+                            id="dateTime"
+                            type="datetime-local"
+                            value={dateTime}
+                            onChange={(e) => setDateTime(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="method">Método</Label>
+                          <Input
+                            id="method"
+                            placeholder="POST"
+                            value={method}
+                            onChange={(e) => setMethod(e.target.value)}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <Button 
                     className="w-full" 
-                    onClick={handleTidAnalysis}
-                    disabled={isLoading}
+                    onClick={handleIncidentAnalysis}
+                    disabled={isLoading || !incidentNumber}
                   >
-                    {isLoading ? "Analisando..." : "Analisar TID em produção"}
+                    {isLoading ? "Analisando..." : "Analisar chamado"}
                   </Button>
                 </div>
               </div>
@@ -276,30 +458,35 @@ export default function Analyses() {
             <CardTitle>Resultado da Análise</CardTitle>
             <CardDescription>Detalhes do erro identificado</CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
+
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label className="text-sm font-semibold">Tipo de Erro</Label>
                 <p className="text-sm text-muted-foreground capitalize">
-                  {analysisResult.success.tipo_erro}
+                  {analysisResult.analise_log_api.tipo_do_erro}
                 </p>
               </div>
+
               <div>
                 <Label className="text-sm font-semibold">URI com Falha</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult.success.info_erro.uri_falha}
+                  {analysisResult.analise_log_api.endpoint_do_provedor}
                 </p>
               </div>
+
               <div>
                 <Label className="text-sm font-semibold">Data e Hora</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult.success.info_erro.data_hora}
+                  {analysisResult.analise_log_api.data_ocorrencia_aproximada}
                 </p>
               </div>
+
               <div>
                 <Label className="text-sm font-semibold">Código do Erro</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult.success.info_erro.response.provider.errorCode}
+                  {analysisResult?.analise_log_api.codigo_status_http_retornado ?? ""}
                 </p>
               </div>
             </div>
@@ -307,14 +494,14 @@ export default function Analyses() {
             <div>
               <Label className="text-sm font-semibold">Motivo do Erro</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                {analysisResult.success.info_erro.motivo_erro}
+                {analysisResult.analise_log_api.causa_raiz_sugerida}
               </p>
             </div>
 
             <div>
               <Label className="text-sm font-semibold">Sugestão de Correção</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                {analysisResult.success.info_erro.corretion_suject}
+                {analysisResult.analise_log_api.causa_raiz_sugerida}
               </p>
             </div>
 
@@ -322,7 +509,7 @@ export default function Analyses() {
               <Label className="text-sm font-semibold">Request</Label>
               <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
                 <pre className="p-4 text-xs">
-                  {JSON.stringify(analysisResult.success.info_erro.request, null, 2)}
+                  {JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
                 </pre>
               </ScrollArea>
             </div>
@@ -331,12 +518,85 @@ export default function Analyses() {
               <Label className="text-sm font-semibold">Response</Label>
               <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
                 <pre className="p-4 text-xs">
-                  {JSON.stringify(analysisResult.success.info_erro.response, null, 2)}
+                  {JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
                 </pre>
               </ScrollArea>
             </div>
-          </CardContent>
+           </CardContent>
+
+            {/* ------------------------------ */}
+            {/* BOTÃO ENCERRAR INCIDENTE */}
+            {/* ------------------------------ */}
+            {analysisResult.analise_log_api.tipo_do_erro === 'regra_de_negocio' ? (
+              <div className="pt-4">
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => handleEncerrarIncidente()}
+                >
+                  Encerrar incidente como regra de negócio
+                </Button>
+              </div>
+            ) : (
+              <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Direcionar para fila</Label>
+
+                    <Select value={selectedDepartmentName} onValueChange={setSelectedDepartmentName}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a fila" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {uniqueDepartments.map((dept) => (
+                          <SelectItem key={dept.sysId} value={dept.name}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold">Informações para análise</Label>
+                    <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
+                      <pre className="p-4 text-xs">
+                        Prezados, poderiam verificar o motivo do erro abaixo:
+                        <br />
+                        <br />
+                        Apontamento: 
+                        <br />
+                        {analysisResult.analise_log_api.endpoint_do_provedor}
+                        <br />
+                        <br />
+                        Request:
+                        <br />
+                        {JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
+                        <br />
+                        <br />
+                        Response: 
+                        <br />
+                        {JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
+                        <br />
+                        <br />
+                        Motivo do erro:
+                        <br />
+                        {analysisResult.analise_log_api.causa_raiz_sugerida}
+
+                      </pre>
+                    </ScrollArea>
+                    <div className="pt-4">
+                      <Button
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => handleTrammitIncident()}
+                      >
+                        Encaminhar incidente para {selectedDepartmentName}
+                      </Button>
+                    </div>
+                </div>
+              </CardContent>
+            )}
         </Card>
+
       )}
     </div>
   );
