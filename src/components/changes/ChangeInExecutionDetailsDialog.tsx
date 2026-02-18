@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { changeTaskService, ChangeTask } from "@/services/changeTaskService";
 import {
   Dialog,
   DialogContent,
@@ -28,14 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, CheckCircle, XCircle, Download, Play } from "lucide-react";
 import { toast } from "sonner";
 
-interface Task {
-  sys_id: string;
-  number: string;
-  description: string;
-  type: string;
-  state: string;
-  departament?: string;
-}
+// ChangeTask type imported from changeTaskService
 
 interface ChangeInExecutionDetails {
   changeSystemData: {
@@ -80,7 +74,7 @@ interface ChangeInExecutionDetails {
     implementation_version: string,
     pipeline_link: string
   }>,
-  tarefas: Task[];
+  tarefas: ChangeTask[];
 }
 
 interface ChangeInExecutionDetailsDialogProps {
@@ -97,35 +91,13 @@ export function ChangeInExecutionDetailsDialog({
   const [currentPage, setCurrentPage] = useState(1);
   const [isExclusaoRunning, setIsExclusaoRunning] = useState(false);
   const itemsPerPage = 10;
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<ChangeTask[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   async function getTasks() {
-    const userToken = localStorage.getItem("userToken");
-    const userId = localStorage.getItem("userId");
-
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", `Bearer ${userToken}`);
-
-    const raw = JSON.stringify({
-      userId,
-      changeNumber: change.changeSystemData.number,
-    });
-
     try {
-      const response = await fetch("http://10.151.1.54:8000/v1/ctasks", {
-        method: "PATCH",
-        headers: myHeaders,
-        body: raw,
-      });
-
-      const data = await response.json();
-      console.log("TASKS RESPONSE:", data);
-
-      // AJUSTE CONFORME SUA API
-      setTasks(data.success ?? data);
-
+      const data = await changeTaskService.getTasksByChange(change.changeSystemData.number);
+      setTasks(data);
     } catch (err) {
       console.error(err);
     }

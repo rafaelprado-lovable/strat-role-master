@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEffect } from 'react';
+import { sanityService, SanityItem } from '@/services/sanityService';
 
 interface ServiceStatus {
   name: string;
@@ -15,21 +16,7 @@ interface ServiceStatus {
   status: 'ok' | 'error';
 }
 
-type ApiStatus = 'ok' | 'error';
-
-interface ApiPayloadItem {
-  name: string;
-  disponibilidade: number;
-  latencia_ms: number;
-  status_disp: ApiStatus;
-  status_lat: ApiStatus;
-}
-
-
-
-// Extract unique system prefixes from service names
 const extractSystem = (name: string): string => {
-  // Try to extract prefix before underscore or specific patterns
   const patterns = [
     /^(AIRVANTAGE)_/i,
     /^(BSCSIX)_/i,
@@ -89,26 +76,18 @@ const extractSystem = (name: string): string => {
 };
 
 
-
 const SanityCheck = () => {
 	const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 	const [selectedSystem, setSelectedSystem] = useState<string>('all');
-	const [apiPayload, setApiPayload] = useState<ApiPayloadItem[]>([]);
+	const [apiPayload, setApiPayload] = useState<SanityItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	const fetchSanity = () => {
 		setLoading(true);
 
-		fetch('http://10.151.1.54:8000/v1/sanity/mw-departament', {
-		method: 'GET',
-		redirect: 'follow',
-		})
-		.then(res => {
-			if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
-			return res.json();
-		})
-		.then((data: ApiPayloadItem[]) => {
+		sanityService.getMwDepartment()
+		.then((data) => {
 			setApiPayload(data);
 			setLastUpdate(new Date());
 			setError(null);
@@ -199,9 +178,9 @@ const SanityCheck = () => {
 			<Badge 
 			variant={service.status === 'error' ? 'destructive' : 'secondary'}
 			className={
-				service.status === 'ok'
-				? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-				: ''
+					service.status === 'ok'
+					? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+					: ''
 			}
 			>
 			{formatValue(service.value, type)}
@@ -242,7 +221,6 @@ const SanityCheck = () => {
 				</Select>
 			</div>
 
-			{/* Última atualização + loading */}
 			<div className="flex items-center gap-2 text-sm text-muted-foreground">
 				<Clock className="h-4 w-4" />
 
@@ -268,7 +246,6 @@ const SanityCheck = () => {
 		</div>
       </div>
 
-      {/* Alert Summary */}
       {totalErrors > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -280,7 +257,6 @@ const SanityCheck = () => {
         </Alert>
       )}
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -345,7 +321,6 @@ const SanityCheck = () => {
         </Card>
       </div>
 
-      {/* Services Tabs */}
       <Tabs defaultValue="alerts" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="alerts" className="flex items-center gap-2">

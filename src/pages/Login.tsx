@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { authService } from '@/services/authService';
 import heimdallLogo from '@/assets/heimdall-logo.png';
 
 export default function Login() {
@@ -19,42 +20,14 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://10.151.1.54:8000/v1/create/authorization/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
+      const data = await authService.login(email, password);
 
-      // Aqui pegamos o resultado da API
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.detail || "Falha ao autenticar");
-      }
-
-      // Exemplo: salvar o token localmente (se vier)
-      if (data.userToken) {
-        localStorage.setItem("userToken", data.userToken);
-        localStorage.setItem("userId", data.userId);
-        localStorage.setItem("userName", data.name);
-        localStorage.setItem("userEmail", data.email);
-        localStorage.setItem("departaments", data.departament);
-      }
-
-      // Exibe o toast de sucesso
       toast({
         title: 'Login realizado',
         description: `Bem-vindo ao Heimdall, ${data.name}!`,
       });
 
-      // Redireciona para a home
       navigate('/');
-
     } catch (error: any) {
       console.error("Erro no login:", error);
       toast({

@@ -6,30 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/components/ui/use-toast";
-import { de } from "date-fns/locale";
+import { analysisService, AnalysisResult, AssignmentGroup } from "@/services/analysisService";
 
 type AnalysisType = "incidente" | "tid-producao" | "";
 
-type AnalysisResult = {
-  analise_log_api: {
-    data_ocorrencia_aproximada: String;
-    codigo_status_http_retornado: String;
-    TID: String;
-    mensagem_erro_principal: String;
-    causa_raiz_sugerida: String;
-    tipo_do_erro: String;
-    endpoint_do_provedor: String;
-    request_ao_provedor: String;
-    response_do_provedor: String;
-    Direcionar_para_fila: String;
-    tagueamento_de_controle: String;
-  }
-};
-
-type Department = {
-  sysId: string;
-  name: string;
-};
+// Types imported from analysisService
 
 export default function Analyses() {
   const [analysisType, setAnalysisType] = useState<AnalysisType>("");
@@ -41,7 +22,7 @@ export default function Analyses() {
   const [method, setMethod] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [departaments, setDepartaments] = useState<Department[]>([]);
+  const [departaments, setDepartaments] = useState<AssignmentGroup[]>([]);
   const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
   const [selectedDepartmentSysId, setSelectedDepartmentSysId] = useState("");
 
@@ -50,37 +31,7 @@ export default function Analyses() {
 
     try {
       setAnalysisResult(null);
-      const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
-      const userId = localStorage.getItem("userId"); // use a mesma chave que você usa no login
-
-      const myHeaders = new Headers();
-      myHeaders.append('Content-Type', 'application/json');
-      myHeaders.append('Authorization', `Bearer ${userToken}`);
-
-      const raw = JSON.stringify({
-        userId: userId,
-        incidentNumber: incidentNumber,
-      });
-
-      const requestOptions: RequestInit = {
-        method: "POST",
-        headers: myHeaders,
-        body: raw,
-        redirect: "follow",
-      };
-
-      const response = await fetch(
-        "http://10.151.1.54:8000/v1/analyse/ticket",
-        requestOptions
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro na API: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      // Ajuste conforme o formato do backend:
+      const result = await analysisService.analyseTicket(incidentNumber);
       setAnalysisResult(result);
 
       toast({
@@ -100,44 +51,15 @@ export default function Analyses() {
 
   const handlePostComment = async (comment: string) => {
     try {
-      const userToken = localStorage.getItem("userToken");
-      const userId = localStorage.getItem("userId");
-
-      if (!userToken || !userId) throw new Error("Usuário não autenticado");
-
-      const response = await fetch(
-        "http://10.151.1.33:8000/v1/create/incident/comment",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userToken}`,
-          },
-          body: JSON.stringify({
-            userId,
-            incidentNumber,
-            incidentComment: comment,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erro ao postar comentário");
-      }
-
-      const result = await response.json();
-      console.log("Comentário enviado:", result);
+      await analysisService.postIncidentComment(incidentNumber, comment);
+      console.log("Comentário enviado");
     } catch (err) {
       console.error("Erro ao comentar incidente:", err);
     }
   };
 
-
   const handleTrammitIncident = async () => {
     try {
-      const userToken = localStorage.getItem("userToken");
-      const userId = localStorage.getItem("userId");
-
       if (!incidentNumber || !selectedDepartmentSysId) {
         toast({
           title: "Erro",
@@ -147,23 +69,7 @@ export default function Analyses() {
         return;
       }
 
-      const response = await fetch(
-        "http://10.151.1.54:8000/v1/change/incident/assignment/group",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userToken}`,
-          },
-          body: JSON.stringify({
-            userId,
-            incidentNumber,
-            assignmentGroup: selectedDepartmentSysId,
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Erro ao encaminhar incidente");
+      await analysisService.changeAssignmentGroup(incidentNumber, selectedDepartmentSysId);
 
       toast({
         title: "Incidente encaminhado",
@@ -173,20 +79,19 @@ export default function Analyses() {
       // Comentário automático ITIL style
       const autoComment = `Prezados, poderiam verificar o motivo do retorno abaixo:
 Apontamento: 
-${analysisResult.analise_log_api.endpoint_do_provedor}
+${analysisResult!.analise_log_api.endpoint_do_provedor}
 Request:
-${JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
+${JSON.stringify(analysisResult!.analise_log_api.request_ao_provedor, null, 2)}
 Response: 
-${JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
+${JSON.stringify(analysisResult!.analise_log_api.response_do_provedor, null, 2)}
 Motivo do erro:
-${analysisResult.analise_log_api.causa_raiz_sugerida}
+${analysisResult!.analise_log_api.causa_raiz_sugerida}
 `;
 
       await handlePostComment(autoComment);
 
     } catch (error) {
       console.error(error);
-
       toast({
         title: "Erro",
         description: "Não foi possível encaminhar o incidente.",
@@ -195,54 +100,27 @@ ${analysisResult.analise_log_api.causa_raiz_sugerida}
     }
   };
 
-
   const handleEncerrarIncidente = async () => {
-    console.log(analysisResult)
-    
+    if (!analysisResult) return;
+
     try {
-      const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
-      const userId = localStorage.getItem("userId"); // use a mesma chave que você usa no login
+      const resolutionNotes = JSON.stringify(analysisResult.analise_log_api, null, 2);
 
-      const myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
-      myHeaders.append("Authorization", `Bearer ${userToken}`);
-
-      const resolutionNotes = `${JSON.stringify(analysisResult.analise_log_api, null, 2)}`
-
-
-      const raw = JSON.stringify({
-        userId: userId,
-        incidentNumber: incidentNumber,
+      await analysisService.resolveIncident({
+        incidentNumber,
         closeCode: "not_solved_not_applicable",
         platform: "PMID",
         cause: "Solicitação de Analise",
         subCause: "IMPROCEDENTE - REGRA DE NEGÓCIO",
-        closeNotes: resolutionNotes
+        closeNotes: resolutionNotes,
       });
-
-      const requestOptions = {
-        method: "PATCH",
-        headers: myHeaders,
-        body: raw,
-      };
-
-      const response = await fetch(
-        "http://10.151.1.54:8000/v1/resolve/incident",
-        requestOptions
-      );
-
-      if (!response.ok) {
-        throw new Error("Erro ao resolver incidente");
-      }
 
       toast({
         title: "Incidente resolvido",
         description: `Incidente ${incidentNumber} marcado como resolvido`,
       });
-
     } catch (error) {
       console.error(error);
-
       toast({
         title: "Erro",
         description: "Não foi possível resolver o incidente.",
@@ -251,29 +129,10 @@ ${analysisResult.analise_log_api.causa_raiz_sugerida}
     }
   };
 
-  const getDepartaments = async () => {
-    try {
-      const userToken = localStorage.getItem("userToken");
-
-      const response = await fetch("http://10.151.1.33:8000/v1/read/assignment/group", {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
-      });
-
-      const result = await response.json();
-
-      setDepartaments(result);
-      console.log("Departamentos carregados:", result);
-
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-
   useEffect(() => {
-    getDepartaments();
+    analysisService.getAssignmentGroups()
+      .then(setDepartaments)
+      .catch(console.error);
   }, []);
   
   const uniqueDepartments = departaments.filter(
