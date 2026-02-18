@@ -3,8 +3,8 @@ import { apiClient } from './apiClient';
 export interface AnalysisResult {
   analise_log_api: {
     data_ocorrencia_aproximada: string;
-    codigo_status_http_retornado: string;
     TID: string;
+    codigo_status_retornado: string;
     mensagem_erro_principal: string;
     causa_raiz_sugerida: string;
     tipo_do_erro: string;
