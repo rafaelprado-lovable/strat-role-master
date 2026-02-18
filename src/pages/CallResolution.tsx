@@ -106,7 +106,7 @@ export default function CallResolution() {
     }
 
     try {
-      await incidentResolutionApi.create(formData);
+      await incidentResolutionApi.create(formData as any);
 
       toast.success("Resolução cadastrada com sucesso!");
 
@@ -141,7 +141,7 @@ export default function CallResolution() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedResolutions = filteredResolutions.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleApprove = async (resolution: CallResolution) => {
+  const handleApprove = async (resolution: any) => {
     try {
       await incidentResolutionApi.aprooveSolicitation({
         id: resolution.handlingRuleData.id,
@@ -156,7 +156,7 @@ export default function CallResolution() {
     }
   };
 
-  const handleReject = async (resolution: CallResolution) => {
+  const handleReject = async (resolution: any) => {
     try {
       await incidentResolutionApi.aprooveSolicitation({
         id: resolution.handlingRuleData.id,

@@ -175,11 +175,11 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Tipo do restart</label>
-                <Input value={
+                <Input value={String(
                   change.changeAproovalData.restart_type === false
                     ? "N/A"
                     : change.changeAproovalData.restart_type ?? "Sem informação"
-                } readOnly className="bg-muted" />
+                )} readOnly className="bg-muted" />
               </div>
 
               <div className="space-y-2">
@@ -231,8 +231,8 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Impacto em vendas</label>
                 <Input value={
-                  change.changeAproovalData.validation_time === true ? "Sim" :
-                  change.changeAproovalData.validation_time === false ? "Não" :
+                  (change.changeAproovalData as any).validation_time === true ? "Sim" :
+                  (change.changeAproovalData as any).validation_time === false ? "Não" :
                   "Sem informação"
                 } readOnly className="bg-muted" />
               </div>

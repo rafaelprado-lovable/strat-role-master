@@ -780,7 +780,7 @@ export default function Insights() {
 
                           <PopoverContent className="p-0 w-[300px]">
                             <Command>
-                              <CommandInput placeholder="Digite para buscar..." value={searchTerm} onInput={(e) => handleSearch(e.target.value)}/>
+                              <CommandInput placeholder="Digite para buscar..." value={searchTerm} onInput={(e) => handleSearch((e.target as HTMLInputElement).value)}/>
 
                               {loading && (
                                 <div className="p-4 text-center text-sm text-muted-foreground">

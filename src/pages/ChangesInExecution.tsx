@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
-import { changesApi, departmentApi } from '@/services/mockApi';
+import { changesApi } from '@/services/mockApi';
 import {
   Table,
   TableBody,
@@ -79,58 +79,15 @@ interface ChangeInExecution {
     pipeline_link: string
   }>,
   serviceTimeline?: {
-    today: ServiceTimelinePoint[];
-    lastWeek?: ServiceTimelinePoint[];
+    today: any[];
+    lastWeek?: any[];
   };
+  cepsInclude?: any[];
+  cepsExclude?: any[];
+  [key: string]: any;
 }
 
-const mockChangesInExecution: ChangeInExecution[] = [
-  {
-    id: "1",
-    numero: "CHG0174916",
-    descricaoResumida: "Bug 1185202: [PRODUÇÃO]|PMID",
-    fimExecucao: "16/11/2025 23:00:00",
-    status: "Em execução",
-    tipo: "Revisão",
-    descricaoChange: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
-    inicioValidacao: "16/11/2025 22:00:00",
-    fimValidacao: "16/11/2025 23:00:00",
-    diaSemana: "Segunda-feira",
-    equipesAplicacao: "CTIO IT -INTEGRATION SOLUTIONS MANAGEMENT -MIDDLEWARE -N3.",
-    equipesValidacao: "CTIO IT -INTEGRATION SOLUTIONS MANAGEMENT -MIDDLEWARE -N3, CTIO IT -DIGITAL SALES OPERATIONS -ECOMMERCE -N3, CTIO IT -DIGITAL SALES OPERATIONS -ACN -N3.",
-    tarefas: [
-      {
-        id: "1",
-        numeroTarefa: "CTASK0232341",
-        descricaoTarefa: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
-        tipoTarefa: "Implementação",
-        statusTarefa: "Encerrado",
-      },
-      {
-        id: "2",
-        numeroTarefa: "CTASK0232357",
-        descricaoTarefa: "Bug 1185202: [PRODUÇÃO]|PMID -orch-r-invoices-v1 -HTTP204| Erro no loop do R-INVOICES.",
-        tipoTarefa: "Revisão",
-        statusTarefa: "Pendente",
-      },
-    ],
-  },
-  {
-    id: "2",
-    numero: "CHG0173972",
-    descricaoResumida: "Projeto HUB - Liberação de clientid",
-    fimExecucao: "17/11/2025 23:00:00",
-    status: "Em execução",
-    tipo: "Implementação",
-    descricaoChange: "Projeto HUB - Liberação de clientid e criação de rota interna - API Detalhamento de produtos",
-    inicioValidacao: "17/11/2025 22:00:00",
-    fimValidacao: "17/11/2025 23:00:00",
-    diaSemana: "Segunda-feira",
-    equipesAplicacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    equipesValidacao: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - OMS - N3, CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
-    tarefas: [],
-  },
-];
+const mockChangesInExecution: ChangeInExecution[] = [];
 
 export default function ChangesInExecution() {
   const navigate = useNavigate();
@@ -304,13 +261,13 @@ export default function ChangesInExecution() {
                   </TableCell>
                 </TableRow>
               ) : (
-                currentChanges.map((change) => (
-                  <TableRow key={change.id}>
+                currentChanges.map((change, index) => (
+                  <TableRow key={change.changeSystemData?.number || index}>
                     <TableCell className="font-medium">{change?.changeSystemData?.number}</TableCell>
                     <TableCell>{change.changeSystemData.description}</TableCell>
-                    <TableCell className="whitespace-nowrap">{change.fimExecucao}</TableCell>
+                    <TableCell className="whitespace-nowrap">{change.changeSystemData?.end_date}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{change.status}</Badge>
+                      <Badge variant="secondary">{change.changeSystemData?.state}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -369,14 +326,14 @@ export default function ChangesInExecution() {
         <ChangeInExecutionDetailsDialog
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
-          change={selectedChange}
+          change={selectedChange as any}
         />
       )}
 
       <Dialog open={!!executingChange} onOpenChange={() => setExecutingChange(null)}>
         <DialogContent className="max-w-[95vw] h-[95vh] p-0">
           {executingChange && (
-            <ChangeExecutionCep change={executingChange} />
+            <ChangeExecutionCep change={executingChange as any} />
           )}
         </DialogContent>
       </Dialog>

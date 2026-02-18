@@ -115,7 +115,7 @@ export function PlantaoDialog({ open, onOpenChange, plantao }: PlantaoDialogProp
         await plantaoApi.update(plantao._id, payload);
         toast.success("Plantão atualizado com sucesso!");
       } else {
-        await plantaoApi.create(payload);
+        await plantaoApi.create(payload as any);
         toast.success("Plantão criado com sucesso!");
       }
 

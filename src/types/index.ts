@@ -103,23 +103,23 @@ export interface PostChange {
     validation_process: string,
     hdc_validation: boolean,
     validator_contact: string[],
+    [key: string]: any,
   }
   changeHistory: {
-    comments_work_notes: string[],
-    comments: string[],
-    timelineAprooval: string[],
-    rejectionAprooval: string[]
+    comments_work_notes: any[],
+    comments: any[],
+    timelineAprooval: any[],
+    rejectionAprooval: any[]
   },
   changeServicesList: Array<{
     service_name: string,
     cf_production_version: string,
     implementation_version: string,
-    pipeline_link: string
+    pipeline_link: string,
+    [key: string]: any,
   }>,
-  serviceTimeline?: {
-    today: ServiceTimelinePoint[];
-    lastWeek?: ServiceTimelinePoint[];
-  };
+  serviceTimeline?: any;
+  [key: string]: any;
 }
 
 export interface Insight {
@@ -131,8 +131,8 @@ export interface Insight {
     assignment_team: string;
   };
   engineering_sla: {
-    entry_time: string[];
-    out_time: string[];
+    entry_time: any[];
+    out_time: any[];
     solved_by_eng: boolean;
     total_time: number;
     departaments: Array<{
@@ -159,7 +159,21 @@ export interface Insight {
       RejectedByIOP?: string;
     };
   };
+  // Extended fields from incident history
+  shortDescription?: string;
+  description?: string;
+  assignment_team?: string;
+  departamentTrammit?: any[];
+  comments?: any[];
+  work_notes?: any[];
+  closeNotes?: any[];
+  [key: string]: any;
 }
+
+export { type ServiceDataPoint as ServiceTimelinePoint } from '@/components/changes/ServiceTimelineChart';
+
+// Changes type alias used across pages
+export type Changes = PostChange;
 
 export interface Plantao {
   _id: string,

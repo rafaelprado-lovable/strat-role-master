@@ -82,9 +82,9 @@ export default function Permissions() {
                   let actions: string[] = [];
 
                   try {
-                    const normalized = permission.actions
-                      ?.replace(/'/g, '"') // troca aspas simples por duplas
-                      ?.trim();
+                    const normalized = (permission.actions as any)
+                      ?.replace?.(/'/g, '"')
+                      ?.trim?.() || JSON.stringify(permission.actions);
 
                     actions = JSON.parse(normalized || '[]');
                   } catch {
@@ -95,9 +95,9 @@ export default function Permissions() {
                   let scopes: string[] = [];
 
                   try {
-                    const normalized = permission.scopes
-                      ?.replace(/'/g, '"') // troca aspas simples por duplas
-                      ?.trim();
+                    const normalized = (permission.scopes as any)
+                      ?.replace?.(/'/g, '"')
+                      ?.trim?.() || JSON.stringify(permission.scopes);
 
                     scopes = JSON.parse(normalized || '[]');
                   } catch {

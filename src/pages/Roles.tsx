@@ -80,7 +80,7 @@ export default function Roles() {
                     <TableCell className="font-medium">{role.name}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {role.permission?.length ?? 0} permissões
+                        {(role as any).permission?.length ?? role.permissions?.length ?? 0} permissões
                       </Badge>
                     </TableCell>
                     <TableCell>

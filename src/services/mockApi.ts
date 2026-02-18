@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User, Scope, Department, Insight, Changes, Plantao, CallResolution, CallResolutionCreate } from '@/types';
+import { Organization, Permission, Role, User, Scope, Department, Insight, PostChange as Changes, Plantao, CallResolution, CallResolutionCreate } from '@/types';
 
 // API service functions - To be replaced with actual API calls
 export const organizationApi = {
@@ -105,8 +105,8 @@ export const organizationApi = {
       if (response.status === 204) {
         return {
           ...data,
-          id: String(Date.now())
-        };
+          _id: String(Date.now())
+        } as Organization;
       };
 
     } catch (error) {
@@ -145,7 +145,7 @@ export const organizationApi = {
 
       const result = await response;
 
-      return result;
+      return result as any;
 
     } catch (error) {
       console.error("Erro ao criar organização:", error);
@@ -181,7 +181,7 @@ export const organizationApi = {
 
       const result = await response;
 
-      return result;
+      return result as any;
 
     } catch (error) {
       console.error("Erro ao criar organização:", error);
@@ -271,10 +271,7 @@ export const permissionApi = {
     }
   },
   update: async (id: string, data: Partial<Permission>): Promise<Permission> => {
-    return new Promise((resolve) => setTimeout(() => resolve({
-      ...mockPermissions.find(perm => perm.id === id)!,
-      ...data,
-    }), 300));
+    return Promise.resolve({ ...data } as Permission);
   },
   delete: async (id: string): Promise<void> => {
     const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
@@ -392,11 +389,7 @@ export const roleApi = {
     }
   },
   update: async (id: string, data: Partial<Role>): Promise<Role> => {
-    return new Promise((resolve) => setTimeout(() => resolve({
-      ...mockRoles.find(role => role.id === id)!,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    }), 300));
+    return Promise.resolve({ ...data } as Role);
   },
   delete: async (id: string): Promise<void> => {
     const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
@@ -486,8 +479,8 @@ export const userApi = {
         name: data.name,
         email: data.email,
         password: data.password,
-        role: data.roleId,
-        organization: data.organizationId,
+        role: (data as any).roleId || data.role,
+        organization: (data as any).organizationId || data.organization,
         departament: `${data.departmentIds}`,
         phoneNumber: data.phoneNumber
     });
@@ -521,11 +514,7 @@ export const userApi = {
     }
   },
   update: async (id: string, data: Partial<User>): Promise<User> => {
-    return new Promise((resolve) => setTimeout(() => resolve({
-      ...mockUsers.find(user => user._id === id)!,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    }), 300));
+    return Promise.resolve({ ...data } as User);
   },
   delete: async (id: string): Promise<void> => {
     const userToken = localStorage.getItem("userToken"); // use a mesma chave que você usa no login
@@ -649,8 +638,8 @@ export const departmentApi = {
       if (response.status === 204) {
         return {
           ...data,
-          id: String(Date.now())
-        };
+          _id: String(Date.now())
+        } as Department;
       };
 
     } catch (error) {
@@ -695,8 +684,8 @@ export const departmentApi = {
       if (response.status === 204) {
         return {
           ...data,
-          id: String(Date.now())
-        };
+          _id: String(Date.now())
+        } as Department;
       };
 
     } catch (error) {
@@ -793,8 +782,8 @@ export const scopeApi = {
       name: data.name, // Nome do elemento
       type: data.type, // Tipo do elemento (menu ou submenu)
       url: data.url, // URL do elemento em caso do elemento ser submenu
-      icone: data.icon, // Icone do elemento em caso de menu
-      menu: data.related_menu, // Menu responsável
+      icone: (data as any).icon || data.icone,
+      menu: (data as any).related_menu || data.menu,
       organization: data.organization,
       departament: "engineering"
     });
@@ -816,8 +805,8 @@ export const scopeApi = {
       if (response.status === 204) {
         return {
           ...data,
-          id: String(Date.now())
-        };
+          _id: String(Date.now())
+        } as Scope;
       };
 
     } catch (error) {
@@ -840,8 +829,8 @@ export const scopeApi = {
       name: data.name, // Nome do elemento
       type: data.type, // Tipo do elemento (menu ou submenu)
       url: data.url, // URL do elemento em caso do elemento ser submenu
-      icone: data.icon, // Icone do elemento em caso de menu
-      menu: data.related_menu, // Menu responsável
+      icone: (data as any).icon || data.icone,
+      menu: (data as any).related_menu || data.menu,
       organization: data.organization,
       departament: "engineering"
     });
@@ -863,8 +852,8 @@ export const scopeApi = {
       if (response.status === 204) {
         return {
           ...data,
-          id: String(Date.now())
-        };
+          _id: String(Date.now())
+        } as Scope;
       };
 
     } catch (error) {
@@ -1273,7 +1262,7 @@ export const plantaoApi = {
       if (response.status === 204) {
         return {
           message: "Plantão criado com sucesso, sem retorno."
-        } as Plantao;
+        } as unknown as Plantao;
       }
 
       // Se for 200 ou 201, aí sim retorna JSON

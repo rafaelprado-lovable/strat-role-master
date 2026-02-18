@@ -92,7 +92,7 @@ const App = () => (
               path="/change-execution-cep/:id"
               element={
                 <AppLayout>
-                  <ChangeExecutionCep />
+                  <ChangeExecutionCep change={{} as any} />
                 </AppLayout>
               }
             />
