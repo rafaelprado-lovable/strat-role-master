@@ -73,8 +73,8 @@ interface ChangeInExecution {
     pipeline_link: string
   }>,
   serviceTimeline?: {
-    today: ServiceTimelinePoint[];
-    lastWeek?: ServiceTimelinePoint[];
+    today: any[];
+    lastWeek?: any[];
   };
 }
 
@@ -357,7 +357,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
           {
             timestamp,
             message: e.data,
-            type: "info",
+            type: "info" as const,
           },
         ];
 
@@ -382,7 +382,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
         {
           timestamp: new Date().toISOString().slice(11, 19),
           message: "Conexão encerrada.",
-          type: "error",
+          type: "error" as const,
         },
       ]);
     };
@@ -415,7 +415,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
           {
             timestamp,
             message: e.data,
-            type: "info",
+            type: "info" as const,
           },
         ];
 
@@ -623,7 +623,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                       {getStatusIcon(cep.status)}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
+      {cep.tecnologia} - {cep.infraco}/{cep.prioridade}
                     </p>
                   </div>
                 </div>
@@ -648,7 +648,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                       {getStatusIcon(cep.status)}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
+                      {cep.tecnologia} - {cep.infraco}/{cep.prioridade}
                     </p>
                   </div>
                 </div>

@@ -26,6 +26,34 @@ export default function Analyses() {
   const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
   const [selectedDepartmentSysId, setSelectedDepartmentSysId] = useState("");
 
+  const handleTidAnalysis = async () => {
+    setIsLoading(true);
+    try {
+      setAnalysisResult(null);
+
+      // Format dateTime for the API: "February 18th 2026, 15:03:23.623"
+      const now = dateTime ? new Date(dateTime) : new Date();
+      const formatted = now.toLocaleString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+      });
+
+      const result = await analysisService.analyseTid({
+        platform,
+        dateTime: formatted,
+        messageId,
+        uri: uri || undefined,
+        method: method || undefined,
+      });
+      setAnalysisResult(result);
+      toast({ title: "Sucesso", description: "TID analisado com sucesso" });
+    } catch (error) {
+      toast({ title: "Erro", description: "Falha ao analisar TID", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleIncidentAnalysis = async () => {
     setIsLoading(true);
 
@@ -299,10 +327,10 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
                   </div>
                   <Button 
                     className="w-full" 
-                    onClick={handleIncidentAnalysis}
-                    disabled={isLoading || !incidentNumber}
+                    onClick={handleTidAnalysis}
+                    disabled={isLoading || !messageId}
                   >
-                    {isLoading ? "Analisando..." : "Analisar chamado"}
+                    {isLoading ? "Analisando..." : "Analisar TID"}
                   </Button>
                 </div>
               </div>

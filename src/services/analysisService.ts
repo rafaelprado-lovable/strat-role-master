@@ -80,4 +80,22 @@ export const analysisService = {
       baseUrl: apiClient.secondaryUrl,
     });
   },
+
+  /** Analyse a TID in production */
+  analyseTid: async (data: {
+    platform: string;
+    dateTime: string;
+    messageId: string;
+    uri?: string;
+    method?: string;
+  }): Promise<AnalysisResult> => {
+    return apiClient.post<AnalysisResult>('/v1/request/analyse', {
+      userId: apiClient.getUserId(),
+      platform: data.platform,
+      dateTime: data.dateTime,
+      messageId: data.messageId,
+      ...(data.uri ? { uri: data.uri } : {}),
+      ...(data.method ? { method: data.method } : {}),
+    }, { baseUrl: apiClient.secondaryUrl });
+  },
 };

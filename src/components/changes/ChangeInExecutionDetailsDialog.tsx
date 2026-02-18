@@ -74,7 +74,8 @@ interface ChangeInExecutionDetails {
     implementation_version: string,
     pipeline_link: string
   }>,
-  tarefas: ChangeTask[];
+  tarefas?: ChangeTask[];
+  [key: string]: any;
 }
 
 interface ChangeInExecutionDetailsDialogProps {
@@ -117,7 +118,7 @@ export function ChangeInExecutionDetailsDialog({
 
     const departments = localStorage.getItem("departaments");
 
-    return departments.some(dep =>
+    return (departments as any)?.some?.((dep: string) =>
       taskDepartment.toLowerCase().includes(dep.trim().toLowerCase())
     );
   }

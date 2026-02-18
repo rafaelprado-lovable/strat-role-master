@@ -87,15 +87,15 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
   useEffect(() => {
     if (user) {
       // transforma a string separada por vírgula em array de IDs
-      const departmentIds = user.departament
-        ? user.departament.split(',').map((id: string) => id.trim())
+      const departmentIds = (user as any).departament
+        ? (user as any).departament.split(',').map((id: string) => id.trim())
         : [];
 
       form.reset({
         name: user.name || '',
         email: user.email || '',
-        organizationId: user.organization?._id || user.organization || '',
-        roleId: user.role?._id || user.role || '',
+        organizationId: (user.organization as any)?._id || user.organization || '',
+        roleId: (user.role as any)?._id || user.role || '',
         departmentIds, // 👈 agora o react-hook-form entende os checkboxes
         phoneNumber: user.phoneNumber || '',
         password: user.password
