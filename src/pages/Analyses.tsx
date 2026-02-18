@@ -341,149 +341,168 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
 
       {analysisResult && (
         <Card>
-          <CardHeader>
-            <CardTitle>Resultado da Análise</CardTitle>
-            <CardDescription>Detalhes do erro identificado</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Resultado da Análise</CardTitle>
+              <CardDescription>Detalhes do erro identificado</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(analysisResult, null, 2));
+                toast({ title: "Copiado", description: "Resultado copiado para a área de transferência" });
+              }}
+            >
+              Copiar resultado
+            </Button>
           </CardHeader>
 
           <CardContent className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label className="text-sm font-semibold">Tipo de Erro</Label>
-                <p className="text-sm text-muted-foreground capitalize">
-                  {analysisResult.analise_log_api.tipo_do_erro}
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-sm font-semibold">URI com Falha</Label>
+                <Label className="text-sm font-semibold">TID</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult.analise_log_api.endpoint_do_provedor}
+                  {analysisResult.analise_log_api.TID}
                 </p>
               </div>
 
               <div>
-                <Label className="text-sm font-semibold">Data e Hora</Label>
+                <Label className="text-sm font-semibold">Data da Ocorrência</Label>
                 <p className="text-sm text-muted-foreground">
                   {analysisResult.analise_log_api.data_ocorrencia_aproximada}
                 </p>
               </div>
 
               <div>
-                <Label className="text-sm font-semibold">Código do Erro</Label>
+                <Label className="text-sm font-semibold">Código de Status Retornado</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult?.analise_log_api.codigo_status_http_retornado ?? ""}
+                  {analysisResult.analise_log_api.codigo_status_retornado}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-semibold">Tipo de Erro</Label>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {analysisResult.analise_log_api.tipo_do_erro}
                 </p>
               </div>
             </div>
 
             <div>
-              <Label className="text-sm font-semibold">Motivo do Erro</Label>
+              <Label className="text-sm font-semibold">Mensagem de Erro Principal</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                {analysisResult.analise_log_api.mensagem_erro_principal}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-semibold">Causa Raiz Sugerida</Label>
               <p className="text-sm text-muted-foreground mt-1">
                 {analysisResult.analise_log_api.causa_raiz_sugerida}
               </p>
             </div>
 
             <div>
-              <Label className="text-sm font-semibold">Sugestão de Correção</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {analysisResult.analise_log_api.causa_raiz_sugerida}
+              <Label className="text-sm font-semibold">Endpoint do Provedor</Label>
+              <p className="text-sm text-muted-foreground mt-1 break-all">
+                {analysisResult.analise_log_api.endpoint_do_provedor}
               </p>
             </div>
 
             <div>
-              <Label className="text-sm font-semibold">Request</Label>
+              <Label className="text-sm font-semibold">Request ao Provedor</Label>
               <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
-                <pre className="p-4 text-xs">
-                  {JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
+                <pre className="p-4 text-xs whitespace-pre-wrap break-all">
+                  {analysisResult.analise_log_api.request_ao_provedor}
                 </pre>
               </ScrollArea>
             </div>
 
             <div>
-              <Label className="text-sm font-semibold">Response</Label>
+              <Label className="text-sm font-semibold">Response do Provedor</Label>
               <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
-                <pre className="p-4 text-xs">
-                  {JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
+                <pre className="p-4 text-xs whitespace-pre-wrap break-all">
+                  {analysisResult.analise_log_api.response_do_provedor}
                 </pre>
               </ScrollArea>
             </div>
-           </CardContent>
 
-            {/* ------------------------------ */}
-            {/* BOTÃO ENCERRAR INCIDENTE */}
-            {/* ------------------------------ */}
-            {analysisResult.analise_log_api.tipo_do_erro === 'regra_de_negocio' ? (
-              <div className="pt-4">
+            <div>
+              <Label className="text-sm font-semibold">Direcionar para Fila</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                {analysisResult.analise_log_api.Direcionar_para_fila}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-semibold">Tagueamento de Controle</Label>
+              <p className="text-sm text-muted-foreground mt-1 font-mono">
+                {analysisResult.analise_log_api.tagueamento_de_controle}
+              </p>
+            </div>
+          </CardContent>
+
+          {analysisType === "incidente" && (
+            analysisResult.analise_log_api.tipo_do_erro === 'regra_de_negocio' ? (
+              <CardContent className="pt-0">
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={() => handleEncerrarIncidente()}
                 >
                   Encerrar incidente como regra de negócio
                 </Button>
-              </div>
+              </CardContent>
             ) : (
-              <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Direcionar para fila</Label>
+              <CardContent className="space-y-4 pt-0">
+                <div className="space-y-2">
+                  <Label>Direcionar para fila</Label>
+                  <Select value={selectedDepartmentName} onValueChange={setSelectedDepartmentName}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a fila" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {uniqueDepartments.map((dept) => (
+                        <SelectItem key={dept.sysId} value={dept.name}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                    <Select value={selectedDepartmentName} onValueChange={setSelectedDepartmentName}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a fila" />
-                      </SelectTrigger>
+                <div>
+                  <Label className="text-sm font-semibold">Informações para análise</Label>
+                  <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
+                    <pre className="p-4 text-xs whitespace-pre-wrap">
+{`Prezados, poderiam verificar o motivo do erro abaixo:
 
-                      <SelectContent>
-                        {uniqueDepartments.map((dept) => (
-                          <SelectItem key={dept.sysId} value={dept.name}>
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+Apontamento:
+${analysisResult.analise_log_api.endpoint_do_provedor}
+
+Request:
+${analysisResult.analise_log_api.request_ao_provedor}
+
+Response:
+${analysisResult.analise_log_api.response_do_provedor}
+
+Motivo do erro:
+${analysisResult.analise_log_api.causa_raiz_sugerida}`}
+                    </pre>
+                  </ScrollArea>
+                  <div className="pt-4">
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => handleTrammitIncident()}
+                    >
+                      Encaminhar incidente para {selectedDepartmentName}
+                    </Button>
                   </div>
-
-                  <div>
-                    <Label className="text-sm font-semibold">Informações para análise</Label>
-                    <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
-                      <pre className="p-4 text-xs">
-                        Prezados, poderiam verificar o motivo do erro abaixo:
-                        <br />
-                        <br />
-                        Apontamento: 
-                        <br />
-                        {analysisResult.analise_log_api.endpoint_do_provedor}
-                        <br />
-                        <br />
-                        Request:
-                        <br />
-                        {JSON.stringify(analysisResult.analise_log_api.request_ao_provedor, null, 2)}
-                        <br />
-                        <br />
-                        Response: 
-                        <br />
-                        {JSON.stringify(analysisResult.analise_log_api.response_do_provedor, null, 2)}
-                        <br />
-                        <br />
-                        Motivo do erro:
-                        <br />
-                        {analysisResult.analise_log_api.causa_raiz_sugerida}
-
-                      </pre>
-                    </ScrollArea>
-                    <div className="pt-4">
-                      <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => handleTrammitIncident()}
-                      >
-                        Encaminhar incidente para {selectedDepartmentName}
-                      </Button>
-                    </div>
                 </div>
               </CardContent>
-            )}
+            )
+          )}
         </Card>
-
       )}
     </div>
   );
