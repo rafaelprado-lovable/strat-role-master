@@ -29,6 +29,7 @@ import Automations from "./pages/Automations";
 import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
+import K8sObservability from "./pages/K8sObservability";
 
 const queryClient = new QueryClient();
 
@@ -230,6 +231,14 @@ const App = () => (
                     <Analyses />
                   </AppLayout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/k8s"
+              element={
+                <AppLayout>
+                  <K8sObservability />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
