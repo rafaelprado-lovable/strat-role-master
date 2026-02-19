@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -16,6 +18,18 @@ import { useToast } from "@/hooks/use-toast";
 
 // ── Types ──────────────────────────────────────────────────
 
+interface PodInfo {
+  name: string;
+  namespace: string;
+  status: "Running" | "Pending" | "CrashLoopBackOff" | "Error" | "Completed";
+  cpuUsage: number;
+  cpuRequest: number;
+  memUsage: number;
+  memRequest: number;
+  restarts: number;
+  age: string;
+}
+
 interface NodeInfo {
   name: string;
   status: "Ready" | "NotReady";
@@ -27,6 +41,7 @@ interface NodeInfo {
   diskTotal: number;
   pods: number;
   maxPods: number;
+  podDetails: PodInfo[];
 }
 
 interface Deployment {
@@ -55,6 +70,30 @@ function jitter(base: number, range: number) {
   return Math.max(0, base + Math.floor((Math.random() - 0.5) * range));
 }
 
+function generatePods(nodeName: string, count: number): PodInfo[] {
+  const podNames = ["api-gateway", "auth-svc", "payment", "cache", "worker", "frontend", "logger", "metrics", "scheduler", "proxy"];
+  const namespaces = ["production", "infra", "monitoring", "kube-system"];
+  const statuses: PodInfo["status"][] = ["Running", "Running", "Running", "Running", "Pending", "CrashLoopBackOff", "Error", "Completed"];
+  const ages = ["2d", "5h", "12h", "1d", "3d", "30m", "6h", "4d"];
+  const pods: PodInfo[] = [];
+  for (let i = 0; i < count; i++) {
+    const cpuReq = [100, 200, 250, 500, 1000][Math.floor(Math.random() * 5)];
+    const memReq = [128, 256, 512, 1024, 2048][Math.floor(Math.random() * 5)];
+    pods.push({
+      name: `${podNames[i % podNames.length]}-${nodeName}-${Math.random().toString(36).slice(2, 7)}`,
+      namespace: namespaces[Math.floor(Math.random() * namespaces.length)],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      cpuUsage: Math.min(jitter(Math.floor(cpuReq * 0.6), Math.floor(cpuReq * 0.3)), cpuReq),
+      cpuRequest: cpuReq,
+      memUsage: Math.min(jitter(Math.floor(memReq * 0.65), Math.floor(memReq * 0.25)), memReq),
+      memRequest: memReq,
+      restarts: Math.random() > 0.7 ? jitter(5, 10) : 0,
+      age: ages[Math.floor(Math.random() * ages.length)],
+    });
+  }
+  return pods;
+}
+
 function generateMockData() {
   const clusters = [
     { name: "prod-br-east-1", nodes: 12, region: "São Paulo" },
@@ -62,7 +101,7 @@ function generateMockData() {
     { name: "staging-br-1", nodes: 4, region: "São Paulo" },
   ];
 
-  const baseNodes: Record<string, NodeInfo[]> = {
+  const baseNodes: Record<string, Omit<NodeInfo, "podDetails">[]> = {
     "prod-br-east-1": [
       { name: "node-01", status: "Ready", cpuUsage: jitter(3200, 400), cpuTotal: 4000, memUsage: jitter(12800, 1000), memTotal: 16384, diskUsage: jitter(78, 5), diskTotal: 100, pods: jitter(42, 6), maxPods: 110 },
       { name: "node-02", status: "Ready", cpuUsage: jitter(2800, 400), cpuTotal: 4000, memUsage: jitter(10240, 1000), memTotal: 16384, diskUsage: jitter(55, 5), diskTotal: 100, pods: jitter(38, 5), maxPods: 110 },
@@ -82,14 +121,19 @@ function generateMockData() {
     ],
   };
 
-  // Clamp values
-  for (const nodes of Object.values(baseNodes)) {
-    for (const n of nodes) {
-      n.cpuUsage = Math.min(n.cpuUsage, n.cpuTotal);
-      n.memUsage = Math.min(n.memUsage, n.memTotal);
-      n.diskUsage = Math.min(n.diskUsage, n.diskTotal);
-      n.pods = Math.min(n.pods, n.maxPods);
-    }
+  // Clamp values and generate pod details
+  const nodesWithPods: Record<string, NodeInfo[]> = {};
+  for (const [cluster, nodes] of Object.entries(baseNodes)) {
+    nodesWithPods[cluster] = nodes.map(n => {
+      const clamped = {
+        ...n,
+        cpuUsage: Math.min(n.cpuUsage, n.cpuTotal),
+        memUsage: Math.min(n.memUsage, n.memTotal),
+        diskUsage: Math.min(n.diskUsage, n.diskTotal),
+        pods: Math.min(n.pods, n.maxPods),
+      };
+      return { ...clamped, podDetails: generatePods(n.name, clamped.pods) };
+    });
   }
 
   const statuses: Deployment["status"][] = ["Healthy", "Degraded", "Failed"];
@@ -117,10 +161,23 @@ function generateMockData() {
     { name: "cache-manager-9e8f7", namespace: "infra", cluster: "prod-br-east-1", restarts: jitter(3, 2), lastRestart: "2026-02-18 22:15", reason: "OOMKilled" },
   ];
 
-  return { clusters, nodesByCluster: baseNodes, deployments, restartingServices };
+  return { clusters, nodesByCluster: nodesWithPods, deployments, restartingServices };
 }
 
-// ── Helpers ──────────────────────────────────────────────
+function getPodStatusBadge(status: PodInfo["status"]) {
+  switch (status) {
+    case "Running":
+      return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" />{status}</Badge>;
+    case "Pending":
+    case "Completed":
+      return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-xs"><AlertTriangle className="h-3 w-3 mr-1" />{status}</Badge>;
+    case "CrashLoopBackOff":
+    case "Error":
+      return <Badge className="bg-red-500/15 text-red-600 border-red-500/30 text-xs"><XCircle className="h-3 w-3 mr-1" />{status}</Badge>;
+    default:
+      return <Badge variant="outline" className="text-xs">{status}</Badge>;
+  }
+}
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -180,6 +237,7 @@ export default function K8sObservability() {
   const [countdown, setCountdown] = useState(30);
   const { toast } = useToast();
   const prevAlertsRef = useRef<Set<string>>(new Set());
+  const [selectedNode, setSelectedNode] = useState<(NodeInfo & { cluster: string }) | null>(null);
 
   const refreshData = useCallback(() => {
     const newData = generateMockData();
@@ -483,7 +541,7 @@ export default function K8sObservability() {
                 const memPct = Math.round((node.memUsage / node.memTotal) * 100);
                 const podPct = Math.round((node.pods / node.maxPods) * 100);
                 return (
-                  <TableRow key={`${node.cluster}-${node.name}`} className={node.status === "NotReady" ? "bg-red-500/5" : ""}>
+                  <TableRow key={`${node.cluster}-${node.name}`} className={`cursor-pointer hover:bg-muted/70 ${node.status === "NotReady" ? "bg-red-500/5" : ""}`} onClick={() => setSelectedNode(node)}>
                     <TableCell className="font-mono text-sm">{node.name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{node.cluster}</TableCell>
                     <TableCell>{getStatusBadge(node.status)}</TableCell>
@@ -617,6 +675,82 @@ export default function K8sObservability() {
           </Table>
         </CardContent>
       </Card>
+      {/* Node detail dialog */}
+      <Dialog open={!!selectedNode} onOpenChange={(open) => !open && setSelectedNode(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh]">
+          {selectedNode && (() => {
+            const cpuPct = Math.round((selectedNode.cpuUsage / selectedNode.cpuTotal) * 100);
+            const memPct = Math.round((selectedNode.memUsage / selectedNode.memTotal) * 100);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 font-mono">
+                    <Server className="h-5 w-5" />
+                    {selectedNode.name}
+                    <span className="text-xs font-normal text-muted-foreground">({selectedNode.cluster})</span>
+                    <span className="ml-2">{getStatusBadge(selectedNode.status)}</span>
+                  </DialogTitle>
+                  <DialogDescription>
+                    CPU: {selectedNode.cpuUsage}m / {selectedNode.cpuTotal}m ({cpuPct}%) · Memória: {Math.round(selectedNode.memUsage / 1024)}Gi / {Math.round(selectedNode.memTotal / 1024)}Gi ({memPct}%) · {selectedNode.podDetails.length} pods
+                  </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Pod</TableHead>
+                        <TableHead>Namespace</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>CPU (m)</TableHead>
+                        <TableHead>Memória (Mi)</TableHead>
+                        <TableHead>Restarts</TableHead>
+                        <TableHead>Idade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedNode.podDetails.map((pod) => {
+                        const podCpuPct = Math.round((pod.cpuUsage / pod.cpuRequest) * 100);
+                        const podMemPct = Math.round((pod.memUsage / pod.memRequest) * 100);
+                        return (
+                          <TableRow key={pod.name} className={pod.status === "CrashLoopBackOff" || pod.status === "Error" ? "bg-red-500/5" : ""}>
+                            <TableCell className="font-mono text-xs">{pod.name}</TableCell>
+                            <TableCell><Badge variant="outline" className="text-xs">{pod.namespace}</Badge></TableCell>
+                            <TableCell>{getPodStatusBadge(pod.status)}</TableCell>
+                            <TableCell>
+                              <div className="space-y-1 min-w-[100px]">
+                                <div className="flex justify-between text-xs">
+                                  <span>{pod.cpuUsage}m/{pod.cpuRequest}m</span>
+                                  <span className={getUsageColor(podCpuPct)}>{podCpuPct}%</span>
+                                </div>
+                                <Progress value={podCpuPct} className={`h-1.5 ${getProgressColor(podCpuPct)}`} />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1 min-w-[100px]">
+                                <div className="flex justify-between text-xs">
+                                  <span>{pod.memUsage}Mi/{pod.memRequest}Mi</span>
+                                  <span className={getUsageColor(podMemPct)}>{podMemPct}%</span>
+                                </div>
+                                <Progress value={podMemPct} className={`h-1.5 ${getProgressColor(podMemPct)}`} />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`font-mono text-xs ${pod.restarts > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>
+                                {pod.restarts}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{pod.age}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
