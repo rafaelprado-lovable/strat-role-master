@@ -27,6 +27,28 @@ import {
 import { Link } from "react-router-dom";
 import engLogo from "@/assets/eng-logo.png";
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+
+/* ─── Motion helpers ─── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const } },
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const scaleUp = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const } },
+};
 
 /* ─── Animated Counter ─── */
 function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
@@ -205,25 +227,25 @@ export default function Landing() {
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
 
         <div className="container mx-auto px-4 py-24 md:py-36 relative z-10">
-          <div className="max-w-5xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+          <motion.div className="max-w-5xl mx-auto text-center space-y-8" initial="hidden" animate="visible" variants={staggerContainer}>
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
               <Shield className="w-4 h-4" />
               Plataforma de Operações Inteligente
-            </div>
+            </motion.div>
 
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+            <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
               <span className="text-foreground">Controle Total.</span>
               <br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Operações Inteligentes.
               </span>
-            </h1>
+            </motion.h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            <motion.p variants={fadeUp} className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               O Heimdall unifica gestão de incidentes, mudanças, automações e observabilidade K8s em uma única plataforma — reduzindo custos operacionais e acelerando a resolução de problemas.
-            </p>
+            </motion.p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/">
                 <Button size="lg" className="text-lg px-10 py-6 rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
                   Começar Gratuitamente
@@ -233,17 +255,17 @@ export default function Landing() {
               <Button size="lg" variant="outline" className="text-lg px-10 py-6 rounded-xl border-2">
                 Agendar Demonstração
               </Button>
-            </div>
+            </motion.div>
 
-            <p className="text-sm text-muted-foreground">
+            <motion.p variants={fadeIn} className="text-sm text-muted-foreground">
               ✓ Setup em minutos &nbsp;&nbsp; ✓ Sem cartão de crédito &nbsp;&nbsp; ✓ Suporte dedicado
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 
       {/* ── Stats ── */}
-      <section className="border-y border-border bg-card/50">
+      <motion.section className="border-y border-border bg-card/50" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer}>
         <div className="container mx-auto px-4 py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
@@ -252,21 +274,21 @@ export default function Landing() {
               { value: 99, suffix: ".9%", label: "Uptime Garantido" },
               { value: 10000, suffix: "+", label: "Incidentes Resolvidos/mês" },
             ].map((stat) => (
-              <div key={stat.label} className="text-center space-y-2">
+              <motion.div key={stat.label} variants={fadeUp} className="text-center space-y-2">
                 <div className="text-4xl md:text-5xl font-extrabold text-primary">
                   <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                 </div>
                 <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ── Features ── */}
       <section id="features" className="container mx-auto px-4 py-24">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-4 mb-16">
+          <motion.div className="text-center space-y-4 mb-16" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeUp}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-semibold">
               <Layers className="w-4 h-4" />
               Recursos Completos
@@ -280,21 +302,23 @@ export default function Landing() {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               12 módulos integrados para cobrir todo o ciclo de operações da sua empresa
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} variants={staggerContainer}>
             {features.map((feature) => (
-              <Card key={feature.title} className="group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:border-primary/30 hover:-translate-y-1">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+              <motion.div key={feature.title} variants={scaleUp}>
+                <Card className="group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:border-primary/30 hover:-translate-y-1 h-full">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/15 to-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <feature.icon className="w-7 h-7 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -302,7 +326,7 @@ export default function Landing() {
       <section id="how-it-works" className="bg-muted/40">
         <div className="container mx-auto px-4 py-24">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center space-y-4 mb-16">
+            <motion.div className="text-center space-y-4 mb-16" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeUp}>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold">
                 <Zap className="w-4 h-4" />
                 Simples de Começar
@@ -311,11 +335,11 @@ export default function Landing() {
               <p className="text-muted-foreground text-lg">
                 Em 4 passos você estará operando com total controle
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <motion.div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer}>
               {steps.map((step, idx) => (
-                <div key={step.number} className="relative">
+                <motion.div key={step.number} variants={fadeUp} className="relative">
                   {idx < steps.length - 1 && (
                     <div className="hidden lg:block absolute top-10 left-full w-full h-px border-t-2 border-dashed border-primary/30 z-0" />
                   )}
@@ -326,9 +350,9 @@ export default function Landing() {
                     <h3 className="text-xl font-bold">{step.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{step.description}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -337,20 +361,20 @@ export default function Landing() {
       <section id="benefits" className="container mx-auto px-4 py-24">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-semibold">
+            <motion.div className="space-y-8" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer}>
+              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-semibold">
                 <CheckCircle2 className="w-4 h-4" />
                 Vantagens Competitivas
-              </div>
-              <h2 className="text-3xl md:text-5xl font-bold leading-tight">
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold leading-tight">
                 Por que escolher o{" "}
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Heimdall?
                 </span>
-              </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg leading-relaxed">
                 Simplifique operações complexas com uma plataforma que integra tudo que sua equipe precisa.
-              </p>
+              </motion.p>
 
               <div className="space-y-6">
                 {[
@@ -360,7 +384,7 @@ export default function Landing() {
                   { title: "RBAC Granular", desc: "Controle de acesso por escopo, função e departamento com auditoria completa" },
                   { title: "Escalável e Resiliente", desc: "Arquitetura preparada para crescer junto com sua operação" },
                 ].map((benefit) => (
-                  <div key={benefit.title} className="flex items-start gap-4">
+                  <motion.div key={benefit.title} variants={fadeUp} className="flex items-start gap-4">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle2 className="w-5 h-5 text-primary" />
                     </div>
@@ -368,12 +392,12 @@ export default function Landing() {
                       <h4 className="font-bold text-lg mb-1">{benefit.title}</h4>
                       <p className="text-muted-foreground">{benefit.desc}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="relative">
+            <motion.div className="relative" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={scaleUp}>
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
               <div className="relative rounded-3xl bg-card border border-border p-8 space-y-6 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
@@ -414,7 +438,7 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -423,31 +447,33 @@ export default function Landing() {
       <section id="testimonials" className="bg-muted/40">
         <div className="container mx-auto px-4 py-24">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center space-y-4 mb-16">
+            <motion.div className="text-center space-y-4 mb-16" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeUp}>
               <h2 className="text-3xl md:text-5xl font-bold">O que nossos clientes dizem</h2>
               <p className="text-muted-foreground text-lg">
                 Empresas que transformaram suas operações com o Heimdall
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <motion.div className="grid md:grid-cols-3 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer}>
               {testimonials.map((t) => (
-                <Card key={t.name} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-8 space-y-6">
-                    <div className="flex gap-1">
-                      {Array.from({ length: t.rating }).map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                      ))}
-                    </div>
-                    <p className="text-foreground text-lg leading-relaxed italic">"{t.quote}"</p>
-                    <div className="pt-4 border-t border-border">
-                      <p className="font-bold">{t.name}</p>
-                      <p className="text-sm text-muted-foreground">{t.role}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div key={t.name} variants={scaleUp}>
+                  <Card className="hover:shadow-lg transition-shadow h-full">
+                    <CardContent className="p-8 space-y-6">
+                      <div className="flex gap-1">
+                        {Array.from({ length: t.rating }).map((_, i) => (
+                          <Star key={i} className="w-5 h-5 fill-accent text-accent" />
+                        ))}
+                      </div>
+                      <p className="text-foreground text-lg leading-relaxed italic">"{t.quote}"</p>
+                      <div className="pt-4 border-t border-border">
+                        <p className="font-bold">{t.name}</p>
+                        <p className="text-sm text-muted-foreground">{t.role}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -456,14 +482,14 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10" />
         <div className="container mx-auto px-4 py-24 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h2 className="text-3xl md:text-5xl font-bold">
+          <motion.div className="max-w-4xl mx-auto text-center space-y-8" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={staggerContainer}>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold">
               Pronto para transformar suas operações?
-            </h2>
-            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-muted-foreground text-xl max-w-2xl mx-auto">
               Junte-se a mais de 500 empresas que já usam o Heimdall para operar com excelência
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            </motion.p>
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/">
                 <Button size="lg" className="text-lg px-10 py-6 rounded-xl shadow-lg shadow-primary/25">
                   Começar Agora — É Grátis
@@ -473,11 +499,11 @@ export default function Landing() {
               <Button size="lg" variant="outline" className="text-lg px-10 py-6 rounded-xl border-2">
                 Falar com Especialista
               </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
+            </motion.div>
+            <motion.p variants={fadeIn} className="text-sm text-muted-foreground">
               Setup em 5 minutos • Sem cartão • Cancele quando quiser
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 
