@@ -4,7 +4,6 @@ import {
   Shield,
   Users,
   Lock,
-  Settings,
   BarChart3,
   Zap,
   Server,
@@ -15,17 +14,18 @@ import {
   ArrowRight,
   Monitor,
   Phone,
-  FileText,
   Clock,
   Target,
   Layers,
   Eye,
   Workflow,
-  ChevronRight,
-  Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import engLogo from "@/assets/eng-logo.png";
+import screenshotDashboard from "@/assets/screenshot-dashboard.png";
+import screenshotK8s from "@/assets/screenshot-k8s.png";
+import screenshotChanges from "@/assets/screenshot-changes.png";
+import screenshotAutomations from "@/assets/screenshot-automations.png";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
@@ -172,24 +172,26 @@ const steps = [
   },
 ];
 
-const testimonials = [
+const productScreenshots = [
   {
-    name: "Carlos Mendes",
-    role: "CTO, TechCorp Brasil",
-    quote: "O Heimdall reduziu nosso MTTR em 60% e trouxe visibilidade total para nossas operações.",
-    rating: 5,
+    image: screenshotDashboard,
+    title: "Dashboard Operacional",
+    description: "Visão centralizada com KPIs em tempo real, gráficos de tendências e indicadores de saúde.",
   },
   {
-    name: "Ana Rodrigues",
-    role: "Gerente de Operações, DataFlow",
-    quote: "A gestão de mudanças automatizada eliminou erros humanos e acelerou nossos deployments.",
-    rating: 5,
+    image: screenshotK8s,
+    title: "Observabilidade Kubernetes",
+    description: "Monitore clusters, nodes, pods e deployments com métricas detalhadas e alertas proativos.",
   },
   {
-    name: "Ricardo Lima",
-    role: "SRE Lead, CloudNative Inc",
-    quote: "A observabilidade K8s integrada nos deu controle total sobre nossos clusters em produção.",
-    rating: 5,
+    image: screenshotChanges,
+    title: "Gestão de Mudanças",
+    description: "Controle pré, durante e pós-mudança com aprovações, checklists e avaliação de risco.",
+  },
+  {
+    image: screenshotAutomations,
+    title: "Automações Visuais",
+    description: "Editor drag-and-drop para criar fluxos de automação com triggers e condições customizáveis.",
   },
 ];
 
@@ -201,10 +203,10 @@ export default function Landing() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <img src={engLogo} alt="Eng Logo" className="h-12" />
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
+            <a href="#screenshots" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Módulos</a>
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Como Funciona</a>
             <a href="#benefits" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Benefícios</a>
-            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Depoimentos</a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
           </nav>
           <div className="flex items-center gap-3">
             <Link to="/login">
@@ -270,7 +272,7 @@ export default function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
               { value: 60, suffix: "%", label: "Redução no MTTR" },
-              { value: 500, suffix: "+", label: "Empresas Ativas" },
+              { value: 12, suffix: "+", label: "Módulos Integrados" },
               { value: 99, suffix: ".9%", label: "Uptime Garantido" },
               { value: 10000, suffix: "+", label: "Incidentes Resolvidos/mês" },
             ].map((stat) => (
@@ -443,34 +445,48 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section id="testimonials" className="bg-muted/40">
+      {/* ── Product Showcase ── */}
+      <section id="screenshots" className="bg-muted/40">
         <div className="container mx-auto px-4 py-24">
           <div className="max-w-6xl mx-auto">
             <motion.div className="text-center space-y-4 mb-16" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeUp}>
-              <h2 className="text-3xl md:text-5xl font-bold">O que nossos clientes dizem</h2>
-              <p className="text-muted-foreground text-lg">
-                Empresas que transformaram suas operações com o Heimdall
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                <Monitor className="w-4 h-4" />
+                Veja na Prática
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold">
+                Conheça os{" "}
+                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  módulos do Heimdall
+                </span>
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Interfaces intuitivas projetadas para máxima produtividade operacional
               </p>
             </motion.div>
 
-            <motion.div className="grid md:grid-cols-3 gap-8" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer}>
-              {testimonials.map((t) => (
-                <motion.div key={t.name} variants={scaleUp}>
-                  <Card className="hover:shadow-lg transition-shadow h-full">
-                    <CardContent className="p-8 space-y-6">
-                      <div className="flex gap-1">
-                        {Array.from({ length: t.rating }).map((_, i) => (
-                          <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                        ))}
-                      </div>
-                      <p className="text-foreground text-lg leading-relaxed italic">"{t.quote}"</p>
-                      <div className="pt-4 border-t border-border">
-                        <p className="font-bold">{t.name}</p>
-                        <p className="text-sm text-muted-foreground">{t.role}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+            <motion.div className="space-y-16" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }} variants={staggerContainer}>
+              {productScreenshots.map((item, idx) => (
+                <motion.div
+                  key={item.title}
+                  variants={fadeUp}
+                  className={`flex flex-col ${idx % 2 === 1 ? "md:flex-row-reverse" : "md:flex-row"} gap-8 items-center`}
+                >
+                  <div className="md:w-2/3 relative group">
+                    <div className="absolute -inset-2 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="relative rounded-xl border border-border shadow-2xl w-full hover:scale-[1.02] transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="md:w-1/3 space-y-4">
+                    <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
+                    <p className="text-muted-foreground text-lg leading-relaxed">{item.description}</p>
+                    <Link to="/" className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all">
+                      Explorar módulo <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>
@@ -487,7 +503,7 @@ export default function Landing() {
               Pronto para transformar suas operações?
             </motion.h2>
             <motion.p variants={fadeUp} className="text-muted-foreground text-xl max-w-2xl mx-auto">
-              Junte-se a mais de 500 empresas que já usam o Heimdall para operar com excelência
+              Comece a operar com total controle e visibilidade em minutos
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/">
@@ -520,6 +536,7 @@ export default function Landing() {
             <div>
               <h4 className="font-bold mb-4">Produto</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#screenshots" className="hover:text-foreground transition-colors">Módulos</a></li>
                 <li><a href="#features" className="hover:text-foreground transition-colors">Recursos</a></li>
                 <li><a href="#how-it-works" className="hover:text-foreground transition-colors">Como Funciona</a></li>
                 <li><a href="#benefits" className="hover:text-foreground transition-colors">Benefícios</a></li>
