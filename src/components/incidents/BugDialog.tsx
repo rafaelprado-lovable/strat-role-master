@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -211,23 +212,19 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="contexto">Descrição do Problema</Label>
-                <Textarea
-                  id="contexto"
+                <RichTextEditor
                   value={contexto}
-                  onChange={(e) => setContexto(e.target.value)}
+                  onChange={setContexto}
                   placeholder="Prezados, identificamos um cenário de falha no(a) (INC, TASK, WR. SITUAÇÃO), onde ocorre o seguinte..."
-                  rows={4}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="situacaoErro">Em qual situação ocorre o erro?</Label>
-                <Textarea
-                  id="situacaoErro"
+                <RichTextEditor
                   value={situacaoErro}
-                  onChange={(e) => setSituacaoErro(e.target.value)}
+                  onChange={setSituacaoErro}
                   placeholder="Descreva a situação específica que causa o erro"
-                  rows={3}
                 />
               </div>
 
