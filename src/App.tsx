@@ -30,6 +30,7 @@ import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
 import K8sObservability from "./pages/K8sObservability";
+import RfpDocument from "./pages/RfpDocument";
 
 const queryClient = new QueryClient();
 
@@ -241,6 +242,7 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route path="/rfp" element={<RfpDocument />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
