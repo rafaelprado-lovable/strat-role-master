@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -7,11 +7,14 @@ import { Changes } from '@/types';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Clock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect } from "react"
+import { useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { departmentApi } from "@/services/mockApi";
 
 interface ChangeDetailsDialogProps {
   open: boolean;
@@ -25,6 +28,14 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
   const { toast } = useToast();
   const [loadingAnalyse, setLoadingAnalyse] = useState(false);
   const [comment, setComment] = useState("");
+  const [loadingCharge, setLoadingCharge] = useState<string | null>(null);
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll
+  });
+
+  const userDepartmentNames = departments.map((d) => d.name);
 
   const validator = change.changeAproovalData?.validator_contact;
 
@@ -476,6 +487,98 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
               </TableBody>
             </Table>
           </div>
+
+          {/* Aprovações Pendentes */}
+          {change.pendentAprooval && change.pendentAprooval.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Aprovações Pendentes</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>DEPARTAMENTO</TableHead>
+                      <TableHead>STATUS</TableHead>
+                      <TableHead className="text-center">AÇÕES</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {change.pendentAprooval.map((item: any, index: number) => {
+                      const isPending = item.status !== "Encerrado Totalmente";
+                      const isMyDept = userDepartmentNames.some(
+                        (name) => name === item.departament
+                      );
+                      return (
+                        <TableRow key={index}>
+                          <TableCell>{item.departament}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={item.status === "Encerrado Totalmente" ? "default" : "secondary"}
+                              className={item.status === "Encerrado Totalmente" ? "" : "border-amber-500 text-amber-600 dark:text-amber-400"}
+                            >
+                              {item.status === "Encerrado Totalmente" ? (
+                                <span className="flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Aprovado</span>
+                              ) : (
+                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {item.status}</span>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {isMyDept && isPending && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={loadingCharge === item.departament}
+                                onClick={async () => {
+                                  setLoadingCharge(item.departament);
+                                  try {
+                                    const userToken = localStorage.getItem("userToken");
+                                    const userId = localStorage.getItem("userId");
+                                    await fetch("http://10.151.1.54:8000/v1/process/change/charge", {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${userToken}`,
+                                      },
+                                      body: JSON.stringify({
+                                        userId,
+                                        changeNumber: change.changeSystemData.number,
+                                        departament: item.departament,
+                                      }),
+                                    });
+                                    toast({
+                                      title: "Cobrança enviada",
+                                      description: `Mensagem de cobrança enviada para ${item.departament}.`,
+                                    });
+                                  } catch {
+                                    toast({
+                                      title: "Erro ao enviar cobrança",
+                                      description: "Não foi possível enviar a cobrança. Tente novamente.",
+                                      variant: "destructive",
+                                    });
+                                  } finally {
+                                    setLoadingCharge(null);
+                                  }
+                                }}
+                              >
+                                {loadingCharge === item.departament ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <Send className="h-4 w-4" /> Cobrar aprovação
+                                  </span>
+                                )}
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
 
           <Separator />
 
