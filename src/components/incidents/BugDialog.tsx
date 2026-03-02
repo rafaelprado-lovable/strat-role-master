@@ -77,7 +77,9 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
     return `[${ambiente}][${sistema} - ${canal} - ${erro}] ${descricaoResumida}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!ambiente || !sistema || !canal || !erro || !descricaoResumida) {
@@ -89,29 +91,74 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
       return;
     }
 
-    toast({
-      title: "Bug criado com sucesso",
-      description: `Bug criado para o incidente ${incident?.incident_data.number}`,
-    });
+    setIsSubmitting(true);
 
-    console.log({
-      title: generateTitle(),
-      contexto,
-      situacaoErro,
-      retornaHttp,
-      impactoNegocio,
-      services,
-      tid,
-      dataHora,
-      apontamentos,
-      logs,
-      areasValidacao,
-      fluxoValidacao,
-      horarioValidacao,
-      justificativa,
-    });
+    try {
+      const userId = localStorage.getItem('userId') || '';
+      const title = generateTitle();
 
-    //onOpenChange(false);
+      const payload = {
+        userId,
+        title,
+        description: contexto || descricaoResumida,
+        systemInfo: sistema,
+        bugVendor: "ENGINEERING",
+        vendorGroup: `Engineering - ${sistema}`,
+        bugEnviroment: ambiente === 'PROD' ? 'PRODUCTION' : ambiente,
+        severity: "4 - Low",
+        bugOrigenSDN: "PRODUCAO",
+        bugProject: sistema,
+        bugSubProject: sistema,
+        bugOrigin: "TI OPERATION",
+        bugTipoDeErro: erro,
+        KPIProdutividade: "FQA - TIM",
+        bugPRDGroup: "MIDDLEWARE",
+        bugCCCGroup: "MIDDLEWARE",
+        tratarBackLog: "Não",
+        priority: 3,
+        bugMeasureOfComplaints: "0 - 100",
+        bugOwnerCCC: localStorage.getItem('userEmail') || '',
+        incidentNumber: incident?.incident_data?.number || '',
+        impact: "4",
+        urgency: "4",
+        assignmentGroup: "CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - MIDDLEWARE - N3",
+      };
+
+      const response = await fetch('http://10.151.1.54:8000/v1/create/bug', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('userToken')
+            ? { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+            : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+      }
+
+      const result = await response.text();
+      console.log('Bug criado:', result);
+
+      toast({
+        title: "Bug criado com sucesso",
+        description: `Bug criado para o incidente ${incident?.incident_data?.number || ''}`,
+      });
+
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error('Erro ao criar bug:', err);
+      toast({
+        title: "Erro ao criar bug",
+        description: err.message || 'Erro de conexão com o servidor',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -458,8 +505,8 @@ export function BugDialog({ open, onOpenChange, incident }: BugDialogProps) {
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            Criar Bug
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Criando...' : 'Criar Bug'}
           </Button>
         </DialogFooter>
       </DialogContent>
