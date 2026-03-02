@@ -315,8 +315,6 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
   const exclusionTerminalRef = useRef<HTMLDivElement>(null);
   const validationInsTerminalRef = useRef<HTMLDivElement>(null);
   const validationExcTerminalRef = useRef<HTMLDivElement>(null);
-  const deleteEventSourceRef = useRef<EventSource | null>(null);
-  const insertEventSourceRef = useRef<EventSource | null>(null);
   const { toast } = useToast();
   const insertionCeps = change.cepsInclude;
   const exclusionCeps = change.cepsExclude;
@@ -335,63 +333,60 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
   const MAX_DELETE_LINES = 300;
 
-  const executeSingleCepSSE = (
+  const executeSingleCep = async (
     changeNumber: string,
     cep: string,
     executionType: 'inclusion' | 'exclusion',
     setLogs: React.Dispatch<React.SetStateAction<ValidationLog[]>>,
   ): Promise<'success' | 'error'> => {
-    return new Promise((resolve) => {
-      const timestamp = () => new Date().toISOString().slice(11, 19);
+    const timestamp = () => new Date().toISOString().slice(11, 19);
+
+    setLogs(prev => [
+      ...prev,
+      { timestamp: timestamp(), message: `══════ Executando CEP ${cep} (${executionType}) ══════`, type: "info" },
+    ]);
+
+    try {
+      const response = await fetch(
+        `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=${executionType}&cep=${encodeURIComponent(cep)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem('userToken')
+              ? { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+              : {}),
+          },
+        }
+      );
+
+      const data = await response.text();
+
+      if (!response.ok) {
+        setLogs(prev => [
+          ...prev,
+          { timestamp: timestamp(), message: `✗ CEP ${cep}: Erro HTTP ${response.status} - ${data}`, type: "error" },
+        ]);
+        return 'error';
+      }
 
       setLogs(prev => [
         ...prev,
-        { timestamp: timestamp(), message: `══════ Executando CEP ${cep} (${executionType}) ══════`, type: "info" },
+        { timestamp: timestamp(), message: `✓ CEP ${cep}: ${data || 'Executado com sucesso'}`, type: "success" },
       ]);
-
-      const es = new EventSource(
-        `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=${executionType}&cep=${encodeURIComponent(cep)}`
-      );
-
-      // Store ref so we can cancel
-      if (executionType === 'exclusion') {
-        deleteEventSourceRef.current = es;
-      } else {
-        insertEventSourceRef.current = es;
-      }
-
-      es.onmessage = (e) => {
-        setLogs(prev => {
-          const next = [
-            ...prev,
-            { timestamp: timestamp(), message: e.data, type: "info" as const },
-          ];
-          return next.length > MAX_DELETE_LINES ? next.slice(next.length - MAX_DELETE_LINES) : next;
-        });
-      };
-
-      es.onerror = () => {
-        es.close();
-        if (executionType === 'exclusion') deleteEventSourceRef.current = null;
-        else insertEventSourceRef.current = null;
-
-        setLogs(prev => [
-          ...prev,
-          { timestamp: timestamp(), message: `CEP ${cep}: conexão encerrada.`, type: "info" },
-        ]);
-        resolve('success');
-      };
-    });
+      return 'success';
+    } catch (err: any) {
+      setLogs(prev => [
+        ...prev,
+        { timestamp: timestamp(), message: `✗ CEP ${cep}: ${err.message || 'Erro de conexão'}`, type: "error" },
+      ]);
+      return 'error';
+    }
   };
 
   const startInsert = async (changeNumber: string) => {
     if (isInsertionRunning) {
-      // Cancel
       cancelInsertionRef.current = true;
-      if (insertEventSourceRef.current) {
-        insertEventSourceRef.current.close();
-        insertEventSourceRef.current = null;
-      }
       setIsInsertionRunning(false);
       setCurrentProcessingCep(null);
       return;
@@ -410,12 +405,10 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
       setCurrentProcessingCep(cep.cep);
       setInsertionProgress({ current: i + 1, total: ceps.length });
 
-      // Update status to "validando"
       setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
 
-      const result = await executeSingleCepSSE(changeNumber, cep.cep, 'inclusion', setInsertionLogs);
+      const result = await executeSingleCep(changeNumber, cep.cep, 'inclusion', setInsertionLogs);
 
-      // Update status based on result
       setCepChanges(prev => prev.map(c =>
         c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
       ));
@@ -430,12 +423,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
   const startDelete = async (changeNumber: string) => {
     if (isExclusionRunning) {
-      // Cancel
       cancelExclusionRef.current = true;
-      if (deleteEventSourceRef.current) {
-        deleteEventSourceRef.current.close();
-        deleteEventSourceRef.current = null;
-      }
       setIsExclusionRunning(false);
       setCurrentProcessingCep(null);
       return;
@@ -456,7 +444,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
       setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
 
-      const result = await executeSingleCepSSE(changeNumber, cep.cep, 'exclusion', setExclusionLogs);
+      const result = await executeSingleCep(changeNumber, cep.cep, 'exclusion', setExclusionLogs);
 
       setCepChanges(prev => prev.map(c =>
         c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
