@@ -306,6 +306,11 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
   const [isValidationInsRunning, setIsValidationInsRunning] = useState(false);
   const [isValidationExcRunning, setIsValidationExcRunning] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentProcessingCep, setCurrentProcessingCep] = useState<string | null>(null);
+  const [insertionProgress, setInsertionProgress] = useState({ current: 0, total: 0 });
+  const [exclusionProgress, setExclusionProgress] = useState({ current: 0, total: 0 });
+  const cancelInsertionRef = useRef(false);
+  const cancelExclusionRef = useRef(false);
   const insertionTerminalRef = useRef<HTMLDivElement>(null);
   const exclusionTerminalRef = useRef<HTMLDivElement>(null);
   const validationInsTerminalRef = useRef<HTMLDivElement>(null);
@@ -330,120 +335,139 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
   const MAX_DELETE_LINES = 300;
 
-  const startDelete = (changeNumber: string) => {
-    // Cancela execução se já estiver rodando
-    if (deleteEventSourceRef.current) {
-      deleteEventSourceRef.current.close();
-      deleteEventSourceRef.current = null;
-      setIsExclusionRunning(false);
-      return;
-    }
+  const executeSingleCepSSE = (
+    changeNumber: string,
+    cep: string,
+    executionType: 'inclusion' | 'exclusion',
+    setLogs: React.Dispatch<React.SetStateAction<ValidationLog[]>>,
+  ): Promise<'success' | 'error'> => {
+    return new Promise((resolve) => {
+      const timestamp = () => new Date().toISOString().slice(11, 19);
 
-    setIsExclusionRunning(true);
-    setExclusionLogs([]); // limpa terminal
-
-    const es = new EventSource(
-      `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=exclusion`
-    );
-
-    deleteEventSourceRef.current = es;
-
-    es.onmessage = (e) => {
-      const timestamp = new Date().toISOString().slice(11, 19);
-
-      setExclusionLogs(prev => {
-        const next = [
-          ...prev,
-          {
-            timestamp,
-            message: e.data,
-            type: "info" as const,
-          },
-        ];
-
-        // Limite de linhas (igual seu código antigo)
-        if (next.length > MAX_DELETE_LINES) {
-          return next.slice(next.length - MAX_DELETE_LINES);
-        }
-
-        return next;
-      });
-    };
-
-    es.onerror = (err) => {
-      console.error("Erro na conexão do SSE de deleção", err);
-
-      es.close();
-      deleteEventSourceRef.current = null;
-      setIsExclusionRunning(false);
-
-      setExclusionLogs(prev => [
+      setLogs(prev => [
         ...prev,
-        {
-          timestamp: new Date().toISOString().slice(11, 19),
-          message: "Conexão encerrada.",
-          type: "error" as const,
-        },
+        { timestamp: timestamp(), message: `══════ Executando CEP ${cep} (${executionType}) ══════`, type: "info" },
       ]);
-    };
+
+      const es = new EventSource(
+        `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=${executionType}&cep=${encodeURIComponent(cep)}`
+      );
+
+      // Store ref so we can cancel
+      if (executionType === 'exclusion') {
+        deleteEventSourceRef.current = es;
+      } else {
+        insertEventSourceRef.current = es;
+      }
+
+      es.onmessage = (e) => {
+        setLogs(prev => {
+          const next = [
+            ...prev,
+            { timestamp: timestamp(), message: e.data, type: "info" as const },
+          ];
+          return next.length > MAX_DELETE_LINES ? next.slice(next.length - MAX_DELETE_LINES) : next;
+        });
+      };
+
+      es.onerror = () => {
+        es.close();
+        if (executionType === 'exclusion') deleteEventSourceRef.current = null;
+        else insertEventSourceRef.current = null;
+
+        setLogs(prev => [
+          ...prev,
+          { timestamp: timestamp(), message: `CEP ${cep}: conexão encerrada.`, type: "info" },
+        ]);
+        resolve('success');
+      };
+    });
   };
 
-  const startInsert = (changeNumber: string) => {
-    // Cancela execução se já estiver rodando
-    if (insertEventSourceRef.current) {
-      insertEventSourceRef.current.close();
-      insertEventSourceRef.current = null;
+  const startInsert = async (changeNumber: string) => {
+    if (isInsertionRunning) {
+      // Cancel
+      cancelInsertionRef.current = true;
+      if (insertEventSourceRef.current) {
+        insertEventSourceRef.current.close();
+        insertEventSourceRef.current = null;
+      }
       setIsInsertionRunning(false);
+      setCurrentProcessingCep(null);
       return;
     }
 
+    cancelInsertionRef.current = false;
     setIsInsertionRunning(true);
-    setInsertionLogs([]); // limpa terminal
+    setInsertionLogs([]);
+    const ceps = change.cepsInclude;
+    setInsertionProgress({ current: 0, total: ceps.length });
 
-    const es = new EventSource(
-      `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=inclusion`
-    );
+    for (let i = 0; i < ceps.length; i++) {
+      if (cancelInsertionRef.current) break;
 
-    insertEventSourceRef.current = es;
+      const cep = ceps[i];
+      setCurrentProcessingCep(cep.cep);
+      setInsertionProgress({ current: i + 1, total: ceps.length });
 
-    es.onmessage = (e) => {
-      const timestamp = new Date().toISOString().slice(11, 19);
+      // Update status to "validando"
+      setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
 
-      setInsertionLogs(prev => {
-        const next = [
-          ...prev,
-          {
-            timestamp,
-            message: e.data,
-            type: "info" as const,
-          },
-        ];
+      const result = await executeSingleCepSSE(changeNumber, cep.cep, 'inclusion', setInsertionLogs);
 
-        // Limite de linhas (igual seu código antigo)
-        if (next.length > MAX_DELETE_LINES) {
-          return next.slice(next.length - MAX_DELETE_LINES);
-        }
+      // Update status based on result
+      setCepChanges(prev => prev.map(c =>
+        c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
+      ));
+    }
 
-        return next;
-      });
-    };
+    setIsInsertionRunning(false);
+    setCurrentProcessingCep(null);
+    if (!cancelInsertionRef.current) {
+      toast({ title: "Execução concluída", description: `${ceps.length} CEPs de inserção processados.` });
+    }
+  };
 
-    es.onerror = (err) => {
-      console.error("Erro na conexão do SSE de deleção", err);
+  const startDelete = async (changeNumber: string) => {
+    if (isExclusionRunning) {
+      // Cancel
+      cancelExclusionRef.current = true;
+      if (deleteEventSourceRef.current) {
+        deleteEventSourceRef.current.close();
+        deleteEventSourceRef.current = null;
+      }
+      setIsExclusionRunning(false);
+      setCurrentProcessingCep(null);
+      return;
+    }
 
-      es.close();
-      insertEventSourceRef.current = null;
-      setIsInsertionRunning(false);
+    cancelExclusionRef.current = false;
+    setIsExclusionRunning(true);
+    setExclusionLogs([]);
+    const ceps = change.cepsExclude;
+    setExclusionProgress({ current: 0, total: ceps.length });
 
-      setInsertionLogs(prev => [
-        ...prev,
-        {
-          timestamp: new Date().toISOString().slice(11, 19),
-          message: "Conexão encerrada.",
-          type: "error",
-        },
-      ]);
-    };
+    for (let i = 0; i < ceps.length; i++) {
+      if (cancelExclusionRef.current) break;
+
+      const cep = ceps[i];
+      setCurrentProcessingCep(cep.cep);
+      setExclusionProgress({ current: i + 1, total: ceps.length });
+
+      setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
+
+      const result = await executeSingleCepSSE(changeNumber, cep.cep, 'exclusion', setExclusionLogs);
+
+      setCepChanges(prev => prev.map(c =>
+        c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
+      ));
+    }
+
+    setIsExclusionRunning(false);
+    setCurrentProcessingCep(null);
+    if (!cancelExclusionRef.current) {
+      toast({ title: "Execução concluída", description: `${ceps.length} CEPs de exclusão processados.` });
+    }
   };
 
 
@@ -756,7 +780,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                       ) : (
                         <Play className="h-3 w-3 mr-1" />
                       )}
-                      {isInsertionRunning ? "Cancelando..." : "Executar"}
+                      {isInsertionRunning ? `Cancelar (${insertionProgress.current}/${insertionProgress.total})` : "Executar Todos"}
                       </Button>
                     </div>
                   </div>
@@ -867,7 +891,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                         ) : (
                           <Play className="h-3 w-3 mr-1" />
                         )}
-                        {isExclusionRunning ? "Cancelando..." : "Executar"}
+                        {isExclusionRunning ? `Cancelar (${exclusionProgress.current}/${exclusionProgress.total})` : "Executar Todos"}
                       </Button>
                     </div>
                   </div>
