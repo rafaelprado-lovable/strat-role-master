@@ -335,28 +335,45 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
   const executeSingleCep = async (
     changeNumber: string,
-    cep: string,
+    cepData: {
+      cep: string;
+      infraco: string;
+      tecnologia: string;
+      prioridade: string;
+    },
     executionType: 'inclusion' | 'exclusion',
     setLogs: React.Dispatch<React.SetStateAction<ValidationLog[]>>,
   ): Promise<'success' | 'error'> => {
+
     const timestamp = () => new Date().toISOString().slice(11, 19);
 
     setLogs(prev => [
       ...prev,
-      { timestamp: timestamp(), message: `══════ Executando CEP ${cep} (${executionType}) ══════`, type: "info" },
+      {
+        timestamp: timestamp(),
+        message: `══════ Executando CEP ${cepData.cep} (${executionType}) ══════`,
+        type: "info"
+      },
     ]);
 
     try {
       const response = await fetch(
-        `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}&execution_type=${executionType}&cep=${encodeURIComponent(cep)}`,
+        `http://10.151.1.54:8000/v1/digibee-change-cep?change_number=${encodeURIComponent(changeNumber)}`,
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(localStorage.getItem('userToken')
               ? { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
               : {}),
           },
+          body: JSON.stringify({
+            executionType: executionType,
+            cep: cepData.cep,
+            infraco: cepData.infraco,
+            tecnologia: cepData.tecnologia,
+            prioridade: cepData.prioridade,
+          }),
         }
       );
 
@@ -365,21 +382,37 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
       if (!response.ok) {
         setLogs(prev => [
           ...prev,
-          { timestamp: timestamp(), message: `✗ CEP ${cep}: Erro HTTP ${response.status} - ${data}`, type: "error" },
+          {
+            timestamp: timestamp(),
+            message: `✗ CEP ${cepData.cep}: Erro HTTP ${response.status} - ${data}`,
+            type: "error"
+          },
         ]);
         return 'error';
       }
 
       setLogs(prev => [
         ...prev,
-        { timestamp: timestamp(), message: `✓ CEP ${cep}: ${data || 'Executado com sucesso'}`, type: "success" },
+        {
+          timestamp: timestamp(),
+          message: `✓ CEP ${cepData.cep}: ${data || 'Executado com sucesso'}`,
+          type: "success"
+        },
       ]);
+
       return 'success';
+
     } catch (err: any) {
+
       setLogs(prev => [
         ...prev,
-        { timestamp: timestamp(), message: `✗ CEP ${cep}: ${err.message || 'Erro de conexão'}`, type: "error" },
+        {
+          timestamp: timestamp(),
+          message: `✗ CEP ${cepData.cep}: ${err.message || 'Erro de conexão'}`,
+          type: "error"
+        },
       ]);
+
       return 'error';
     }
   };
@@ -407,7 +440,17 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
       setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
 
-      const result = await executeSingleCep(changeNumber, cep.cep, 'inclusion', setInsertionLogs);
+      const result = await executeSingleCep(
+        changeNumber,
+        {
+          cep: cep.cep,
+          infraco: cep.infraco,
+          tecnologia: cep.tecnologia,
+          prioridade: cep.prioridade,
+        },
+        'inclusion',
+        setInsertionLogs
+      );
 
       setCepChanges(prev => prev.map(c =>
         c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
@@ -444,7 +487,17 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
       setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
 
-      const result = await executeSingleCep(changeNumber, cep.cep, 'exclusion', setExclusionLogs);
+      const result = await executeSingleCep(
+        changeNumber,
+        {
+          cep: cep.cep,
+          infraco: cep.infraco,
+          tecnologia: cep.tecnologia,
+          prioridade: cep.prioridade,
+        },
+        'exclusion',
+        setExclusionLogs
+      );
 
       setCepChanges(prev => prev.map(c =>
         c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
