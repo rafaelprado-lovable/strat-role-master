@@ -13,6 +13,7 @@ import {
   OnConnect,
   useReactFlow,
   BackgroundVariant,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,7 +49,7 @@ import {
 } from 'lucide-react';
 import TaskInstanceNode from './TaskInstanceNode';
 import { TaskConfigPanel } from './TaskConfigPanel';
-import { EdgeConditionDialog } from './EdgeConditionDialog';
+import { EdgeConfigPanel, EdgeStyleConfig } from './EdgeConfigPanel';
 import { TaskDefinitionDialog } from './TaskDefinitionDialog';
 import { MachineDialog } from './MachineDialog';
 import { MachinesSheet } from './MachinesSheet';
@@ -130,7 +131,20 @@ const LOOP_HANDLE_LABELS: Record<string, { label: string; color: string }> = {
   'loop-back': { label: '↩ volta', color: '#ec4899' },
 };
 
-function edgeStyle(condition?: string, sourceHandle?: string) {
+function getStrokeDasharray(lineStyle?: string, fallbackCondition?: boolean): string | undefined {
+  if (lineStyle === 'dashed') return '8 4';
+  if (lineStyle === 'dotted') return '2 4';
+  if (fallbackCondition) return '6 3';
+  return undefined;
+}
+
+function getMarkerEnd(arrowType?: string) {
+  if (arrowType === 'none') return {};
+  if (arrowType === 'arrow') return { markerEnd: { type: MarkerType.Arrow, width: 20, height: 20 } };
+  return { markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } };
+}
+
+function edgeStyle(condition?: string, sourceHandle?: string, styleConfig?: EdgeStyleConfig) {
   // Loop-specific edges
   const loopMeta = sourceHandle ? LOOP_HANDLE_LABELS[sourceHandle] : undefined;
   if (loopMeta) {
@@ -140,6 +154,7 @@ function edgeStyle(condition?: string, sourceHandle?: string) {
       labelStyle: { fontSize: 10, fill: loopMeta.color, fontWeight: 600 },
       labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.9 },
       labelBgPadding: [4, 6] as [number, number],
+      ...getMarkerEnd(styleConfig?.arrowType),
     };
   }
 
@@ -147,11 +162,15 @@ function edgeStyle(condition?: string, sourceHandle?: string) {
   const hasCondition = !!condition;
   const strokeColor = isTrue ? '#22c55e' : hasCondition ? '#ef4444' : '#6366f1';
   return {
-    style: { stroke: strokeColor, strokeDasharray: hasCondition ? '6 3' : undefined },
+    style: {
+      stroke: strokeColor,
+      strokeDasharray: getStrokeDasharray(styleConfig?.lineStyle, hasCondition),
+    },
     label: condition || undefined,
     labelStyle: hasCondition ? { fontSize: 10, fill: strokeColor } : undefined,
     labelBgStyle: hasCondition ? { fill: 'hsl(var(--background))', fillOpacity: 0.9 } : undefined,
     labelBgPadding: hasCondition ? [4, 6] as [number, number] : undefined,
+    ...getMarkerEnd(styleConfig?.arrowType ?? 'arrowclosed'),
   };
 }
 
@@ -208,6 +227,7 @@ export function FlowEditor({
     from: string;
     to: string;
     condition?: string;
+    styleConfig?: EdgeStyleConfig;
   } | null>(null);
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -274,19 +294,20 @@ export function FlowEditor({
       from: edge.source,
       to: edge.target,
       condition: edge.data?.condition as string | undefined,
+      styleConfig: edge.data?.styleConfig as EdgeStyleConfig | undefined,
     });
     setIsEdgeDialogOpen(true);
   }, []);
 
   const handleSaveEdgeCondition = useCallback(
-    (edgeId: string, condition: string | undefined) => {
+    (edgeId: string, condition: string | undefined, styleConfig: EdgeStyleConfig) => {
       setEdges((eds) =>
         eds.map((e) => {
           if (e.id !== edgeId) return e;
-          const es = edgeStyle(condition, e.sourceHandle ?? undefined);
+          const es = edgeStyle(condition, e.sourceHandle ?? undefined, styleConfig);
           return {
             ...e,
-            data: { ...e.data, condition },
+            data: { ...e.data, condition, styleConfig },
             ...es,
           };
         })
@@ -619,20 +640,20 @@ export function FlowEditor({
         </SheetContent>
       </Sheet>
 
-      {/* Edge Condition Dialog */}
-      <EdgeConditionDialog
+      {/* Edge Config Panel */}
+      <EdgeConfigPanel
         open={isEdgeDialogOpen}
         onOpenChange={setIsEdgeDialogOpen}
         edge={selectedEdgeData}
         sourceLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.from) : ''}
         targetLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.to) : ''}
         sourceDefinition={sourceDefForEdge}
-      onSave={handleSaveEdgeCondition}
-      onDelete={(edgeId) => {
-        setEdges((eds) => eds.filter((e) => e.id !== edgeId));
-        toast.success('Conexão removida');
-      }}
-    />
+        onSave={handleSaveEdgeCondition}
+        onDelete={(edgeId) => {
+          setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+          toast.success('Conexão removida');
+        }}
+      />
 
       {/* Task Definition Dialog */}
       <TaskDefinitionDialog
