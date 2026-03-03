@@ -124,7 +124,25 @@ function toRFNodes(
 
 /** Convert WorkflowEdge[] → ReactFlow Edge[] */
 /** Build consistent edge style */
+const LOOP_HANDLE_LABELS: Record<string, { label: string; color: string }> = {
+  'loop-body': { label: '↪ corpo', color: '#ec4899' },
+  'loop-done': { label: '✓ fim do loop', color: '#22c55e' },
+  'loop-back': { label: '↩ volta', color: '#ec4899' },
+};
+
 function edgeStyle(condition?: string, sourceHandle?: string) {
+  // Loop-specific edges
+  const loopMeta = sourceHandle ? LOOP_HANDLE_LABELS[sourceHandle] : undefined;
+  if (loopMeta) {
+    return {
+      style: { stroke: loopMeta.color, strokeDasharray: sourceHandle === 'loop-back' ? '4 4' : undefined },
+      label: loopMeta.label,
+      labelStyle: { fontSize: 10, fill: loopMeta.color, fontWeight: 600 },
+      labelBgStyle: { fill: 'hsl(var(--background))', fillOpacity: 0.9 },
+      labelBgPadding: [4, 6] as [number, number],
+    };
+  }
+
   const isTrue = condition?.includes('== true');
   const hasCondition = !!condition;
   const strokeColor = isTrue ? '#22c55e' : hasCondition ? '#ef4444' : '#6366f1';
@@ -207,18 +225,17 @@ export function FlowEditor({
       // Determine edge color based on source handle (condition nodes have true/false handles)
       const sourceNode = nodes.find((n) => n.id === params.source);
       const isConditionSource = sourceNode?.data?.type === 'condition';
-      let strokeColor = '#6366f1'; // default blue
+      const isLoopSource = sourceNode?.data?.type === 'loop';
+      const isLoopHandle = params.sourceHandle && LOOP_HANDLE_LABELS[params.sourceHandle];
       let autoCondition: string | undefined;
 
       if (isConditionSource && params.sourceHandle === 'true') {
-        strokeColor = '#22c55e'; // green
         autoCondition = `${params.source}.result == true`;
       } else if (isConditionSource && params.sourceHandle === 'false') {
-        strokeColor = '#ef4444'; // red
         autoCondition = `${params.source}.result == false`;
       }
 
-      const es = edgeStyle(autoCondition);
+      const es = edgeStyle(autoCondition, params.sourceHandle ?? undefined);
       const newEdge: Edge = {
         id: `e-${params.source}-${params.target}-${Date.now()}`,
         source: params.source!,
@@ -231,8 +248,8 @@ export function FlowEditor({
       };
       setEdges((eds) => addEdge(newEdge, eds));
 
-      // Only open edge condition dialog for non-condition source handles
-      if (!isConditionSource) {
+      // Only open edge condition dialog for standard connections
+      if (!isConditionSource && !isLoopHandle) {
         setTimeout(() => {
           setSelectedEdgeData({
             id: newEdge.id,
