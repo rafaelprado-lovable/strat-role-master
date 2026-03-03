@@ -14,6 +14,8 @@ import {
   Server,
   Terminal,
   Cog,
+  Repeat,
+  RefreshCw,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -29,6 +31,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   filter: Filter,
   server: Server,
   terminal: Terminal,
+  repeat: Repeat,
+  'refresh-cw': RefreshCw,
 };
 
 interface TaskInstanceNodeData extends Record<string, unknown> {
@@ -46,12 +50,13 @@ const TaskInstanceNode = memo(({ data, selected }: NodeProps) => {
   const colorClass = d.color || 'bg-primary';
   const isCondition = d.type === 'condition';
   const isTrigger = d.type === 'trigger';
+  const isLoop = d.type === 'loop';
 
   return (
     <div
       className={`px-4 py-3 rounded-lg border-2 bg-background shadow-lg min-w-[170px] transition-all ${
         selected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
-      }`}
+      } ${isLoop ? 'border-dashed' : ''}`}
     >
       {/* Target handle — not on triggers */}
       {!isTrigger && (
@@ -90,6 +95,32 @@ const TaskInstanceNode = memo(({ data, selected }: NodeProps) => {
             id="false"
             style={{ top: '70%' }}
             className="!bg-red-500 !w-3 !h-3 !border-2 !border-background"
+          />
+        </>
+      ) : isLoop ? (
+        <>
+          {/* Forward — goes to body of the loop */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="loop-body"
+            style={{ top: '30%' }}
+            className="!bg-pink-500 !w-3 !h-3 !border-2 !border-background"
+          />
+          {/* After loop ends */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="loop-done"
+            style={{ top: '70%' }}
+            className="!bg-green-500 !w-3 !h-3 !border-2 !border-background"
+          />
+          {/* Loop-back target — receives connection back from last node in body */}
+          <Handle
+            type="target"
+            position={Position.Bottom}
+            id="loop-back"
+            className="!bg-pink-500 !w-3 !h-3 !border-2 !border-background"
           />
         </>
       ) : (

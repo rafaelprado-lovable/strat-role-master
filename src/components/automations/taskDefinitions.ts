@@ -171,6 +171,47 @@ export const BUILTIN_TASK_DEFINITIONS: TaskDefinition[] = [
     },
   },
 
+  // ── Loops ──
+  {
+    id: 'loop_for_each',
+    name: 'For Each',
+    type: 'loop',
+    description: 'Itera sobre cada item de um array recebido de um nó anterior',
+    icon: 'repeat',
+    color: 'bg-pink-500',
+    category: 'Loops',
+    schema: {
+      inputs: {
+        items: 'array',
+      },
+      outputs: {
+        currentItem: 'object',
+        index: 'number',
+        isLast: 'boolean',
+      },
+    },
+  },
+  {
+    id: 'loop_while',
+    name: 'While',
+    type: 'loop',
+    description: 'Repete enquanto a condição for verdadeira (com limite de iterações)',
+    icon: 'refresh-cw',
+    color: 'bg-pink-600',
+    category: 'Loops',
+    schema: {
+      inputs: {
+        condition: 'string',
+        maxIterations: 'number',
+      },
+      outputs: {
+        iterationCount: 'number',
+        lastResult: 'object',
+        exitReason: 'string',
+      },
+    },
+  },
+
   // ── Conditions ──
   {
     id: 'condition_if',
