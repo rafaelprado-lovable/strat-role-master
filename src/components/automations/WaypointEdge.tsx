@@ -1,7 +1,6 @@
 import { useCallback, useState, useMemo } from 'react';
 import {
   type EdgeProps,
-  getBezierPath,
   EdgeLabelRenderer,
   useReactFlow,
 } from '@xyflow/react';
@@ -11,14 +10,12 @@ interface Waypoint {
   y: number;
 }
 
-/** Build an SVG path through waypoints using quadratic Bézier curves */
 function buildPath(
   sx: number, sy: number,
   tx: number, ty: number,
   waypoints: Waypoint[]
 ): string {
   if (waypoints.length === 0) {
-    // simple quadratic curve
     const mx = (sx + tx) / 2;
     const my = (sy + ty) / 2;
     return `M${sx},${sy} Q${mx},${(sy + my) / 2} ${mx},${my} Q${mx},${(my + ty) / 2} ${tx},${ty}`;
@@ -28,19 +25,11 @@ function buildPath(
   let d = `M${points[0].x},${points[0].y}`;
 
   for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1];
     const curr = points[i];
     const next = points[i + 1];
-    const cpx1 = (prev.x + curr.x) / 2;
-    const cpy1 = (prev.y + curr.y) / 2;
     const cpx2 = (curr.x + next.x) / 2;
     const cpy2 = (curr.y + next.y) / 2;
-
-    if (i === 1) {
-      d += ` Q${curr.x},${curr.y} ${cpx2},${cpy2}`;
-    } else {
-      d += ` Q${curr.x},${curr.y} ${cpx2},${cpy2}`;
-    }
+    d += ` Q${curr.x},${curr.y} ${cpx2},${cpy2}`;
   }
 
   const last = points[points.length - 1];
@@ -59,31 +48,18 @@ export function WaypointEdge({
   markerEnd,
   label,
 }: EdgeProps) {
-  const { setEdges } = useReactFlow();
-  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
-
-  // Store waypoints in edge data
+  const { screenToFlowPosition } = useReactFlow();
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
 
-  // Derive edge style from sourceHandleId
   const edgeStyle = useMemo(() => {
     const base = { strokeWidth: 2, ...style };
-    if (sourceHandleId === 'true') {
-      return { ...base, stroke: 'hsl(var(--chart-2))' };
-    }
-    if (sourceHandleId === 'false') {
-      return { ...base, stroke: 'hsl(var(--destructive))' };
-    }
-    if (sourceHandleId === 'loop-body' || sourceHandleId === 'loop-back') {
-      return { ...base, stroke: 'hsl(var(--chart-4))', strokeDasharray: '6 3' };
-    }
-    if (sourceHandleId === 'loop-done') {
-      return { ...base, stroke: 'hsl(var(--chart-2))' };
-    }
+    if (sourceHandleId === 'true') return { ...base, stroke: 'hsl(var(--chart-2))' };
+    if (sourceHandleId === 'false') return { ...base, stroke: 'hsl(var(--destructive))' };
+    if (sourceHandleId === 'loop-body' || sourceHandleId === 'loop-back') return { ...base, stroke: 'hsl(var(--chart-4))', strokeDasharray: '6 3' };
+    if (sourceHandleId === 'loop-done') return { ...base, stroke: 'hsl(var(--chart-2))' };
     return { ...base, stroke: 'hsl(var(--primary))' };
   }, [sourceHandleId, style]);
 
-  // Edge label based on handle
   const edgeLabel = useMemo(() => {
     if (sourceHandleId === 'true') return '✓ True';
     if (sourceHandleId === 'false') return '✗ False';
@@ -94,74 +70,51 @@ export function WaypointEdge({
   }, [sourceHandleId, label]);
 
   const isDashed = sourceHandleId === 'loop-body' || sourceHandleId === 'loop-back';
-
   const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints);
 
-  // Double-click on path to add waypoint
+  const toFlowCoords = useCallback(
+    (clientX: number, clientY: number) => screenToFlowPosition({ x: clientX, y: clientY }),
+    [screenToFlowPosition]
+  );
+
   const handleDoubleClick = useCallback(
-    (event: React.MouseEvent<SVGPathElement>) => {
+    (event: React.MouseEvent) => {
       event.stopPropagation();
-      const svg = (event.target as SVGElement).closest('svg');
-      if (!svg) return;
-      const point = svg.createSVGPoint();
-      point.x = event.clientX;
-      point.y = event.clientY;
-      const ctm = svg.getScreenCTM();
-      if (!ctm) return;
-      const svgPoint = point.matrixTransform(ctm.inverse());
+      const pos = toFlowCoords(event.clientX, event.clientY);
 
       setWaypoints((prev) => {
-        // Insert at the closest segment position
-        const allPoints = [
-          { x: sourceX, y: sourceY },
-          ...prev,
-          { x: targetX, y: targetY },
-        ];
+        const allPoints = [{ x: sourceX, y: sourceY }, ...prev, { x: targetX, y: targetY }];
         let bestIdx = prev.length;
         let bestDist = Infinity;
         for (let i = 0; i < allPoints.length - 1; i++) {
           const mx = (allPoints[i].x + allPoints[i + 1].x) / 2;
           const my = (allPoints[i].y + allPoints[i + 1].y) / 2;
-          const d = Math.hypot(svgPoint.x - mx, svgPoint.y - my);
-          if (d < bestDist) {
-            bestDist = d;
-            bestIdx = i;
-          }
+          const d = Math.hypot(pos.x - mx, pos.y - my);
+          if (d < bestDist) { bestDist = d; bestIdx = i; }
         }
         const next = [...prev];
-        next.splice(bestIdx, 0, { x: svgPoint.x, y: svgPoint.y });
+        next.splice(bestIdx, 0, { x: pos.x, y: pos.y });
         return next;
       });
     },
-    [sourceX, sourceY, targetX, targetY]
+    [sourceX, sourceY, targetX, targetY, toFlowCoords]
   );
 
-  // Drag waypoint handlers
   const handleWaypointMouseDown = useCallback(
     (idx: number, event: React.MouseEvent) => {
       event.stopPropagation();
       event.preventDefault();
-      setDraggingIdx(idx);
-
-      const svg = (event.target as SVGElement).closest('svg');
-      if (!svg) return;
 
       const onMouseMove = (e: MouseEvent) => {
-        const pt = svg.createSVGPoint();
-        pt.x = e.clientX;
-        pt.y = e.clientY;
-        const ctm = svg.getScreenCTM();
-        if (!ctm) return;
-        const svgPt = pt.matrixTransform(ctm.inverse());
+        const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
         setWaypoints((prev) => {
           const next = [...prev];
-          next[idx] = { x: svgPt.x, y: svgPt.y };
+          next[idx] = { x: pos.x, y: pos.y };
           return next;
         });
       };
 
       const onMouseUp = () => {
-        setDraggingIdx(null);
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
       };
@@ -169,10 +122,9 @@ export function WaypointEdge({
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    []
+    [screenToFlowPosition]
   );
 
-  // Double-click on waypoint to remove it
   const handleWaypointDoubleClick = useCallback(
     (idx: number, event: React.MouseEvent) => {
       event.stopPropagation();
@@ -181,7 +133,6 @@ export function WaypointEdge({
     []
   );
 
-  // Label position at midpoint
   const labelX = waypoints.length > 0
     ? waypoints[Math.floor(waypoints.length / 2)].x
     : (sourceX + targetX) / 2;
@@ -191,7 +142,6 @@ export function WaypointEdge({
 
   return (
     <>
-      {/* Invisible wider path for easier interaction */}
       <path
         d={path}
         fill="none"
@@ -200,7 +150,6 @@ export function WaypointEdge({
         onDoubleClick={handleDoubleClick}
         style={{ cursor: 'crosshair' }}
       />
-      {/* Visible path */}
       <path
         d={path}
         fill="none"
@@ -210,7 +159,6 @@ export function WaypointEdge({
         onDoubleClick={handleDoubleClick}
         className="react-flow__edge-path"
       />
-      {/* Waypoint handles */}
       {waypoints.map((wp, idx) => (
         <circle
           key={idx}
@@ -225,7 +173,6 @@ export function WaypointEdge({
           onDoubleClick={(e) => handleWaypointDoubleClick(idx, e)}
         />
       ))}
-      {/* Edge label */}
       {edgeLabel && (
         <EdgeLabelRenderer>
           <div
