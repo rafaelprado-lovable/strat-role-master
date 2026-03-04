@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { type Node } from '@xyflow/react';
+import { type Node, type Edge } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
 
 interface NodeConfigPanelProps {
   node: Node;
   inputs: Record<string, unknown>;
+  loopEdge: Edge | null;
   onUpdate: (id: string, data: Record<string, unknown>) => void;
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
+  onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
   onClose: () => void;
 }
 
@@ -24,7 +26,7 @@ function resolveTemplate(template: string, mockData: Record<string, unknown>): s
   });
 }
 
-export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClose }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInputs, onUpdateEdge, onClose }: NodeConfigPanelProps) {
   const d = node.data as Record<string, any>;
   const forEach: WorkflowForEach | undefined = d.for_each;
   const [forEachEnabled, setForEachEnabled] = useState(!!forEach);
@@ -32,8 +34,16 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
   const [jsonError, setJsonError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
+  // Loop edge data
+  const loopData = loopEdge ? (loopEdge.data || {}) as Record<string, any> : null;
+
   const update = (updates: Record<string, unknown>) => {
     onUpdate(node.id, { ...d, ...updates });
+  };
+
+  const updateLoopEdge = (key: string, value: unknown) => {
+    if (!loopEdge) return;
+    onUpdateEdge(loopEdge.id, { ...loopData, [key]: value });
   };
 
   const updateForEach = (field: string, value: string) => {
@@ -119,6 +129,104 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
             className="h-8 text-sm"
           />
         </div>
+
+        {/* ============ WHILE LOOP SECTION ============ */}
+        {loopEdge && loopData && (
+          <div className="border-t border-border pt-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-chart-4" />
+              <Label className="text-xs font-semibold text-chart-4">While Loop (Self-loop)</Label>
+            </div>
+
+            {/* While condition */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">
+                Condição do while <span className="text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                value={loopData.condition || ''}
+                onChange={(e) => updateLoopEdge('condition', e.target.value)}
+                placeholder="node-id.output.status != 200"
+                className="h-8 text-sm font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Sem condição = <code className="bg-muted px-1 rounded">while true</code>
+              </p>
+            </div>
+
+            {/* Max iterations */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">
+                max_iterations <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={loopData.max_iterations || ''}
+                onChange={(e) => updateLoopEdge('max_iterations', parseInt(e.target.value) || undefined)}
+                className="h-8 text-sm"
+              />
+              {(!loopData.max_iterations || loopData.max_iterations < 1) && (
+                <p className="text-xs text-destructive">⚠ Obrigatório — limita o número máximo de repetições</p>
+              )}
+            </div>
+
+            {/* Break condition explanation */}
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0" />
+                <p className="text-xs font-semibold text-foreground">Condições de Break (saída do loop)</p>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="text-destructive font-bold shrink-0">1.</span>
+                  <p>
+                    <strong>max_iterations atingido:</strong> o loop para após{' '}
+                    <code className="bg-muted px-1 rounded text-foreground">{loopData.max_iterations || '?'}</code> execuções
+                  </p>
+                </div>
+                {loopData.condition ? (
+                  <div className="flex items-start gap-2">
+                    <span className="text-destructive font-bold shrink-0">2.</span>
+                    <p>
+                      <strong>Condição falsa:</strong> quando{' '}
+                      <code className="bg-muted px-1 rounded text-foreground">{loopData.condition}</code>{' '}
+                      retornar <code className="bg-muted px-1 rounded text-destructive">false</code>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <span className="text-chart-4 font-bold shrink-0">2.</span>
+                    <p>
+                      <em>Sem condição configurada</em> — o loop só para pelo max_iterations
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pseudo-code preview */}
+            <div className="p-2.5 rounded bg-muted border border-border font-mono text-xs text-foreground leading-relaxed">
+              <div className="text-chart-4">// Pseudo-código do loop</div>
+              {loopData.condition ? (
+                <>
+                  <div>i = 0</div>
+                  <div><span className="text-chart-4 font-bold">while</span> ({loopData.condition}) {'{'}</div>
+                  <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                  <div className="pl-4">i++</div>
+                  <div className="pl-4"><span className="text-destructive font-bold">if</span> (i &gt;= {loopData.max_iterations || '?'}) <span className="text-destructive font-bold">break</span></div>
+                  <div>{'}'}</div>
+                </>
+              ) : (
+                <>
+                  <div><span className="text-chart-4 font-bold">for</span> (i = 0; i &lt; {loopData.max_iterations || '?'}; i++) {'{'}</div>
+                  <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                  <div>{'}'}</div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* for_each */}
         <div className="border-t border-border pt-3">

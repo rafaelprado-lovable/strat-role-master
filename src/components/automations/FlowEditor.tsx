@@ -383,8 +383,10 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           <NodeConfigPanel
             node={selectedNode}
             inputs={nodeInputs[selectedNode.id] || {}}
+            loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
+            onUpdateEdge={handleEdgeDataUpdate}
             onClose={() => setSelectedNodeId(null)}
           />
         )}
