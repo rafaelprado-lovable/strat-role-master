@@ -58,6 +58,10 @@ interface FlowEditorProps {
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   // Build initial nodes from workflow
+  const selfLoopNodeIds = new Set(
+    workflow?.edges?.filter(e => e.from === e.to && e.loop).map(e => e.from) || []
+  );
+
   const initialNodes: Node[] = workflow?.nodes?.map((n, i) => ({
     id: n.id,
     type: 'task',
@@ -68,20 +72,26 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       description: (n.config as any)?.description || '',
       for_each: n.for_each,
       hasForEach: !!n.for_each,
+      hasLoop: selfLoopNodeIds.has(n.id),
     },
   })) || [];
 
-  const initialEdges: Edge[] = workflow?.edges?.map((e, i) => ({
-    id: e.id || `e-${i}`,
-    source: e.from,
-    target: e.to,
-    type: 'waypoint',
-    data: {
-      condition: e.condition || '',
-      loop: e.loop || false,
-      max_iterations: e.max_iterations,
-    },
-  })) || [];
+  const initialEdges: Edge[] = workflow?.edges?.map((e, i) => {
+    const isSelfLoop = e.from === e.to;
+    return {
+      id: e.id || `e-${i}`,
+      source: e.from,
+      target: e.to,
+      sourceHandle: isSelfLoop ? 'loop-out' : 'bottom',
+      targetHandle: isSelfLoop ? 'loop-in' : 'top',
+      type: 'waypoint',
+      data: {
+        condition: e.condition || '',
+        loop: e.loop || false,
+        max_iterations: e.max_iterations,
+      },
+    };
+  }) || [];
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -141,11 +151,27 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((eds) =>
-        addEdge({ ...connection, type: 'waypoint', data: { condition: '', loop: false } }, eds)
-      );
+      const isSelfLoop = connection.source === connection.target;
+      const newEdge = {
+        ...connection,
+        type: 'waypoint',
+        data: {
+          condition: '',
+          loop: isSelfLoop,
+          max_iterations: isSelfLoop ? 5 : undefined,
+        },
+      };
+      if (isSelfLoop) {
+        newEdge.sourceHandle = 'loop-out';
+        newEdge.targetHandle = 'loop-in';
+        // Mark the node as having a loop
+        setNodes((nds) => nds.map((n) =>
+          n.id === connection.source ? { ...n, data: { ...n.data, hasLoop: true } } : n
+        ));
+      }
+      setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, setNodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {

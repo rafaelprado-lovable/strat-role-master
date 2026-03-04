@@ -13,8 +13,16 @@ interface Waypoint {
 function buildPath(
   sx: number, sy: number,
   tx: number, ty: number,
-  waypoints: Waypoint[]
+  waypoints: Waypoint[],
+  isSelfLoop: boolean,
 ): string {
+  // Self-loop: draw a curve that goes out right and comes back left
+  if (isSelfLoop && waypoints.length === 0) {
+    const loopSize = 80;
+    const loopHeight = 60;
+    return `M${sx},${sy} C${sx + loopSize},${sy - loopHeight} ${tx - loopSize},${ty - loopHeight} ${tx},${ty}`;
+  }
+
   const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
 
   if (points.length === 2) {
@@ -38,6 +46,8 @@ function buildPath(
 
 export function WaypointEdge({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -57,6 +67,7 @@ export function WaypointEdge({
   const edgeData = (data || {}) as Record<string, any>;
   const isLoop = !!edgeData.loop;
   const hasCondition = !!edgeData.condition;
+  const isSelfLoop = source === target;
 
   const edgeStyle = useMemo(() => {
     const base = { strokeWidth: 2, ...style };
@@ -66,13 +77,13 @@ export function WaypointEdge({
   }, [isLoop, hasCondition, style]);
 
   const edgeLabel = useMemo(() => {
-    if (isLoop && hasCondition) return `🔄 ${edgeData.condition}`;
-    if (isLoop) return '🔄 loop';
+    if (isLoop && hasCondition) return `🔄 while: ${edgeData.condition} (max ${edgeData.max_iterations || '?'})`;
+    if (isLoop) return `🔄 while true (max ${edgeData.max_iterations || '?'})`;
     if (hasCondition) return `⚡ ${edgeData.condition}`;
     return '';
-  }, [isLoop, hasCondition, edgeData.condition]);
+  }, [isLoop, hasCondition, edgeData.condition, edgeData.max_iterations]);
 
-  const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints);
+  const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints, isSelfLoop);
 
   const toFlowCoords = useCallback(
     (clientX: number, clientY: number) => reactFlowRef.current.screenToFlowPosition({ x: clientX, y: clientY }),
@@ -81,6 +92,7 @@ export function WaypointEdge({
 
   const handleDoubleClick = useCallback(
     (event: React.MouseEvent) => {
+      if (isSelfLoop) return; // don't add waypoints on self-loops
       event.stopPropagation();
       const pos = toFlowCoords(event.clientX, event.clientY);
       setWaypoints((prev) => {
@@ -98,7 +110,7 @@ export function WaypointEdge({
         return next;
       });
     },
-    [sourceX, sourceY, targetX, targetY, toFlowCoords]
+    [sourceX, sourceY, targetX, targetY, toFlowCoords, isSelfLoop]
   );
 
   const handleWaypointMouseDown = useCallback(
@@ -142,17 +154,24 @@ export function WaypointEdge({
     []
   );
 
-  const labelX = waypoints.length > 0
-    ? waypoints[Math.floor(waypoints.length / 2)].x
-    : (sourceX + targetX) / 2;
-  const labelY = waypoints.length > 0
-    ? waypoints[Math.floor(waypoints.length / 2)].y - 14
-    : (sourceY + targetY) / 2 - 14;
+  // Label position
+  let labelX: number, labelY: number;
+  if (isSelfLoop) {
+    labelX = (sourceX + targetX) / 2;
+    labelY = Math.min(sourceY, targetY) - 70;
+  } else if (waypoints.length > 0) {
+    const mid = waypoints[Math.floor(waypoints.length / 2)];
+    labelX = mid.x;
+    labelY = mid.y - 14;
+  } else {
+    labelX = (sourceX + targetX) / 2;
+    labelY = (sourceY + targetY) / 2 - 14;
+  }
 
   return (
     <>
       <path d={path} fill="none" stroke="transparent" strokeWidth={20}
-        onDoubleClick={handleDoubleClick} style={{ cursor: 'crosshair' }} />
+        onDoubleClick={handleDoubleClick} style={{ cursor: isSelfLoop ? 'default' : 'crosshair' }} />
       <path d={path} fill="none" style={edgeStyle}
         strokeDasharray={isLoop ? '6 3' : undefined}
         markerEnd={markerEnd as string}
@@ -178,7 +197,7 @@ export function WaypointEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: 'none',
             }}
-            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-card border border-border shadow-sm text-foreground max-w-[200px] truncate"
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-card border border-border shadow-sm text-foreground max-w-[220px] truncate"
           >
             {edgeLabel}
           </div>
