@@ -53,26 +53,58 @@ const MOCK_WORKFLOWS: Workflow[] = [
     runCount: 156,
   },
   {
-    id: 'wf-loop',
-    name: 'While Loop — Retry até sucesso',
-    description: 'Tenta chamar API em loop até status 200 ou max 5 tentativas',
+    id: 'wf-while-condition',
+    name: 'While (condição) — Retry até sucesso',
+    description: 'Chama API repetidamente enquanto status != 200. Para quando status == 200 ou após 5 tentativas (break).',
     status: 'draft',
     schedule: null,
     nodes: [
-      { id: 'node-retry', definition_id: 'api_call_v1', config: {}, position: { x: 250, y: 50 } },
-      { id: 'node-done', definition_id: 'send_whatsapp_message_v1', config: {}, position: { x: 250, y: 200 } },
+      { id: 'node-check', definition_id: 'api_call_v1', config: { label: 'Verificar API' }, position: { x: 250, y: 50 } },
+      { id: 'node-sucesso', definition_id: 'send_whatsapp_message_v1', config: { label: 'Notificar Sucesso' }, position: { x: 250, y: 250 } },
+      { id: 'node-falha', definition_id: 'send_whatsapp_message_v1', config: { label: 'Notificar Falha (max atingido)' }, position: { x: 500, y: 250 } },
     ],
     edges: [
-      { from: 'node-retry', to: 'node-retry', loop: true, max_iterations: 5, condition: 'node-retry.output.status != 200' },
-      { from: 'node-retry', to: 'node-done', condition: 'node-retry.output.status == 200' },
+      // Self-loop: while status != 200, repete (max 5x)
+      { id: 'loop-retry', from: 'node-check', to: 'node-check', loop: true, max_iterations: 5, condition: 'node-check.output.status != 200' },
+      // Break path: quando status == 200, segue para sucesso
+      { id: 'break-ok', from: 'node-check', to: 'node-sucesso', condition: 'node-check.output.status == 200' },
+      // Fallback: se esgotou max_iterations sem sucesso
+      { id: 'break-fail', from: 'node-check', to: 'node-falha', condition: 'node-check.output.status != 200' },
     ],
     inputs: {
-      'node-retry': { url: 'https://api.example.com/process', method: 'POST' },
-      'node-done': { phone: '+5511999999999', message: 'Sucesso após retry!' },
+      'node-check': { url: 'https://api.example.com/health', method: 'GET' },
+      'node-sucesso': { phone: '+5511999999999', message: 'API voltou! Status: {{node-check.output.status}}' },
+      'node-falha': { phone: '+5511999999999', message: 'API não respondeu após 5 tentativas.' },
     },
     start_date: null,
     createdAt: '2024-01-27T15:00:00Z',
     updatedAt: '2024-01-27T15:00:00Z',
+    lastRunAt: null,
+    runCount: 0,
+  },
+  {
+    id: 'wf-while-true',
+    name: 'While True — Polling fixo',
+    description: 'Executa um comando SSH exatamente 10 vezes (while true com max_iterations = 10). Sem condição de break antecipado.',
+    status: 'draft',
+    schedule: null,
+    nodes: [
+      { id: 'node-poll', definition_id: 'ssh_execution', config: { label: 'Coletar Métricas' }, position: { x: 250, y: 50 } },
+      { id: 'node-report', definition_id: 'api_call_v1', config: { label: 'Enviar Relatório' }, position: { x: 250, y: 250 } },
+    ],
+    edges: [
+      // While true: repete 10x sem condição
+      { id: 'loop-poll', from: 'node-poll', to: 'node-poll', loop: true, max_iterations: 10 },
+      // Depois do loop, envia relatório
+      { id: 'after-loop', from: 'node-poll', to: 'node-report' },
+    ],
+    inputs: {
+      'node-poll': { host: '192.168.1.10', command: 'cat /proc/loadavg' },
+      'node-report': { url: 'https://api.example.com/metrics', method: 'POST', body: '{{node-poll.output.stdout}}' },
+    },
+    start_date: null,
+    createdAt: '2024-01-28T10:00:00Z',
+    updatedAt: '2024-01-28T10:00:00Z',
     lastRunAt: null,
     runCount: 0,
   },
