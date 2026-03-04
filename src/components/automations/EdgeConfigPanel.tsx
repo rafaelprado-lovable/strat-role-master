@@ -26,9 +26,12 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
     onUpdate(edge.id, { ...d, ...updates });
   };
 
-  // Determine current loop mode
+  // Determine current loop mode — use explicit loop_mode if stored, else infer
   const getLoopMode = (): LoopMode => {
     if (!d.loop) return 'none';
+    if (d.loop_mode === 'while_condition') return 'while_condition';
+    if (d.loop_mode === 'while_true') return 'while_true';
+    // Fallback inference for legacy data
     if (d.condition) return 'while_condition';
     return 'while_true';
   };
@@ -38,13 +41,13 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
   const setLoopMode = (mode: LoopMode) => {
     switch (mode) {
       case 'none':
-        updateMultiple({ loop: false, max_iterations: undefined, condition: '' });
+        updateMultiple({ loop: false, loop_mode: undefined, max_iterations: undefined, condition: '' });
         break;
       case 'while_true':
-        updateMultiple({ loop: true, max_iterations: d.max_iterations || 5, condition: '' });
+        updateMultiple({ loop: true, loop_mode: 'while_true', max_iterations: d.max_iterations || 5, condition: '' });
         break;
       case 'while_condition':
-        updateMultiple({ loop: true, max_iterations: d.max_iterations || 5, condition: d.condition || '' });
+        updateMultiple({ loop: true, loop_mode: 'while_condition', max_iterations: d.max_iterations || 5, condition: d.condition || '' });
         break;
     }
   };
