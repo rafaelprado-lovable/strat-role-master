@@ -50,7 +50,7 @@ import {
 import TaskInstanceNode from './TaskInstanceNode';
 import WaypointEdge from './WaypointEdge';
 import { TaskConfigPanel } from './TaskConfigPanel';
-import { EdgeConfigPanel, EdgeStyleConfig } from './EdgeConfigPanel';
+
 import { TaskDefinitionDialog } from './TaskDefinitionDialog';
 import { MachineDialog } from './MachineDialog';
 import { MachinesSheet } from './MachinesSheet';
@@ -149,7 +149,7 @@ function getMarkerEnd(arrowType?: string) {
   return { markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20 } };
 }
 
-function edgeStyle(condition?: string, sourceHandle?: string, styleConfig?: EdgeStyleConfig) {
+function edgeStyle(condition?: string, sourceHandle?: string, styleConfig?: { lineStyle?: string; arrowType?: string }) {
   // Loop-specific edges
   const loopMeta = sourceHandle ? LOOP_HANDLE_LABELS[sourceHandle] : undefined;
   if (loopMeta) {
@@ -226,15 +226,7 @@ export function FlowEditor({
   const [isMachineDialogOpen, setIsMachineDialogOpen] = useState(false);
   const [isDefDialogOpen, setIsDefDialogOpen] = useState(false);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [isEdgeDialogOpen, setIsEdgeDialogOpen] = useState(false);
   const [editingMachine, setEditingMachine] = useState<Machine | null>(null);
-  const [selectedEdgeData, setSelectedEdgeData] = useState<{
-    id: string;
-    from: string;
-    to: string;
-    condition?: string;
-    styleConfig?: EdgeStyleConfig;
-  } | null>(null);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -275,17 +267,6 @@ export function FlowEditor({
       };
       setEdges((eds) => addEdge(newEdge, eds));
 
-      // Only open edge condition dialog for standard connections
-      if (!isConditionSource && !isLoopHandle) {
-        setTimeout(() => {
-          setSelectedEdgeData({
-            id: newEdge.id,
-            from: params.source!,
-            to: params.target!,
-          });
-          setIsEdgeDialogOpen(true);
-        }, 100);
-      }
     },
     [nodes]
   );
@@ -295,34 +276,6 @@ export function FlowEditor({
     setIsConfigOpen(true);
   }, []);
 
-  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    setSelectedEdgeData({
-      id: edge.id,
-      from: edge.source,
-      to: edge.target,
-      condition: edge.data?.condition as string | undefined,
-      styleConfig: edge.data?.styleConfig as EdgeStyleConfig | undefined,
-    });
-    setIsEdgeDialogOpen(true);
-  }, []);
-
-  const handleSaveEdgeCondition = useCallback(
-    (edgeId: string, condition: string | undefined, styleConfig: EdgeStyleConfig) => {
-      setEdges((eds) =>
-        eds.map((e) => {
-          if (e.id !== edgeId) return e;
-          const es = edgeStyle(condition, e.sourceHandle ?? undefined, styleConfig);
-          return {
-            ...e,
-            data: { ...e.data, condition, styleConfig },
-            ...es,
-          };
-        })
-      );
-      toast.success('Edge atualizada');
-    },
-    [nodes]
-  );
 
   const updateNodeLabel = useCallback(
     (label: string) => {
@@ -496,19 +449,6 @@ export function FlowEditor({
       )
     : undefined;
 
-  // Get source node label for edge dialog
-  const getNodeLabel = (nodeId: string) => {
-    const node = nodes.find((n) => n.id === nodeId);
-    return (node?.data.label as string) || nodeId;
-  };
-
-  const sourceDefForEdge = selectedEdgeData
-    ? findDefinition(
-        (nodes.find((n) => n.id === selectedEdgeData.from)?.data.definitionId as string) || '',
-        BUILTIN_TASK_DEFINITIONS,
-        customDefinitions
-      )
-    : undefined;
 
   return (
     <div className="space-y-4 h-[calc(100vh-8rem)]">
@@ -612,7 +552,7 @@ export function FlowEditor({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
-            onEdgeClick={onEdgeClick}
+            
             onDragOver={onDragOver}
             onDrop={onDrop}
             nodeTypes={nodeTypes}
@@ -648,20 +588,6 @@ export function FlowEditor({
         </SheetContent>
       </Sheet>
 
-      {/* Edge Config Panel */}
-      <EdgeConfigPanel
-        open={isEdgeDialogOpen}
-        onOpenChange={setIsEdgeDialogOpen}
-        edge={selectedEdgeData}
-        sourceLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.from) : ''}
-        targetLabel={selectedEdgeData ? getNodeLabel(selectedEdgeData.to) : ''}
-        sourceDefinition={sourceDefForEdge}
-        onSave={handleSaveEdgeCondition}
-        onDelete={(edgeId) => {
-          setEdges((eds) => eds.filter((e) => e.id !== edgeId));
-          toast.success('Conexão removida');
-        }}
-      />
 
       {/* Task Definition Dialog */}
       <TaskDefinitionDialog
