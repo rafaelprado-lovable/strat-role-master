@@ -58,6 +58,7 @@ export function WaypointEdge({
   const reactFlowRef = useRef(reactFlow);
   reactFlowRef.current = reactFlow;
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
 
   const edgeStyle = useMemo(() => {
     const base = { strokeWidth: 2, ...style };
@@ -113,16 +114,28 @@ export function WaypointEdge({
       event.stopPropagation();
       event.preventDefault();
 
+      const startPointer = reactFlowRef.current.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const startWaypoint = waypoints[idx];
+      if (!startWaypoint) return;
+
+      const offsetX = startPointer.x - startWaypoint.x;
+      const offsetY = startPointer.y - startWaypoint.y;
+
+      setDraggingIdx(idx);
+
       const onMouseMove = (e: MouseEvent) => {
         const pos = reactFlowRef.current.screenToFlowPosition({ x: e.clientX, y: e.clientY });
         setWaypoints((prev) => {
+          const current = prev[idx];
+          if (!current) return prev;
           const next = [...prev];
-          next[idx] = { x: pos.x, y: pos.y };
+          next[idx] = { x: pos.x - offsetX, y: pos.y - offsetY };
           return next;
         });
       };
 
       const onMouseUp = () => {
+        setDraggingIdx(null);
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
       };
@@ -130,7 +143,7 @@ export function WaypointEdge({
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    []
+    [waypoints]
   );
 
   const handleWaypointDoubleClick = useCallback(
@@ -168,18 +181,26 @@ export function WaypointEdge({
         className="react-flow__edge-path"
       />
       {waypoints.map((wp, idx) => (
-        <circle
-          key={idx}
-          cx={wp.x}
-          cy={wp.y}
-          r={5}
-          fill="hsl(var(--background))"
-          stroke={edgeStyle.stroke as string}
-          strokeWidth={2}
-          style={{ cursor: 'grab' }}
-          onMouseDown={(e) => handleWaypointMouseDown(idx, e)}
-          onDoubleClick={(e) => handleWaypointDoubleClick(idx, e)}
-        />
+        <g key={idx}>
+          <circle
+            cx={wp.x}
+            cy={wp.y}
+            r={14}
+            fill="transparent"
+            style={{ cursor: draggingIdx === idx ? 'grabbing' : 'grab' }}
+            onMouseDown={(e) => handleWaypointMouseDown(idx, e)}
+            onDoubleClick={(e) => handleWaypointDoubleClick(idx, e)}
+          />
+          <circle
+            cx={wp.x}
+            cy={wp.y}
+            r={6}
+            fill="hsl(var(--background))"
+            stroke={edgeStyle.stroke as string}
+            strokeWidth={2}
+            style={{ pointerEvents: 'none' }}
+          />
+        </g>
       ))}
       {edgeLabel && (
         <EdgeLabelRenderer>
