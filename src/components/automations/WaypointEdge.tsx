@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useRef } from 'react';
 import {
   type EdgeProps,
   EdgeLabelRenderer,
@@ -48,7 +48,9 @@ export function WaypointEdge({
   markerEnd,
   label,
 }: EdgeProps) {
-  const { screenToFlowPosition } = useReactFlow();
+  const reactFlow = useReactFlow();
+  const reactFlowRef = useRef(reactFlow);
+  reactFlowRef.current = reactFlow;
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
 
   const edgeStyle = useMemo(() => {
@@ -73,8 +75,8 @@ export function WaypointEdge({
   const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints);
 
   const toFlowCoords = useCallback(
-    (clientX: number, clientY: number) => screenToFlowPosition({ x: clientX, y: clientY }),
-    [screenToFlowPosition]
+    (clientX: number, clientY: number) => reactFlowRef.current.screenToFlowPosition({ x: clientX, y: clientY }),
+    []
   );
 
   const handleDoubleClick = useCallback(
@@ -106,7 +108,7 @@ export function WaypointEdge({
       event.preventDefault();
 
       const onMouseMove = (e: MouseEvent) => {
-        const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        const pos = reactFlowRef.current.screenToFlowPosition({ x: e.clientX, y: e.clientY });
         setWaypoints((prev) => {
           const next = [...prev];
           next[idx] = { x: pos.x, y: pos.y };
@@ -122,7 +124,7 @@ export function WaypointEdge({
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    [screenToFlowPosition]
+    []
   );
 
   const handleWaypointDoubleClick = useCallback(
