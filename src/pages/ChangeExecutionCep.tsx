@@ -89,12 +89,11 @@ type CepStatus = "pendente" | "validado" | "erro" | "validando";
 type ChangeType = "inserção" | "exclusão";
 
 interface CepChange {
-  id: string;
   cep: string;
   infraco: string;
   tecnologia: string;
-  prioridade: string;
-  changeType: string;
+  propriedade: string;
+  type: string;
   status: CepStatus;
 }
 
@@ -295,7 +294,8 @@ interface ChangeExecutionCepProps {
 }
 
 export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) {
-  const [cepChanges, setCepChanges] = useState<CepChange[]>(change.cepsInclude);
+  const [insertionCepsState, setInsertionCepsState] = useState<CepChange[]>(change.cepsInclude);
+  const [exclusionCepsState, setExclusionCepsState] = useState<CepChange[]>(change.cepsExclude);
   const [selectedCep, setSelectedCep] = useState<string | null>(null);
   const [insertionLogs, setInsertionLogs] = useState<ValidationLog[]>([]);
   const [exclusionLogs, setExclusionLogs] = useState<ValidationLog[]>([]);
@@ -318,7 +318,10 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
   const { toast } = useToast();
   const insertionCeps = change.cepsInclude;
   const exclusionCeps = change.cepsExclude;
-  
+  const allCeps = [...insertionCepsState, ...exclusionCepsState];
+
+  const validatedCount = allCeps.filter(c => c.status === "validado").length;
+
   const filteredInsertionCeps = insertionCeps.filter(c => 
     c.cep.includes(searchTerm) || 
     c.tecnologia.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -438,7 +441,13 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
       setCurrentProcessingCep(cep.cep);
       setInsertionProgress({ current: i + 1, total: ceps.length });
 
-      setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
+      setInsertionCepsState(prev =>
+        prev.map(c =>
+          c.cep === cep.cep
+            ? { ...c, status: "validando" as CepStatus }
+            : c
+        )
+      );
 
       const result = await executeSingleCep(
         changeNumber,
@@ -446,15 +455,19 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
           cep: cep.cep,
           infraco: cep.infraco,
           tecnologia: cep.tecnologia,
-          prioridade: cep.prioridade,
+          prioridade: cep.propriedade,
         },
         'inclusion',
         setInsertionLogs
       );
 
-      setCepChanges(prev => prev.map(c =>
-        c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
-      ));
+      setInsertionCepsState(prev =>
+        prev.map(c =>
+          c.cep === cep.cep
+            ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus }
+            : c
+        )
+      );
     }
 
     setIsInsertionRunning(false);
@@ -485,23 +498,32 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
       setCurrentProcessingCep(cep.cep);
       setExclusionProgress({ current: i + 1, total: ceps.length });
 
-      setCepChanges(prev => prev.map(c => c.id === cep.id ? { ...c, status: "validando" as CepStatus } : c));
-
+      setExclusionCepsState(prev =>
+        prev.map(c =>
+          c.cep === cep.cep
+            ? { ...c, status: "validando" as CepStatus }
+            : c
+        )
+      );
       const result = await executeSingleCep(
         changeNumber,
         {
           cep: cep.cep,
           infraco: cep.infraco,
           tecnologia: cep.tecnologia,
-          prioridade: cep.prioridade,
+          prioridade: cep.propriedade,
         },
         'exclusion',
         setExclusionLogs
       );
 
-      setCepChanges(prev => prev.map(c =>
-        c.id === cep.id ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus } : c
-      ));
+      setExclusionCepsState(prev =>
+        prev.map(c =>
+          c.cep === cep.cep
+            ? { ...c, status: (result === 'success' ? 'validado' : 'erro') as CepStatus }
+            : c
+        )
+      );
     }
 
     setIsExclusionRunning(false);
@@ -574,8 +596,8 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
     streamLogs(insertionPipelineLogs, setInsertionLogs, () => {
       setIsInsertionRunning(false);
-      setCepChanges(prev => prev.map(c => 
-        c.changeType === "inserção" ? { ...c, status: "validado" as CepStatus } : c
+      setInsertionCepsState(prev => prev.map(c => 
+        c.type === "inserção" ? { ...c, status: "validado" as CepStatus } : c
       ));
       toast({
         title: "Pipeline concluído",
@@ -593,8 +615,8 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
 
     streamLogs(exclusionPipelineLogs, setExclusionLogs, () => {
       setIsExclusionRunning(false);
-      setCepChanges(prev => prev.map(c => 
-        c.changeType === "exclusão" ? { ...c, status: "validado" as CepStatus } : c
+      setExclusionCepsState(prev => prev.map(c => 
+        c.type === "exclusão" ? { ...c, status: "validado" as CepStatus } : c
       ));
       toast({
         title: "Pipeline concluído",
@@ -646,8 +668,6 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
     URL.revokeObjectURL(url);
   };
 
-  const validatedCount = [];
-
   return (
     <div className="flex gap-6 h-[calc(100vh-8rem)]">
       {/* Sidebar - Lista de CEPs alterados */}
@@ -659,7 +679,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
               <CardTitle className="text-base">CEPs Alterados</CardTitle>
             </div>
             <Badge variant="secondary" className="text-xs">
-              {validatedCount}/{cepChanges.length}
+              {validatedCount}/{allCeps.length}
             </Badge>
           </div>
             <CardDescription className="text-xs">
@@ -669,12 +689,12 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
         <CardContent className="flex-1 overflow-hidden p-0">
           <div className="h-full overflow-y-auto px-4 pb-4">
             <div className="space-y-1">
-              {change.cepsInclude.map((cep) => (
+              {insertionCepsState.map((cep) => (
                 <div
-                  key={cep.id}
-                  onClick={() => setSelectedCep(cep.id)}
+                  key={cep.cep}
+                  onClick={() => setSelectedCep(cep.cep)}
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedCep === cep.id 
+                    selectedCep === cep.cep 
                       ? "bg-accent border-primary" 
                       : "bg-card hover:bg-accent/50"
                   }`}
@@ -688,17 +708,17 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                       {getStatusIcon(cep.status)}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-      {cep.tecnologia} - {cep.infraco}/{cep.prioridade}
+      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
                     </p>
                   </div>
                 </div>
               ))}
-              {change.cepsExclude.map((cep) => (
+              {exclusionCepsState.map((cep) => (
                 <div
-                  key={cep.id}
-                  onClick={() => setSelectedCep(cep.id)}
+                  key={cep.cep}
+                  onClick={() => setSelectedCep(cep.cep)}
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedCep === cep.id 
+                    selectedCep === cep.cep 
                       ? "bg-accent border-primary" 
                       : "bg-card hover:bg-accent/50"
                   }`}
@@ -713,7 +733,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                       {getStatusIcon(cep.status)}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {cep.tecnologia} - {cep.infraco}/{cep.prioridade}
+                      {cep.tecnologia} - {cep.infraco}/{cep.propriedade}
                     </p>
                   </div>
                 </div>
@@ -763,7 +783,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                 <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-2">
                   {insertionCeps.map((cep) => (
                     <div
-                      key={cep.id}
+                      key={cep.cep}
                       className="flex items-center justify-between p-3 rounded-lg border bg-card"
                     >
                       <div className="flex items-center gap-3">
@@ -874,7 +894,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                 <CardContent className="flex-1 min-h-0 overflow-y-auto space-y-2">
                   {exclusionCeps.map((cep) => (
                     <div
-                      key={cep.id}
+                      key={cep.cep}
                       className="flex items-center justify-between p-3 rounded-lg border bg-card"
                     >
                       <div className="flex items-center gap-3">
@@ -1007,7 +1027,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                     {filteredInsertionCeps.map((cep) => (
                       <div
-                        key={cep.id}
+                        key={cep.cep}
                         className="flex items-center gap-2 p-2 rounded-lg border bg-card text-sm"
                       >
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
@@ -1096,7 +1116,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                     {filteredExclusionCeps.map((cep) => (
                       <div
-                        key={cep.id}
+                        key={cep.cep}
                         className="flex items-center gap-2 p-2 rounded-lg border bg-card text-sm"
                       >
                         <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />

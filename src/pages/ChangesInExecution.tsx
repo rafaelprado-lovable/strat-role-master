@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
-import { changesApi } from '@/services/mockApi';
+import { changesApi, departmentApi } from '@/services/mockApi';
 import {
   Table,
   TableBody,
@@ -79,12 +79,9 @@ interface ChangeInExecution {
     pipeline_link: string
   }>,
   serviceTimeline?: {
-    today: any[];
-    lastWeek?: any[];
+    today: ServiceTimelinePoint[];
+    lastWeek?: ServiceTimelinePoint[];
   };
-  cepsInclude?: any[];
-  cepsExclude?: any[];
-  [key: string]: any;
 }
 
 const mockChangesInExecution: ChangeInExecution[] = [];
@@ -136,7 +133,6 @@ export default function ChangesInExecution() {
 
     if (change?.changeAproovalData?.tecnology?.toLowerCase() === "nmws") {
       setExecutingChange(change);
-
     } else {
       setExecutingChange(change);
     }
@@ -179,7 +175,7 @@ export default function ChangesInExecution() {
                 <SelectContent>
                   <SelectItem value="all">Todos os números</SelectItem>
                   {mockChangesInExecution.map((change) => (
-                    <SelectItem key={change.id} value={change?.changeSystemData?.number}>
+                    <SelectItem key={change?.changeSystemData?.number} value={change?.changeSystemData?.number}>
                       {change?.changeSystemData?.number}
                     </SelectItem>
                   ))}
@@ -261,13 +257,13 @@ export default function ChangesInExecution() {
                   </TableCell>
                 </TableRow>
               ) : (
-                currentChanges.map((change, index) => (
-                  <TableRow key={change.changeSystemData?.number || index}>
+                currentChanges.map((change) => (
+                  <TableRow key={change.id}>
                     <TableCell className="font-medium">{change?.changeSystemData?.number}</TableCell>
                     <TableCell>{change.changeSystemData.description}</TableCell>
-                    <TableCell className="whitespace-nowrap">{change.changeSystemData?.end_date}</TableCell>
+                    <TableCell className="whitespace-nowrap">{change.changeSystemData.end_date}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{change.changeSystemData?.state}</Badge>
+                      <Badge variant="secondary">{change.changeSystemData.state}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -326,14 +322,14 @@ export default function ChangesInExecution() {
         <ChangeInExecutionDetailsDialog
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
-          change={selectedChange as any}
+          change={selectedChange}
         />
       )}
 
       <Dialog open={!!executingChange} onOpenChange={() => setExecutingChange(null)}>
         <DialogContent className="max-w-[95vw] h-[95vh] p-0">
           {executingChange && (
-            <ChangeExecutionCep change={executingChange as any} />
+            <ChangeExecutionCep change={executingChange} />
           )}
         </DialogContent>
       </Dialog>

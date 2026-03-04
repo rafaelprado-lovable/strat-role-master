@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { changeTaskService, ChangeTask } from "@/services/changeTaskService";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +8,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { departmentApi, incidentResolutionApi } from '@/services/mockApi';
+import { useQuery } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -26,10 +27,17 @@ import {
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, CheckCircle, XCircle, Download, Play } from "lucide-react";
+import { Search, CheckCircle, XCircle, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// ChangeTask type imported from changeTaskService
+interface Task {
+  sys_id: string;
+  number: string;
+  description: string;
+  type: string;
+  state: string;
+  departament?: string;
+}
 
 interface ChangeInExecutionDetails {
   changeSystemData: {
@@ -74,14 +82,19 @@ interface ChangeInExecutionDetails {
     implementation_version: string,
     pipeline_link: string
   }>,
-  tarefas?: ChangeTask[];
-  [key: string]: any;
+  tarefas: Task[];
 }
 
 interface ChangeInExecutionDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   change: ChangeInExecutionDetails;
+}
+
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
 }
 
 export function ChangeInExecutionDetailsDialog({
@@ -92,51 +105,138 @@ export function ChangeInExecutionDetailsDialog({
   const [currentPage, setCurrentPage] = useState(1);
   const [isExclusaoRunning, setIsExclusaoRunning] = useState(false);
   const itemsPerPage = 10;
-  const [tasks, setTasks] = useState<ChangeTask[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [userDepartments, setUserDepartments] = useState<string[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("departaments");
+
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUserDepartments(parsed); // array
+      } catch {
+        // caso venha como string simples
+        setUserDepartments([stored]);
+      }
+    }
+  }, []);
 
   async function getTasks() {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+
+    const raw = JSON.stringify({
+      userId,
+      changeNumber: change.changeSystemData.number,
+    });
+
     try {
-      const data = await changeTaskService.getTasksByChange(change.changeSystemData.number);
-      setTasks(data);
+      setLoadingTasks(true); // 🔥 START LOADING
+
+      const response = await fetch("http://10.151.1.54:8000/v1/ctasks", {
+        method: "PATCH",
+        headers: myHeaders,
+        body: raw,
+      });
+
+      const data = await response.json();
+      console.log("TASKS RESPONSE:", data);
+
+      // AJUSTE CONFORME SUA API
+      setTasks(data.success ?? data);
+
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingTasks(false); // 🔥 STOP LOADING
+    }
+  }
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll
+  });
+
+  const stringAllowedDepartments = (
+    localStorage.getItem("departaments") ?? ""
+  ).split(",");
+
+  const allowedDepartmentsList = departments.filter((dept) =>
+    stringAllowedDepartments.includes(dept._id)
+  );
+
+  console.log(allowedDepartmentsList)
+
+  async function closeTask(taskNumber: string, isRollback = false) {
+    const userId = localStorage.getItem("userId") ?? "unknown_user";
+    const userToken = localStorage.getItem("userToken") ?? "unknown_user";
+
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+
+    const raw = JSON.stringify({
+      userId,
+      taskNumber,
+      close_code: isRollback ? "unsuccessful" : "successful",
+      close_notes: isRollback ? "Rollback!" : "Sucesso!",
+      u_houve_estouro_de_janela: "no",
+    });
+
+    try {
+      const response = await fetch(
+        "http://10.151.1.33:8000/v1/close/implementation/tasks",
+        {
+          method: "PATCH",
+          headers: myHeaders,
+          body: raw,
+        }
+      );
+
+      toast.success(`Task ${taskNumber} fechada com ${isRollback ? "rollback" : "sucesso"}`);
+
+      // 🔥 Atualizar lista depois de fechar
+      getTasks();
+
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Erro ao fechar task ${taskNumber}`);
     }
   }
 
   useEffect(() => {
-    getTasks();
-  }, []);
-
-  useEffect(() => {
-    console.log("Tasks atualizadas:", tasks);
-  }, [tasks]);
-
-
-  function isDepartmentAllowed(taskDepartment?: string) {
-    if (!taskDepartment) return false;
-
-    const departments = localStorage.getItem("departaments");
-
-    return (departments as any)?.some?.((dep: string) =>
-      taskDepartment.toLowerCase().includes(dep.trim().toLowerCase())
-    );
-  }
-
-
+    if (open && change?.changeSystemData?.number) {
+      setCurrentPage(1);
+      getTasks();
+    }
+  }, [open, change.changeSystemData.number]);
 
   const filteredTasks = useMemo(() => {
     const term = searchTerm.toLowerCase();
+
     return tasks.filter(task => {
-      console.log(task?.departament)
-      console.log(localStorage.getItem("departaments").includes(task?.departament))
       const matchesSearch =
         task.number?.toLowerCase().includes(term) ||
         task.description?.toLowerCase().includes(term);
 
-      return matchesSearch && localStorage.getItem("departaments").includes(task?.departament);
+      const taskDept = task.departament?.toLowerCase() ?? "";
+
+      const matchesDepartment =
+        allowedDepartmentsList.length === 0 ||
+        allowedDepartmentsList.some(dep =>
+          taskDept.includes(dep.sysId)
+        );
+
+      return matchesSearch && matchesDepartment;
     });
-  }, [tasks, searchTerm]);
+  }, [tasks, searchTerm, allowedDepartmentsList]);
 
 
   const totalPages = Math.ceil(filteredTasks?.length / itemsPerPage || 0);
@@ -145,13 +245,12 @@ export function ChangeInExecutionDetailsDialog({
   const currentTasks = filteredTasks?.slice(startIndex, endIndex);
 
   const handleFecharSucesso = (number: string) => {
-    toast.success(`Tarefa ${number} fechada como sucesso`);
+    closeTask(number, false);
   };
 
   const handleFecharRollback = (number: string) => {
-    toast.error(`Tarefa ${number} fechada como rollback`);
+    closeTask(number, true);
   };
-
 
 
   const getStatusVariant = (state: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -290,13 +389,22 @@ export function ChangeInExecutionDetailsDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentTasks?.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          Nenhuma tarefa encontrada
-                        </TableCell>
-                      </TableRow>
-                    ) : (
+                      {loadingTasks ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10">
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="animate-spin h-5 w-5 text-muted-foreground" />
+                              Carregando tarefas...
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : currentTasks?.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            Nenhuma tarefa encontrada
+                          </TableCell>
+                        </TableRow>
+                      ) : (
                       currentTasks?.map((task) => (
                         <TableRow key={task.sys_id}>
                           <TableCell className="font-medium">{task.number}</TableCell>

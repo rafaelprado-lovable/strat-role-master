@@ -588,7 +588,7 @@ function TimelineChartSection({ dayData, title, icon }: TimelineChartSectionProp
 }
 
 // Filter data based on time selection
-function filterDataByTime(dayData: any[], timeFilter: string): any[] {
+function filterDataByTime(dayData: ServiceDayData[], timeFilter: string): ServiceDayData[] {
   const filterOption = TIME_FILTER_OPTIONS.find(opt => opt.value === timeFilter);
   
   if (!filterOption || timeFilter === "all") {

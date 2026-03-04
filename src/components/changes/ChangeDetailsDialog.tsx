@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { departmentApi } from "@/services/mockApi";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChangeDetailsDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface ChangeDetailsDialogProps {
   change: Changes;
   onUpdateChange: (updated: Changes) => void;  // <-- aqui
 }
+
 
 
 export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange  }: ChangeDetailsDialogProps) {
@@ -34,6 +36,8 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
     queryKey: ['departments'],
     queryFn: departmentApi.getAll
   });
+
+  console.log(departments)
 
   const userDepartmentNames = departments.map((d) => d.name);
 
@@ -108,6 +112,66 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
       });
     } finally {
       setLoadingAnalyse(false);
+    }
+  }
+
+  async function cobrarAprovacao(item: any) {
+    try {
+      setLoadingCharge(item.departament);
+
+      const userId = localStorage.getItem("userId");
+      const userToken = localStorage.getItem("userToken");
+
+      const payload = {
+        userId,
+        alarmData: {
+          alarmDescription: `Cobrança aprovação CHG ${change.changeSystemData.number}`,
+          alarmHash: uuidv4(),
+          alarmDatetime: new Date().toISOString(),
+          alarmFailureTax: "N/A",
+          alarmStatusCode: "N/A",
+          responsibleUser: "Rafael Prado",
+          actionType: ["whatsappData"]
+        },
+        whatsappData: {
+          groupId: "120363116722508039@g.us",
+          message: `⚙️ Prezado time, poderiam nos auxiliar com a aprovação da change, por gentileza? 
+- Número da change: ${change.changeSystemData.number}
+- Fila: ${item.departament}
+- Descrição da change: ${change.changeSystemData.description}
+- Data de execução: ${change.changeSystemData.start_date}`
+        }
+      };
+
+      const response = await fetch("http://10.151.1.54:8000/v1/triggered/action/service", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Erro ao enviar cobrança");
+      }
+
+      toast({
+        title: "Cobrança enviada",
+        description: `Mensagem enviada para ${item.departament}`,
+      });
+
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Erro ao cobrar aprovação",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingCharge(null);
     }
   }
 
@@ -508,6 +572,7 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                       const isMyDept = userDepartmentNames.some(
                         (name) => name === item.departament
                       );
+
                       return (
                         <TableRow key={index}>
                           <TableCell>{item.departament}</TableCell>
@@ -529,37 +594,7 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                                 variant="outline"
                                 size="sm"
                                 disabled={loadingCharge === item.departament}
-                                onClick={async () => {
-                                  setLoadingCharge(item.departament);
-                                  try {
-                                    const userToken = localStorage.getItem("userToken");
-                                    const userId = localStorage.getItem("userId");
-                                    await fetch("http://10.151.1.54:8000/v1/process/change/charge", {
-                                      method: "POST",
-                                      headers: {
-                                        "Content-Type": "application/json",
-                                        Authorization: `Bearer ${userToken}`,
-                                      },
-                                      body: JSON.stringify({
-                                        userId,
-                                        changeNumber: change.changeSystemData.number,
-                                        departament: item.departament,
-                                      }),
-                                    });
-                                    toast({
-                                      title: "Cobrança enviada",
-                                      description: `Mensagem de cobrança enviada para ${item.departament}.`,
-                                    });
-                                  } catch {
-                                    toast({
-                                      title: "Erro ao enviar cobrança",
-                                      description: "Não foi possível enviar a cobrança. Tente novamente.",
-                                      variant: "destructive",
-                                    });
-                                  } finally {
-                                    setLoadingCharge(null);
-                                  }
-                                }}
+                                onClick={() => cobrarAprovacao(item)}
                               >
                                 {loadingCharge === item.departament ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -645,3 +680,5 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
     </Dialog>
   );
 }
+
+

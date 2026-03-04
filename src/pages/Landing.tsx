@@ -108,11 +108,6 @@ const features = [
     description: "Controle pré, durante e pós-mudança com aprovações, checklists e rollback automatizado.",
   },
   {
-    icon: Workflow,
-    title: "Automações Inteligentes",
-    description: "Crie fluxos de automação visuais com editor drag-and-drop, triggers e condições customizáveis.",
-  },
-  {
     icon: Server,
     title: "Observabilidade K8s",
     description: "Monitore clusters Kubernetes com métricas de nodes, pods, deployments e alertas em tempo real.",
@@ -187,12 +182,7 @@ const productScreenshots = [
     image: screenshotChanges,
     title: "Gestão de Mudanças",
     description: "Controle pré, durante e pós-mudança com aprovações, checklists e avaliação de risco.",
-  },
-  {
-    image: screenshotAutomations,
-    title: "Automações Visuais",
-    description: "Editor drag-and-drop para criar fluxos de automação com triggers e condições customizáveis.",
-  },
+  }
 ];
 
 export default function Landing() {
