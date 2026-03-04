@@ -32,24 +32,21 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
   const [jsonError, setJsonError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
-  const update = (key: string, value: unknown) => {
-    onUpdate(node.id, { ...d, [key]: value });
+  const update = (updates: Record<string, unknown>) => {
+    onUpdate(node.id, { ...d, ...updates });
   };
 
   const updateForEach = (field: string, value: string) => {
     const current = d.for_each || { items: '', item_var: 'item', index_var: 'index' };
-    update('for_each', { ...current, [field]: value });
-    update('hasForEach', true);
+    update({ for_each: { ...current, [field]: value }, hasForEach: true });
   };
 
   const toggleForEach = (enabled: boolean) => {
     setForEachEnabled(enabled);
     if (enabled) {
-      update('for_each', { items: '', item_var: 'item', index_var: 'index' });
-      update('hasForEach', true);
+      update({ for_each: { items: '', item_var: 'item', index_var: 'index' }, hasForEach: true });
     } else {
-      update('for_each', undefined);
-      update('hasForEach', false);
+      update({ for_each: undefined, hasForEach: false });
     }
   };
 
@@ -91,7 +88,7 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
           <Label className="text-xs">Nome</Label>
           <Input
             value={d.label || ''}
-            onChange={(e) => update('label', e.target.value)}
+            onChange={(e) => update({ label: e.target.value })}
             className="h-8 text-sm"
           />
         </div>
@@ -99,7 +96,7 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
         {/* Definition ID */}
         <div className="space-y-1.5">
           <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
-          <Select value={d.definition_id || ''} onValueChange={(v) => update('definition_id', v)}>
+          <Select value={d.definition_id || ''} onValueChange={(v) => update({ definition_id: v })}>
             <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
@@ -118,7 +115,7 @@ export function NodeConfigPanel({ node, inputs, onUpdate, onUpdateInputs, onClos
           <Label className="text-xs">Descrição</Label>
           <Input
             value={d.description || ''}
-            onChange={(e) => update('description', e.target.value)}
+            onChange={(e) => update({ description: e.target.value })}
             className="h-8 text-sm"
           />
         </div>
