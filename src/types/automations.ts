@@ -50,10 +50,13 @@ export interface Workflow {
 
 // Available definition IDs
 export const DEFINITION_IDS = [
-  { value: 'ssh_execution', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH' },
-  { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp' },
-  { value: 'api_call_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API' },
-  { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico' },
+  // Gatilhos
+  { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico', category: 'trigger' },
+  // Ações
+  { value: 'ssh_execution', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH', category: 'action' },
+  { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp', category: 'action' },
+  { value: 'api_call_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
+  { value: 'delay_v1', label: 'Delay', icon: 'timer', description: 'Aguarda um tempo antes de continuar', category: 'action' },
 ] as const;
 
 export type DefinitionId = typeof DEFINITION_IDS[number]['value'];
