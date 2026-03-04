@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useMemo } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -16,12 +16,12 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
-  ArrowLeft, Save, Zap, Database, Mail, Globe, Clock, Code, GitBranch, GripVertical, Repeat, RefreshCw,
+  ArrowLeft, Save, Zap, Database, Mail, Globe, Clock, Code, GitBranch, Repeat, RefreshCw,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
+import { WaypointEdge } from './WaypointEdge';
+import { NodeConfigPanel } from './NodeConfigPanel';
 import { Workflow, AutomationSchedule } from '@/types/automations';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -44,6 +44,7 @@ const TASK_DEFINITIONS = [
 ];
 
 const nodeTypes = { task: TaskNode };
+const edgeTypes = { waypoint: WaypointEdge };
 
 interface FlowEditorProps {
   workflow: Workflow | null;
@@ -56,15 +57,14 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     id: n.id,
     type: 'task',
     position: n.position,
-    data: { label: n.config.label || n.definition_id, type: n.config.type || 'script', description: n.config.description || '' },
+    data: { label: n.config.label || n.definition_id, type: n.config.type || 'script', description: n.config.description || '', ...n.config },
   })) || [];
 
   const initialEdges: Edge[] = workflow?.edges?.map((e, i) => ({
     id: `e-${i}`,
     source: e.from,
     target: e.to,
-    animated: true,
-    style: { stroke: 'hsl(var(--primary))' },
+    type: 'waypoint',
   })) || [];
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -75,15 +75,15 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
   const [scheduleValue, setScheduleValue] = useState(workflow?.schedule?.value || '5');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
 
   const onConnect = useCallback(
     (connection: Connection) => {
       setEdges((eds) =>
-        addEdge(
-          { ...connection, animated: true, style: { stroke: 'hsl(var(--primary))' } },
-          eds
-        )
+        addEdge({ ...connection, type: 'waypoint' }, eds)
       );
     },
     [setEdges]
@@ -122,6 +122,20 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     [setNodes]
   );
 
+  const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  const handleNodeDataUpdate = useCallback((id: string, data: Record<string, unknown>) => {
+    setNodes((nds) =>
+      nds.map((n) => (n.id === id ? { ...n, data } : n))
+    );
+  }, [setNodes]);
+
   const handleSave = () => {
     onSave({
       id: workflow?.id,
@@ -131,12 +145,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       nodes: nodes.map((n) => ({
         id: n.id,
         definition_id: (n.data as any).type,
-        config: { label: (n.data as any).label, type: (n.data as any).type, description: (n.data as any).description },
+        config: { ...(n.data as any) },
         position: n.position,
       })),
       edges: edges.map((e) => ({
         from: e.source,
         to: e.target,
+        condition: e.sourceHandle || undefined,
       })),
     });
   };
@@ -220,7 +235,11 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             onConnect={onConnect}
             onDragOver={onDragOver}
             onDrop={onDrop}
+            onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={{ type: 'waypoint' }}
             fitView
             deleteKeyCode={['Backspace', 'Delete']}
             className="bg-background"
@@ -243,6 +262,15 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             )}
           </ReactFlow>
         </div>
+
+        {/* Config Panel */}
+        {selectedNode && (
+          <NodeConfigPanel
+            node={selectedNode}
+            onUpdate={handleNodeDataUpdate}
+            onClose={() => setSelectedNodeId(null)}
+          />
+        )}
       </div>
 
       {/* Schedule Dialog */}
