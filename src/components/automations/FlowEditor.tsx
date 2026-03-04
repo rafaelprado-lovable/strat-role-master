@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
-  ArrowLeft, Save, Zap, Database, Mail, Globe, Clock, Code, GitBranch, GripVertical,
+  ArrowLeft, Save, Zap, Database, Mail, Globe, Clock, Code, GitBranch, GripVertical, Repeat, RefreshCw,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { Workflow, AutomationSchedule } from '@/types/automations';
@@ -32,13 +32,15 @@ import {
 import { Label } from '@/components/ui/label';
 
 const TASK_DEFINITIONS = [
-  { type: 'trigger', label: 'Trigger', icon: Zap, description: 'Inicia o workflow' },
-  { type: 'http', label: 'HTTP Request', icon: Globe, description: 'Chamada HTTP/API' },
-  { type: 'database', label: 'Database', icon: Database, description: 'Consulta ao banco' },
-  { type: 'email', label: 'Email', icon: Mail, description: 'Envio de email' },
-  { type: 'delay', label: 'Delay', icon: Clock, description: 'Aguardar tempo' },
-  { type: 'script', label: 'Script', icon: Code, description: 'Executar código' },
-  { type: 'condition', label: 'Condição', icon: GitBranch, description: 'Branching lógico' },
+  { type: 'trigger', label: 'Trigger', icon: Zap, description: 'Inicia o workflow', category: 'Controle' },
+  { type: 'condition', label: 'Condição', icon: GitBranch, description: 'If/Else lógico', category: 'Controle' },
+  { type: 'forEach', label: 'For Each', icon: Repeat, description: 'Itera sobre uma lista', category: 'Loops' },
+  { type: 'while', label: 'While', icon: RefreshCw, description: 'Repete enquanto condição', category: 'Loops' },
+  { type: 'http', label: 'HTTP Request', icon: Globe, description: 'Chamada HTTP/API', category: 'Ações' },
+  { type: 'database', label: 'Database', icon: Database, description: 'Consulta ao banco', category: 'Ações' },
+  { type: 'email', label: 'Email', icon: Mail, description: 'Envio de email', category: 'Ações' },
+  { type: 'delay', label: 'Delay', icon: Clock, description: 'Aguardar tempo', category: 'Ações' },
+  { type: 'script', label: 'Script', icon: Code, description: 'Executar código', category: 'Ações' },
 ];
 
 const nodeTypes = { task: TaskNode };
@@ -183,20 +185,29 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         {/* Sidebar – Blocos */}
         <div className="w-56 shrink-0 border rounded-lg bg-card p-3 overflow-y-auto space-y-2">
           <h3 className="font-semibold text-sm text-foreground mb-3">Blocos</h3>
-          {TASK_DEFINITIONS.map((task) => (
-            <div
-              key={task.type}
-              draggable
-              onDragStart={(e) => onDragStart(e, task)}
-              className="flex items-center gap-2 p-2 rounded-md border border-border bg-background cursor-grab hover:bg-muted transition-colors"
-            >
-              <task.icon className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{task.label}</p>
-                <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+          {(['Controle', 'Loops', 'Ações'] as const).map((category) => {
+            const tasks = TASK_DEFINITIONS.filter((t) => t.category === category);
+            if (tasks.length === 0) return null;
+            return (
+              <div key={category}>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 mt-2">{category}</p>
+                {tasks.map((task) => (
+                  <div
+                    key={task.type}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, task)}
+                    className="flex items-center gap-2 p-2 rounded-md border border-border bg-background cursor-grab hover:bg-muted transition-colors mb-1"
+                  >
+                    <task.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{task.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Canvas */}
