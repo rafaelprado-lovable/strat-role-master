@@ -1,12 +1,13 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Repeat } from 'lucide-react';
+import { Terminal, MessageCircle, Globe, AlertTriangle, Repeat, Timer } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
   ssh_execution: Terminal,
   send_whatsapp_message_v1: MessageCircle,
   api_call_v1: Globe,
   get_specific_incident_v1: AlertTriangle,
+  delay_v1: Timer,
 };
 
 const colorMap: Record<string, { border: string; bg: string; iconBg: string; accent: string }> = {
@@ -33,6 +34,12 @@ const colorMap: Record<string, { border: string; bg: string; iconBg: string; acc
     bg: 'bg-gradient-to-br from-chart-4/10 to-chart-4/5',
     iconBg: 'bg-chart-4/20 text-chart-4',
     accent: 'bg-chart-4',
+  },
+  delay_v1: {
+    border: 'border-chart-1/60',
+    bg: 'bg-gradient-to-br from-chart-1/10 to-chart-1/5',
+    iconBg: 'bg-chart-1/20 text-chart-1',
+    accent: 'bg-chart-1',
   },
 };
 

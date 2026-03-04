@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, FileDown,
+  FileJson, ShieldCheck, FileDown, Timer, Zap, Cog,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
@@ -39,13 +39,23 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+const iconResolver = (icon: string) => {
+  switch (icon) {
+    case 'terminal': return Terminal;
+    case 'message-circle': return MessageCircle;
+    case 'alert-triangle': return AlertTriangle;
+    case 'timer': return Timer;
+    default: return Globe;
+  }
+};
+
 const BLOCK_LIBRARY = DEFINITION_IDS.map(d => ({
   ...d,
-  Icon: d.icon === 'terminal' ? Terminal
-    : d.icon === 'message-circle' ? MessageCircle
-    : d.icon === 'alert-triangle' ? AlertTriangle
-    : Globe,
+  Icon: iconResolver(d.icon),
 }));
+
+const TRIGGERS = BLOCK_LIBRARY.filter(b => b.category === 'trigger');
+const ACTIONS = BLOCK_LIBRARY.filter(b => b.category === 'action');
 
 const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
@@ -331,29 +341,61 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       {/* Editor */}
       <div className="flex flex-1 mt-4 gap-4 overflow-hidden">
         {/* Sidebar – Blocos */}
-        <div className="w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-2">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
+          <div className="flex items-center gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-primary/10">
               <FileJson className="h-3.5 w-3.5 text-primary" />
             </div>
             <h3 className="font-semibold text-sm text-foreground">Blocos Disponíveis</h3>
           </div>
-          {BLOCK_LIBRARY.map((block) => (
-            <div
-              key={block.value}
-              draggable
-              onDragStart={(e) => onDragStart(e, block)}
-              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-            >
-              <div className="p-1.5 rounded-md bg-muted/80 shrink-0">
-                <block.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-              </div>
+
+          {/* Gatilhos */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 px-1">
+              <Zap className="h-3 w-3 text-chart-4" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-4">Gatilhos</span>
             </div>
-          ))}
+            {TRIGGERS.map((block) => (
+              <div
+                key={block.value}
+                draggable
+                onDragStart={(e) => onDragStart(e, block)}
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-4/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+              >
+                <div className="p-1.5 rounded-md bg-chart-4/10 shrink-0">
+                  <block.Icon className="h-3.5 w-3.5 text-chart-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Ações */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 px-1">
+              <Cog className="h-3 w-3 text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Ações</span>
+            </div>
+            {ACTIONS.map((block) => (
+              <div
+                key={block.value}
+                draggable
+                onDragStart={(e) => onDragStart(e, block)}
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+              >
+                <div className="p-1.5 rounded-md bg-muted/80 shrink-0">
+                  <block.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* start_date */}
           <div className="border-t border-border mt-4 pt-3 space-y-1.5">
