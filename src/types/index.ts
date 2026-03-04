@@ -19,14 +19,15 @@ export interface Department {
 export interface Permission {
   _id: string;
   name: string;
-  actions: string[];
-  scopes: string[];
+  actions: any; // can be string or string[] from API
+  scopes: any;  // can be string or string[] from API
 }
 
 export interface Role {
   _id: string;
   name: string;
   permissions: string[];
+  permission?: string[]; // legacy alias from API
 }
 
 export interface User {
@@ -34,9 +35,10 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  role: string;
-  organization: string;
+  role: any;
+  organization: any;
   departmentIds: string[];
+  departament?: string; // legacy field from API
   phoneNumber: string;
 }
 
@@ -47,7 +49,9 @@ export interface Scope {
   type: string;
   url: string;
   icone: string;
+  icon?: string;        // alias
   menu: string;
+  related_menu?: string; // alias
   organization: string;
   departament: string;
 }
@@ -71,6 +75,58 @@ interface ServiceTimelinePoint {
 
 interface ServiceTimelineDay {
   services: ServiceTimelinePoint[];
+}
+
+export interface Changes {
+  changeSystemData: {
+    number: string;
+    description: string;
+    teams_involved_in_execution: string[];
+    teams_involved_in_validation: string[];
+    start_date: string;
+    end_date: string;
+    week_day: string;
+    state: string;
+  };
+  postChangeData: {
+    applicationStatus: string;
+  };
+  changeTestData: {
+    fqa: string;
+    uat: string;
+    system_test: string;
+    no_test: string;
+  };
+  changeAproovalData: {
+    tecnology: string;
+    restart_type: boolean;
+    new_service: boolean;
+    old_service: boolean;
+    increase_volume: boolean;
+    validation_time: string;
+    validation_process: string;
+    hdc_validation: boolean;
+    validator_contact: string[];
+    [key: string]: any;
+  };
+  changeHistory: {
+    comments_work_notes: any[];
+    comments: any[];
+    timelineAprooval: any[];
+    rejectionAprooval: any[];
+  };
+  changeServicesList: Array<{
+    service_name: string;
+    cf_production_version: string;
+    implementation_version: string;
+    pipeline_link: string;
+    [key: string]: any;
+  }>;
+  serviceTimeline?: {
+    today: ServiceTimelinePoint[];
+    lastWeek?: ServiceTimelinePoint[];
+  };
+  [key: string]: any;
 }
 
 export interface PostChange {
@@ -131,8 +187,8 @@ export interface Insight {
     assignment_team: string;
   };
   engineering_sla: {
-    entry_time: string[];
-    out_time: string[];
+    entry_time: any[];
+    out_time: any[];
     solved_by_eng: boolean;
     total_time: number;
     departaments: Array<{
@@ -159,6 +215,15 @@ export interface Insight {
       RejectedByIOP?: string;
     };
   };
+  // Optional fields populated from API
+  shortDescription?: string;
+  description?: string;
+  assignment_team?: string;
+  departamentTrammit?: any[];
+  comments?: any[];
+  work_notes?: any[];
+  closeNotes?: any[];
+  [key: string]: any;
 }
 
 export interface Plantao {
@@ -194,7 +259,7 @@ export interface CallResolution {
 
 
 export interface CallResolutionCreate {
-  created_by: string,
+  created_by?: string,
   departament: string,
   target_field: string,
   match_description: string,

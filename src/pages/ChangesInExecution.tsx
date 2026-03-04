@@ -78,9 +78,12 @@ interface ChangeInExecution {
     implementation_version: string,
     pipeline_link: string
   }>,
+  cepsInclude?: any[],
+  cepsExclude?: any[],
+  tarefas?: any[],
   serviceTimeline?: {
-    today: ServiceTimelinePoint[];
-    lastWeek?: ServiceTimelinePoint[];
+    today: any[];
+    lastWeek?: any[];
   };
 }
 
@@ -322,14 +325,14 @@ export default function ChangesInExecution() {
         <ChangeInExecutionDetailsDialog
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
-          change={selectedChange}
+          change={selectedChange as any}
         />
       )}
 
       <Dialog open={!!executingChange} onOpenChange={() => setExecutingChange(null)}>
         <DialogContent className="max-w-[95vw] h-[95vh] p-0">
           {executingChange && (
-            <ChangeExecutionCep change={executingChange} />
+            <ChangeExecutionCep change={executingChange as any} />
           )}
         </DialogContent>
       </Dialog>
