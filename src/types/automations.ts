@@ -1,61 +1,28 @@
 // ==========================================
-// Task Definition → Task Instance → Workflow
+// Workflow JSON Contract — Backend-compatible
 // ==========================================
 
-/** Schema defining inputs and outputs for a task definition */
-export interface TaskSchema {
-  inputs: Record<string, ParamType>;   // paramName → paramType
-  outputs: Record<string, ParamType>;  // paramName → paramType
+export interface WorkflowForEach {
+  items: string;       // "{{node-x.output.items}}" or array literal
+  item_var: string;    // e.g. "item"
+  index_var: string;   // e.g. "index"
 }
 
-
-/** Blueprint/template for a task type */
-export interface TaskDefinition {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-  schema: TaskSchema;
-  // UI metadata
-  preConfig?: object;
-  icon?: string;
-  color?: string;
-  category?: string;
-  // For remote execution (custom blocks)
-  machineId?: string;
-  scriptPath?: string;
-}
-
-/** A node on the workflow canvas — an instance of a TaskDefinition */
 export interface WorkflowNode {
   id: string;
-  definition_id: string;
-  config: Record<string, unknown>;     // filled input values or {{nodeId.output}} references
-  position: { x: number; y: number };
+  definition_id: DefinitionId;
+  config: Record<string, unknown>;
+  for_each?: WorkflowForEach;
+  position?: { x: number; y: number };  // UI-only
 }
 
-/** An edge connecting two nodes, optionally with a condition */
 export interface WorkflowEdge {
+  id?: string;
   from: string;
   to: string;
-  condition?: string;  // e.g. "task1.status == 200"
-}
-
-/** A complete workflow (formerly "Automation") */
-export interface Workflow {
-  id: string;
-  name: string;
-  description: string;
-  status: 'active' | 'inactive' | 'draft';
-  schedule: AutomationSchedule | null;
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  inputs: Record<string, unknown>;     // workflow-level inputs
-  createdAt: string;
-  updatedAt: string;
-  lastRunAt: string | null;
-  runCount: number;
-  start_date?: string;
+  condition?: string;   // "node-x.output.status == 200"
+  loop?: boolean;
+  max_iterations?: number;
 }
 
 export interface AutomationSchedule {
@@ -64,21 +31,130 @@ export interface AutomationSchedule {
   timezone: string;
 }
 
-export interface Machine {
+export interface Workflow {
   id: string;
   name: string;
-  host: string;
-  port: string;
-  description: string;
+  description?: string;
+  status: 'active' | 'draft';
+  schedule: AutomationSchedule | null;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  inputs: Record<string, Record<string, unknown>>;  // nodeId → input object
+  start_date: string | null;  // DD/MM/YYYY HH:MM
+  // UI-only metadata
+  createdAt?: string;
+  updatedAt?: string;
+  lastRunAt?: string | null;
+  runCount?: number;
 }
 
-// Parameter types available
-export const PARAM_TYPES = [
-  { value: 'string', label: 'String' },
-  { value: 'number', label: 'Number' },
-  { value: 'boolean', label: 'Boolean' },
-  { value: 'object', label: 'Object' },
-  { value: 'array', label: 'Array' },
+// Available definition IDs
+export const DEFINITION_IDS = [
+  { value: 'ssh_execution', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH' },
+  { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp' },
+  { value: 'api_call_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API' },
+  { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico' },
 ] as const;
 
-export type ParamType = typeof PARAM_TYPES[number]['value'];
+export type DefinitionId = typeof DEFINITION_IDS[number]['value'];
+
+// Validation
+export interface ValidationError {
+  path: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!workflow.id) errors.push({ path: 'id', message: 'ID do workflow é obrigatório', severity: 'error' });
+  if (!workflow.name?.trim()) errors.push({ path: 'name', message: 'Nome do workflow é obrigatório', severity: 'error' });
+
+  const nodes = workflow.nodes || [];
+  const edges = workflow.edges || [];
+  const nodeIds = new Set(nodes.map(n => n.id));
+
+  if (nodes.length === 0) errors.push({ path: 'nodes', message: 'Workflow precisa ter pelo menos 1 nó', severity: 'error' });
+
+  nodes.forEach((node, i) => {
+    if (!node.definition_id) {
+      errors.push({ path: `nodes[${i}]`, message: `Nó "${node.id}" sem definition_id`, severity: 'error' });
+    }
+    if (node.for_each) {
+      if (!node.for_each.items?.trim()) {
+        errors.push({ path: `nodes[${i}].for_each.items`, message: `Nó "${node.id}": for_each ativo sem items`, severity: 'error' });
+      }
+      if (!node.for_each.item_var?.trim()) {
+        errors.push({ path: `nodes[${i}].for_each.item_var`, message: `Nó "${node.id}": for_each sem item_var`, severity: 'error' });
+      }
+      if (!node.for_each.index_var?.trim()) {
+        errors.push({ path: `nodes[${i}].for_each.index_var`, message: `Nó "${node.id}": for_each sem index_var`, severity: 'error' });
+      }
+      if (node.for_each.item_var && node.for_each.index_var && node.for_each.item_var === node.for_each.index_var) {
+        errors.push({ path: `nodes[${i}].for_each`, message: `Nó "${node.id}": item_var e index_var não podem ser iguais`, severity: 'error' });
+      }
+    }
+  });
+
+  edges.forEach((edge, i) => {
+    if (!nodeIds.has(edge.from)) {
+      errors.push({ path: `edges[${i}].from`, message: `Edge "${edge.from}" → "${edge.to}": origem não existe`, severity: 'error' });
+    }
+    if (!nodeIds.has(edge.to)) {
+      errors.push({ path: `edges[${i}].to`, message: `Edge "${edge.from}" → "${edge.to}": destino não existe`, severity: 'error' });
+    }
+    if (edge.loop && (!edge.max_iterations || edge.max_iterations < 1)) {
+      errors.push({ path: `edges[${i}].max_iterations`, message: `Edge loop "${edge.from}" → "${edge.to}": max_iterations obrigatório`, severity: 'error' });
+    }
+    if (edge.condition) {
+      // Basic validation: must contain an operator
+      const condPattern = /^[\w.\-{}\s]+\s*(==|!=|>|<|>=|<=)\s*.+$/;
+      if (!condPattern.test(edge.condition.trim())) {
+        errors.push({ path: `edges[${i}].condition`, message: `Edge "${edge.from}" → "${edge.to}": condição em formato inválido (use "left == right")`, severity: 'warning' });
+      }
+    }
+  });
+
+  // Check inputs reference existing nodes
+  if (workflow.inputs) {
+    Object.keys(workflow.inputs).forEach(nodeId => {
+      if (!nodeIds.has(nodeId)) {
+        errors.push({ path: `inputs.${nodeId}`, message: `inputs["${nodeId}"] referencia nó inexistente`, severity: 'error' });
+      }
+    });
+  }
+
+  return errors;
+}
+
+export function exportWorkflowJson(workflow: Workflow): object {
+  return {
+    id: workflow.id,
+    name: workflow.name,
+    description: workflow.description || '',
+    status: workflow.status,
+    schedule: workflow.schedule,
+    nodes: workflow.nodes.map(n => {
+      const node: any = {
+        id: n.id,
+        definition_id: n.definition_id,
+        config: n.config || {},
+      };
+      if (n.for_each) node.for_each = n.for_each;
+      return node;
+    }),
+    edges: workflow.edges.map(e => {
+      const edge: any = { from: e.from, to: e.to };
+      if (e.id) edge.id = e.id;
+      if (e.condition) edge.condition = e.condition;
+      if (e.loop) {
+        edge.loop = true;
+        edge.max_iterations = e.max_iterations;
+      }
+      return edge;
+    }),
+    inputs: workflow.inputs || {},
+    start_date: workflow.start_date || null,
+  };
+}
