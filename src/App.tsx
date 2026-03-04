@@ -228,11 +228,9 @@ const App = () => (
             <Route
               path="/automations"
               element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Automations />
-                  </AppLayout>
-                </ProtectedRoute>
+                <AppLayout>
+                  <Automations />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
