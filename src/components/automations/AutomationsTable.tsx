@@ -29,10 +29,9 @@ interface AutomationsTableProps {
   onCreate: () => void;
 }
 
-const statusConfig = {
-  active: { label: 'Ativo', variant: 'default' as const, className: 'bg-green-600 hover:bg-green-600' },
-  inactive: { label: 'Inativo', variant: 'secondary' as const, className: '' },
-  draft: { label: 'Rascunho', variant: 'outline' as const, className: '' },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; className: string }> = {
+  active: { label: 'Ativo', variant: 'default', className: 'bg-green-600 hover:bg-green-600' },
+  draft: { label: 'Rascunho', variant: 'outline', className: '' },
 };
 
 export function AutomationsTable({
