@@ -53,12 +53,12 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
           </p>
         </div>
 
-        {/* Loop */}
+        {/* While Loop */}
         <div className="border-t border-border pt-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-xs font-semibold">Loop (while)</Label>
+              <Repeat className="h-4 w-4 text-chart-4" />
+              <Label className="text-xs font-semibold">While Loop</Label>
             </div>
             <Switch
               checked={!!d.loop}
@@ -71,6 +71,14 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
 
           {d.loop && (
             <div className="space-y-3 pl-1">
+              {/* While condition info */}
+              <div className="p-2 rounded bg-chart-4/10 border border-chart-4/30 text-xs text-foreground space-y-1">
+                <p className="font-semibold">Comportamento:</p>
+                <p>• <strong>Com condição:</strong> repete enquanto a condição for verdadeira (while condition)</p>
+                <p>• <strong>Sem condição:</strong> repete sempre (while true)</p>
+                <p>• <strong>Break:</strong> quando a condição fica falsa ou atinge max_iterations</p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="text-xs">max_iterations <span className="text-destructive">*</span></Label>
                 <Input
@@ -81,12 +89,16 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
                   className="h-8 text-sm"
                 />
                 {(!d.max_iterations || d.max_iterations < 1) && (
-                  <p className="text-xs text-destructive">⚠ max_iterations é obrigatório para edges de loop</p>
+                  <p className="text-xs text-destructive">⚠ max_iterations é obrigatório — funciona como break de segurança</p>
                 )}
               </div>
-              <p className="text-[10px] text-muted-foreground">
-                O loop repete enquanto a condição for verdadeira, até max_iterations. Sem condição = while true.
-              </p>
+
+              <div className="p-2 rounded bg-muted text-[10px] text-muted-foreground font-mono">
+                {d.condition
+                  ? `while (${d.condition}) { ... } // max ${d.max_iterations || '?'}x`
+                  : `while (true) { ... } // max ${d.max_iterations || '?'}x`
+                }
+              </div>
             </div>
           )}
         </div>
