@@ -16,17 +16,19 @@ function buildPath(
   waypoints: Waypoint[],
   isSelfLoop: boolean,
 ): string {
-  // Self-loop: draw a curve that goes out right and comes back left
+  // Self-loop: draw a curve that goes down and comes back up
   if (isSelfLoop && waypoints.length === 0) {
+    const loopWidth = 60;
     const loopSize = 80;
-    const loopHeight = 60;
-    return `M${sx},${sy} C${sx + loopSize},${sy - loopHeight} ${tx - loopSize},${ty - loopHeight} ${tx},${ty}`;
+    return `M${sx},${sy} C${sx + loopWidth},${sy + loopSize} ${tx + loopWidth},${ty - loopSize} ${tx},${ty}`;
   }
 
   const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
 
   if (points.length === 2) {
-    return `M${sx},${sy} C${sx},${(sy + ty) / 2} ${tx},${(sy + ty) / 2} ${tx},${ty}`;
+    // Horizontal curve
+    const midX = (sx + tx) / 2;
+    return `M${sx},${sy} C${midX},${sy} ${midX},${ty} ${tx},${ty}`;
   }
 
   let d = `M${points[0].x},${points[0].y}`;
@@ -157,8 +159,8 @@ export function WaypointEdge({
   // Label position
   let labelX: number, labelY: number;
   if (isSelfLoop) {
-    labelX = (sourceX + targetX) / 2;
-    labelY = Math.min(sourceY, targetY) - 70;
+    labelX = Math.max(sourceX, targetX) + 50;
+    labelY = (sourceY + targetY) / 2;
   } else if (waypoints.length > 0) {
     const mid = waypoints[Math.floor(waypoints.length / 2)];
     labelX = mid.x;
@@ -178,14 +180,14 @@ export function WaypointEdge({
         onDoubleClick={handleDoubleClick}
         className="react-flow__edge-path" />
       {waypoints.map((wp, idx) => (
-        <g key={idx}>
-          <circle cx={wp.x} cy={wp.y} r={14} fill="transparent"
-            style={{ cursor: draggingIdx === idx ? 'grabbing' : 'grab' }}
+        <g key={idx} style={{ pointerEvents: 'all' }}>
+          <circle cx={wp.x} cy={wp.y} r={18} fill="transparent"
+            style={{ cursor: draggingIdx === idx ? 'grabbing' : 'grab', pointerEvents: 'all' }}
             onMouseDown={(e) => handleWaypointMouseDown(idx, e)}
             onDoubleClick={(e) => handleWaypointDoubleClick(idx, e)} />
-          <circle cx={wp.x} cy={wp.y} r={6}
+          <circle cx={wp.x} cy={wp.y} r={7}
             fill="hsl(var(--background))"
-            stroke={edgeStyle.stroke as string} strokeWidth={2}
+            stroke={edgeStyle.stroke as string} strokeWidth={2.5}
             style={{ pointerEvents: 'none' }} />
         </g>
       ))}

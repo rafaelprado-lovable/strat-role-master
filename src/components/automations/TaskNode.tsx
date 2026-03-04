@@ -61,13 +61,13 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
       {/* Accent bar */}
       <div className={`absolute top-0 left-3 right-3 h-[2px] rounded-b-full ${colors.accent} opacity-60`} />
 
-      {/* Top (target) */}
-      <Handle type="target" position={Position.Top} id="top" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-top-1.5" />
+      {/* Left (target) */}
+      <Handle type="target" position={Position.Left} id="left" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-left-1.5" />
 
-      {/* Right source — for loop-back */}
-      <Handle type="source" position={Position.Right} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background !top-1/2" />
-      {/* Left target — for loop-back */}
-      <Handle type="target" position={Position.Left} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background !top-1/2" />
+      {/* Bottom source — for loop-back */}
+      <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
+      {/* Top target — for loop-back */}
+      <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
 
       <div className="flex items-center gap-2.5 mt-0.5">
         <div className={`p-1.5 rounded-lg ${colors.iconBg} shrink-0`}>
@@ -97,8 +97,8 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
         <p className="text-[11px] text-muted-foreground mt-1.5 truncate leading-relaxed">{d.description}</p>
       )}
 
-      {/* Bottom (source) */}
-      <Handle type="source" position={Position.Bottom} id="bottom" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-bottom-1.5" />
+      {/* Right (source) */}
+      <Handle type="source" position={Position.Right} id="right" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-right-1.5" />
     </div>
   );
 }
