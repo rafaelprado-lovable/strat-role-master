@@ -226,6 +226,27 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setEdges((eds) => eds.map((e) => (e.id === id ? { ...e, data: { ...(e.data || {}), ...data } } : e)));
   }, [setEdges]);
 
+  const handleCreateLoopEdge = useCallback((nodeId: string) => {
+    setEdges((eds) => {
+      const exists = eds.some(e => e.source === nodeId && e.target === nodeId);
+      if (exists) return eds;
+      const newEdge: Edge = {
+        id: `loop-${nodeId}`,
+        source: nodeId,
+        target: nodeId,
+        sourceHandle: 'loop-out',
+        targetHandle: 'loop-in',
+        type: 'waypoint',
+        data: { condition: '', loop: true, loop_mode: 'while_true', max_iterations: 5 },
+      };
+      return [...eds, newEdge];
+    });
+  }, [setEdges]);
+
+  const handleDeleteLoopEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter(e => e.id !== edgeId));
+  }, [setEdges]);
+
   const handleUpdateInputs = useCallback((nodeId: string, inputs: Record<string, unknown>) => {
     setNodeInputs((prev) => ({ ...prev, [nodeId]: inputs }));
   }, []);
@@ -387,6 +408,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
             onUpdateEdge={handleEdgeDataUpdate}
+            onCreateLoopEdge={handleCreateLoopEdge}
+            onDeleteLoopEdge={handleDeleteLoopEdge}
             onClose={() => setSelectedNodeId(null)}
           />
         )}
