@@ -65,7 +65,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const initialNodes: Node[] = workflow?.nodes?.map((n, i) => ({
     id: n.id,
     type: 'task',
-    position: (n as any).position || { x: 250, y: i * 120 },
+    position: (n as any).position || { x: i * 280, y: 150 },
     data: {
       label: (n.config as any)?.label || DEFINITION_IDS.find(d => d.value === n.definition_id)?.label || n.definition_id,
       definition_id: n.definition_id,
@@ -82,8 +82,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       id: e.id || `e-${i}`,
       source: e.from,
       target: e.to,
-      sourceHandle: isSelfLoop ? 'loop-out' : 'bottom',
-      targetHandle: isSelfLoop ? 'loop-in' : 'top',
+      sourceHandle: isSelfLoop ? 'loop-out' : 'right',
+      targetHandle: isSelfLoop ? 'loop-in' : 'left',
       type: 'waypoint',
       data: {
         condition: e.condition || '',
