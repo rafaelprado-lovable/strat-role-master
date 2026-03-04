@@ -15,7 +15,7 @@ import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { departmentApi } from "@/services/mockApi";
-import { v4 as uuidv4 } from 'uuid';
+const uuidv4 = () => crypto.randomUUID();
 
 interface ChangeDetailsDialogProps {
   open: boolean;

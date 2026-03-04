@@ -741,7 +741,7 @@ export default function Insights() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Time de Atribuição:</span>
-                    <p className="font-medium">{selectedInsight.assignment_team}</p>
+                    <p className="font-medium">{selectedInsight.assignment_team || selectedInsight.incident_data.assignment_team}</p>
                   </div>
                 </div>
               </div>
@@ -780,7 +780,7 @@ export default function Insights() {
 
                           <PopoverContent className="p-0 w-[300px]">
                             <Command>
-                              <CommandInput placeholder="Digite para buscar..." value={searchTerm} onInput={(e) => handleSearch(e.target.value)}/>
+                              <CommandInput placeholder="Digite para buscar..." value={searchTerm} onInput={(e) => handleSearch((e.target as HTMLInputElement).value)}/>
 
                               {loading && (
                                 <div className="p-4 text-center text-sm text-muted-foreground">

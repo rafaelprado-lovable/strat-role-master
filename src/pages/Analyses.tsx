@@ -377,7 +377,7 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
               <div>
                 <Label className="text-sm font-semibold">Código de Status Retornado</Label>
                 <p className="text-sm text-muted-foreground">
-                  {analysisResult.analise_log_api.codigo_status_retornado}{analysisResult.analise_log_api.codigo_status_http_retornado}
+                  {analysisResult.analise_log_api.codigo_status_retornado}
                 </p>
               </div>
 
