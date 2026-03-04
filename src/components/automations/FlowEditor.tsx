@@ -331,19 +331,26 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       {/* Editor */}
       <div className="flex flex-1 mt-4 gap-4 overflow-hidden">
         {/* Sidebar – Blocos */}
-        <div className="w-56 shrink-0 border rounded-lg bg-card p-3 overflow-y-auto space-y-1">
-          <h3 className="font-semibold text-sm text-foreground mb-3">Blocos Disponíveis</h3>
+        <div className="w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-2">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <FileJson className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h3 className="font-semibold text-sm text-foreground">Blocos Disponíveis</h3>
+          </div>
           {BLOCK_LIBRARY.map((block) => (
             <div
               key={block.value}
               draggable
               onDragStart={(e) => onDragStart(e, block)}
-              className="flex items-center gap-2 p-2 rounded-md border border-border bg-background cursor-grab hover:bg-muted transition-colors"
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
             >
-              <block.Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="p-1.5 rounded-md bg-muted/80 shrink-0">
+                <block.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-                <p className="text-xs text-muted-foreground truncate">{block.description}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
               </div>
             </div>
           ))}

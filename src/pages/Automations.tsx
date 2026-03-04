@@ -4,6 +4,8 @@ import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
 import { Workflow } from '@/types/automations';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { Workflow as WorkflowIcon } from 'lucide-react';
 
 const MOCK_WORKFLOWS: Workflow[] = [
   {
@@ -16,9 +18,7 @@ const MOCK_WORKFLOWS: Workflow[] = [
       { id: 'node-ssh', definition_id: 'ssh_execution', config: {}, position: { x: 250, y: 50 } },
       { id: 'node-whatsapp', definition_id: 'send_whatsapp_message_v1', config: {}, position: { x: 250, y: 200 } },
     ],
-    edges: [
-      { from: 'node-ssh', to: 'node-whatsapp' },
-    ],
+    edges: [{ from: 'node-ssh', to: 'node-whatsapp' }],
     inputs: {
       'node-ssh': { host: '192.168.1.10', command: 'uptime' },
       'node-whatsapp': { phone: '+5511999999999', message: 'Resultado: {{node-ssh.output.stdout}}' },
@@ -39,9 +39,7 @@ const MOCK_WORKFLOWS: Workflow[] = [
       { id: 'node-api', definition_id: 'api_call_v1', config: {}, position: { x: 250, y: 50 } },
       { id: 'node-alert', definition_id: 'send_whatsapp_message_v1', config: {}, position: { x: 250, y: 200 } },
     ],
-    edges: [
-      { from: 'node-api', to: 'node-alert', condition: 'node-api.output.status == 500' },
-    ],
+    edges: [{ from: 'node-api', to: 'node-alert', condition: 'node-api.output.status == 500' }],
     inputs: {
       'node-api': { url: 'https://api.example.com/health', method: 'GET' },
       'node-alert': { phone: '+5511999999999', message: 'API fora! Status: {{node-api.output.status}}' },
@@ -55,7 +53,7 @@ const MOCK_WORKFLOWS: Workflow[] = [
   {
     id: 'wf-while-condition',
     name: 'While (condição) — Retry até sucesso',
-    description: 'Chama API repetidamente enquanto status != 200. Para quando status == 200 ou após 5 tentativas (break).',
+    description: 'Chama API repetidamente enquanto status != 200.',
     status: 'draft',
     schedule: null,
     nodes: [
@@ -64,16 +62,13 @@ const MOCK_WORKFLOWS: Workflow[] = [
       { id: 'node-falha', definition_id: 'send_whatsapp_message_v1', config: { label: 'Notificar Falha (max atingido)' }, position: { x: 500, y: 250 } },
     ],
     edges: [
-      // Self-loop: while status != 200, repete (max 5x)
       { id: 'loop-retry', from: 'node-check', to: 'node-check', loop: true, max_iterations: 5, condition: 'node-check.output.status != 200' },
-      // Break path: quando status == 200, segue para sucesso
       { id: 'break-ok', from: 'node-check', to: 'node-sucesso', condition: 'node-check.output.status == 200' },
-      // Fallback: se esgotou max_iterations sem sucesso
       { id: 'break-fail', from: 'node-check', to: 'node-falha', condition: 'node-check.output.status != 200' },
     ],
     inputs: {
       'node-check': { url: 'https://api.example.com/health', method: 'GET' },
-      'node-sucesso': { phone: '+5511999999999', message: 'API voltou! Status: {{node-check.output.status}}' },
+      'node-sucesso': { phone: '+5511999999999', message: 'API voltou!' },
       'node-falha': { phone: '+5511999999999', message: 'API não respondeu após 5 tentativas.' },
     },
     start_date: null,
@@ -85,7 +80,7 @@ const MOCK_WORKFLOWS: Workflow[] = [
   {
     id: 'wf-while-true',
     name: 'While True — Polling fixo',
-    description: 'Executa um comando SSH exatamente 10 vezes (while true com max_iterations = 10). Sem condição de break antecipado.',
+    description: 'Executa um comando SSH exatamente 10 vezes.',
     status: 'draft',
     schedule: null,
     nodes: [
@@ -93,9 +88,7 @@ const MOCK_WORKFLOWS: Workflow[] = [
       { id: 'node-report', definition_id: 'api_call_v1', config: { label: 'Enviar Relatório' }, position: { x: 250, y: 250 } },
     ],
     edges: [
-      // While true: repete 10x sem condição
       { id: 'loop-poll', from: 'node-poll', to: 'node-poll', loop: true, max_iterations: 10 },
-      // Depois do loop, envia relatório
       { id: 'after-loop', from: 'node-poll', to: 'node-report' },
     ],
     inputs: {
@@ -124,12 +117,10 @@ const MOCK_WORKFLOWS: Workflow[] = [
         position: { x: 250, y: 200 },
       },
     ],
-    edges: [
-      { from: 'node-list', to: 'node-notify' },
-    ],
+    edges: [{ from: 'node-list', to: 'node-notify' }],
     inputs: {
       'node-list': { url: 'https://api.example.com/incidents', method: 'GET' },
-      'node-notify': { phone: '+5511999999999', message: 'Incidente #{{idx}}: {{incident.title}} — {{incident.severity}}' },
+      'node-notify': { phone: '+5511999999999', message: 'Incidente #{{idx}}: {{incident.title}}' },
     },
     start_date: '03/03/2025 09:00',
     createdAt: '2024-01-05T11:00:00Z',
@@ -237,10 +228,20 @@ export default function Automations() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Automações</h2>
-        <p className="text-muted-foreground">Gerencie seus workflows e automações</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center gap-3"
+      >
+        <div className="p-2.5 rounded-xl bg-primary/10">
+          <WorkflowIcon className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Automações</h2>
+          <p className="text-muted-foreground text-sm">Gerencie seus workflows e automações</p>
+        </div>
+      </motion.div>
       <AutomationsTable
         automations={workflows}
         onEdit={handleEdit}
