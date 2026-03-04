@@ -48,6 +48,7 @@ import {
   Cog,
 } from 'lucide-react';
 import TaskInstanceNode from './TaskInstanceNode';
+import WaypointEdge from './WaypointEdge';
 import { TaskConfigPanel } from './TaskConfigPanel';
 import { EdgeConfigPanel, EdgeStyleConfig } from './EdgeConfigPanel';
 import { TaskDefinitionDialog } from './TaskDefinitionDialog';
@@ -70,6 +71,10 @@ import {
 
 const nodeTypes = {
   taskInstance: TaskInstanceNode,
+};
+
+const edgeTypes = {
+  waypoint: WaypointEdge,
 };
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -179,9 +184,10 @@ function toRFEdges(workflowEdges: WorkflowEdge[]): Edge[] {
     id: `e-${we.from}-${we.to}-${i}`,
     source: we.from,
     target: we.to,
+    type: 'waypoint',
     animated: true,
     ...edgeStyle(we.condition),
-    data: { condition: we.condition },
+    data: { condition: we.condition, waypoints: [] },
   }));
 }
 
@@ -262,9 +268,10 @@ export function FlowEditor({
         target: params.target!,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
+        type: 'waypoint',
         animated: true,
         ...es,
-        data: { condition: autoCondition },
+        data: { condition: autoCondition, waypoints: [] },
       };
       setEdges((eds) => addEdge(newEdge, eds));
 
@@ -609,6 +616,7 @@ export function FlowEditor({
             onDragOver={onDragOver}
             onDrop={onDrop}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             fitView
             className="bg-background"
           >
