@@ -15,25 +15,31 @@ function buildPath(
   tx: number, ty: number,
   waypoints: Waypoint[]
 ): string {
-  if (waypoints.length === 0) {
-    const mx = (sx + tx) / 2;
-    const my = (sy + ty) / 2;
-    return `M${sx},${sy} Q${mx},${(sy + my) / 2} ${mx},${my} Q${mx},${(my + ty) / 2} ${tx},${ty}`;
+  const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
+
+  if (points.length === 2) {
+    // No waypoints — smooth vertical-ish curve
+    const cx = (sx + tx) / 2;
+    return `M${sx},${sy} C${sx},${(sy + ty) / 2} ${tx},${(sy + ty) / 2} ${tx},${ty}`;
   }
 
-  const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
+  // Catmull-Rom-like smoothing through all points
   let d = `M${points[0].x},${points[0].y}`;
 
-  for (let i = 1; i < points.length - 1; i++) {
-    const curr = points[i];
-    const next = points[i + 1];
-    const cpx2 = (curr.x + next.x) / 2;
-    const cpy2 = (curr.y + next.y) / 2;
-    d += ` Q${curr.x},${curr.y} ${cpx2},${cpy2}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
   }
 
-  const last = points[points.length - 1];
-  d += ` L${last.x},${last.y}`;
   return d;
 }
 
