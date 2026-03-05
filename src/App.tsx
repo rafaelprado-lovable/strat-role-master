@@ -26,6 +26,7 @@ import ChangesInExecution from "./pages/ChangesInExecution";
 import SwapAlarms from "./pages/SwapAlarms";
 import PostChange from "./pages/PostChange";
 import Automations from "./pages/Automations";
+import WorkflowExecution from "./pages/WorkflowExecution";
 import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
@@ -230,6 +231,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Automations />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/automations/execute/:id"
+              element={
+                <AppLayout>
+                  <WorkflowExecution />
                 </AppLayout>
               }
             />
