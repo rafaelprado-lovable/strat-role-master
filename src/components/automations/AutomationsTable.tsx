@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Edit2, MoreVertical, Play, Pause, Trash2, Copy, Clock, Search, Plus,
-  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon,
+  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay,
 } from 'lucide-react';
 import { Workflow } from '@/types/automations';
 import { format } from 'date-fns';
@@ -39,6 +40,7 @@ export function AutomationsTable({
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const filtered = automations.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase())
@@ -181,6 +183,9 @@ export function AutomationsTable({
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}>
                               <Play className="h-4 w-4 mr-2" /> Executar agora
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/automations/execute/${wf.id}`); }}>
+                              <MonitorPlay className="h-4 w-4 mr-2" /> Executar & Monitorar
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleStatus(wf.id); }}>
                               {wf.status === 'active' ? (
