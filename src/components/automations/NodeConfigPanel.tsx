@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
 
 interface NodeConfigPanelProps {
@@ -99,6 +99,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
     let parsedValue: any = value;
     if (field === 'reopen_tasks') {
       try { parsedValue = JSON.parse(value); } catch { return; }
+    }
+    if (field === 'stream') {
+      parsedValue = value === 'true';
     }
     update({ for_each: { ...current, [field]: parsedValue }, hasForEach: true });
   };
@@ -460,12 +463,37 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
 
           {forEachEnabled && (
             <div className="space-y-3 pl-1">
+              {/* Stream toggle */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3.5 w-3.5 text-chart-3" />
+                    <Label className="text-xs font-semibold text-chart-3">Stream (fan-out)</Label>
+                  </div>
+                  <Switch
+                    checked={!!forEach?.stream}
+                    onCheckedChange={(v) => updateForEach('stream', v ? 'true' : 'false')}
+                  />
+                </div>
+                {forEach?.stream && (
+                  <div className="p-2 rounded bg-chart-3/10 border border-chart-3/20">
+                    <p className="text-[10px] text-foreground">
+                      <strong>Stream ativo:</strong> este nó receberá itens do nó pai (upstream) automaticamente, item a item. O campo <code className="bg-muted px-1 rounded">items</code> é opcional — se vazio, herda do output do nó conectado acima.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Items - optional when stream=true */}
               <div className="space-y-1.5">
-                <Label className="text-xs">items <span className="text-destructive">*</span></Label>
+                <Label className="text-xs">
+                  items {!forEach?.stream && <span className="text-destructive">*</span>}
+                  {forEach?.stream && <span className="text-muted-foreground ml-1">(opcional no stream)</span>}
+                </Label>
                 <Input
                   value={forEach?.items || ''}
                   onChange={(e) => updateForEach('items', e.target.value)}
-                  placeholder="{{node-x.output.items}}"
+                  placeholder={forEach?.stream ? '(herda do nó pai)' : '{{node-x.output.items}}'}
                   className="h-8 text-sm font-mono"
                 />
               </div>
