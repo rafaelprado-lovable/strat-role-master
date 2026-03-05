@@ -107,14 +107,45 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
     }
   };
 
+  const normalizeJsonString = (raw: string): string => {
+    // 1. Replace single quotes with double quotes (but not inside double-quoted strings)
+    let result = raw;
+    // Simple approach: if no double quotes exist, swap all single quotes
+    if (!result.includes('"')) {
+      result = result.replace(/'/g, '"');
+    } else {
+      // Replace only single-quoted keys/values: 'xxx' → "xxx"
+      result = result.replace(/'([^']*?)'/g, '"$1"');
+    }
+    // 2. Wrap bare {{...}} templates in double quotes if not already quoted
+    result = result.replace(/:\s*(\{\{[^}]+\}\})\s*([,}\n])/g, ': "$1"$2');
+    return result;
+  };
+
   const handleInputsChange = (val: string) => {
     setInputsJson(val);
+    const trimmed = val.trim();
+    if (!trimmed || trimmed === '{}') {
+      setJsonError('');
+      onUpdateInputs(node.id, {});
+      return;
+    }
+    // Try raw first
     try {
-      const parsed = JSON.parse(val);
+      const parsed = JSON.parse(trimmed);
+      setJsonError('');
+      onUpdateInputs(node.id, parsed);
+      return;
+    } catch {
+      // Try normalized
+    }
+    try {
+      const normalized = normalizeJsonString(trimmed);
+      const parsed = JSON.parse(normalized);
       setJsonError('');
       onUpdateInputs(node.id, parsed);
     } catch {
-      setJsonError('JSON inválido');
+      setJsonError('JSON inválido — use aspas duplas ("") em chaves e valores');
     }
   };
 
@@ -416,7 +447,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
           <Textarea
             value={inputsJson}
             onChange={(e) => handleInputsChange(e.target.value)}
-            placeholder='{"key": "value", "msg": "{{item.campo}}"}'
+            placeholder={'{\n  "server": "{{item.campo}}",\n  "user": "nmws_app",\n  "command": "/path/script.sh"\n}'}
             className="text-sm min-h-[100px] font-mono"
           />
           {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
@@ -427,7 +458,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
             </div>
           )}
           <p className="text-[10px] text-muted-foreground">
-            Templates: {'{{item.campo}}'}, {'{{index}}'}, {'{{node-id.output.campo}}'}
+            Aceita aspas simples (') e templates: {'{{item.campo}}'}, {'{{index}}'}, {'{{node-id.output.campo}}'}
           </p>
         </div>
       </div>
