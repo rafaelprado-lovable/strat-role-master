@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
 
 interface NodeConfigPanelProps {
   node: Node;
   inputs: Record<string, unknown>;
   loopEdge: Edge | null;
+  allNodes: Node[];
   onUpdate: (id: string, data: Record<string, unknown>) => void;
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
@@ -28,7 +29,7 @@ function resolveTemplate(template: string, mockData: Record<string, unknown>): s
   });
 }
 
-export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onClose }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onClose }: NodeConfigPanelProps) {
   const d = node.data as Record<string, any>;
   const forEach: WorkflowForEach | undefined = d.for_each;
   const [forEachEnabled, setForEachEnabled] = useState(!!forEach);
@@ -361,6 +362,52 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                 )}
               </div>
 
+              {/* Reopen Tasks */}
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-3.5 w-3.5 text-chart-2" />
+                  <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks (reopen_tasks)</Label>
+                </div>
+                <p className="text-[10px] text-muted-foreground -mt-1">
+                  Selecione quais nós devem ser reexecutados a cada iteração do loop. O nó atual ({node.id}) é incluído automaticamente.
+                </p>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {allNodes.map((n) => {
+                    const nd = n.data as Record<string, any>;
+                    const reopenTasks: string[] = loopData?.reopen_tasks || [];
+                    const isCurrentNode = n.id === node.id;
+                    const isChecked = isCurrentNode || reopenTasks.includes(n.id);
+                    return (
+                      <label
+                        key={n.id}
+                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer hover:bg-muted/50 ${isCurrentNode ? 'opacity-70' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isCurrentNode}
+                          onChange={(e) => {
+                            let updated = [...reopenTasks];
+                            if (e.target.checked) {
+                              if (!updated.includes(n.id)) updated.push(n.id);
+                            } else {
+                              updated = updated.filter(id => id !== n.id);
+                            }
+                            // Always ensure current node is included
+                            if (!updated.includes(node.id)) updated.push(node.id);
+                            updateLoopEdge({ reopen_tasks: updated });
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="font-mono text-foreground">{n.id}</span>
+                        <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
+                        {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Pseudo-code preview */}
               <div className="p-2.5 rounded bg-muted border border-border font-mono text-xs text-foreground leading-relaxed">
                 <div className="text-chart-4">// Pseudo-código do loop</div>
@@ -368,6 +415,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                   <>
                     <div>i = 0</div>
                     <div><span className="text-chart-4 font-bold">while</span> ({loopData.condition}) {'{'}</div>
+                    {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
+                      <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
+                    ))}
                     <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
                     {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
                       <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
@@ -379,6 +429,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                 ) : (
                   <>
                     <div><span className="text-chart-4 font-bold">for</span> (i = 0; i &lt; {loopData.max_iterations || '?'}; i++) {'{'}</div>
+                    {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
+                      <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
+                    ))}
                     <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
                     {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
                       <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>

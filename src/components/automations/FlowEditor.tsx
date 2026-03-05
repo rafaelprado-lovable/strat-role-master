@@ -99,6 +99,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         condition: e.condition || '',
         loop: e.loop || false,
         max_iterations: e.max_iterations,
+        reopen_tasks: e.reopen_tasks || [],
       },
     };
   }) || [];
@@ -148,6 +149,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       if (d.loop) {
         edge.loop = true;
         edge.max_iterations = d.max_iterations;
+        if (d.reopen_tasks && d.reopen_tasks.length > 0) {
+          edge.reopen_tasks = d.reopen_tasks;
+        }
       }
       return edge;
     }),
@@ -247,7 +251,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         sourceHandle: 'loop-out',
         targetHandle: 'loop-in',
         type: 'waypoint',
-        data: { condition: '', loop: true, loop_mode: 'while_true', max_iterations: 5 },
+        data: { condition: '', loop: true, loop_mode: 'while_true', max_iterations: 5, reopen_tasks: [nodeId] },
       };
       return [...eds, newEdge];
     });
@@ -455,6 +459,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             node={selectedNode}
             inputs={nodeInputs[selectedNode.id] || {}}
             loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
+            allNodes={nodes}
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
             onUpdateEdge={handleEdgeDataUpdate}

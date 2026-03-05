@@ -23,6 +23,7 @@ export interface WorkflowEdge {
   condition?: string;   // "node-x.output.status == 200"
   loop?: boolean;
   max_iterations?: number;
+  reopen_tasks?: string[];  // node IDs to re-execute in loop iterations
 }
 
 export interface AutomationSchedule {
@@ -107,8 +108,20 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
     if (!nodeIds.has(edge.to)) {
       errors.push({ path: `edges[${i}].to`, message: `Edge "${edge.from}" → "${edge.to}": destino não existe`, severity: 'error' });
     }
+    // Block self-referencing edges without loop: true
+    if (edge.from === edge.to && !edge.loop) {
+      errors.push({ path: `edges[${i}]`, message: `Edge "${edge.from}" → "${edge.to}": ciclo sem loop=true não permitido`, severity: 'error' });
+    }
     if (edge.loop && (!edge.max_iterations || edge.max_iterations < 1)) {
       errors.push({ path: `edges[${i}].max_iterations`, message: `Edge loop "${edge.from}" → "${edge.to}": max_iterations obrigatório`, severity: 'error' });
+    }
+    // Validate reopen_tasks references
+    if (edge.loop && edge.reopen_tasks) {
+      edge.reopen_tasks.forEach(taskId => {
+        if (!nodeIds.has(taskId)) {
+          errors.push({ path: `edges[${i}].reopen_tasks`, message: `reopen_tasks "${taskId}" referencia nó inexistente`, severity: 'error' });
+        }
+      });
     }
     if (edge.condition) {
       // Basic validation: must contain an operator
@@ -118,6 +131,32 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
       }
     }
   });
+
+  // Detect cycles in non-loop edges (simple DFS)
+  const normalAdj = new Map<string, string[]>();
+  edges.filter(e => !e.loop && e.from !== e.to).forEach(e => {
+    if (!normalAdj.has(e.from)) normalAdj.set(e.from, []);
+    normalAdj.get(e.from)!.push(e.to);
+  });
+  const visited = new Set<string>();
+  const inStack = new Set<string>();
+  const dfs = (nodeId: string): boolean => {
+    if (inStack.has(nodeId)) return true;
+    if (visited.has(nodeId)) return false;
+    visited.add(nodeId);
+    inStack.add(nodeId);
+    for (const next of (normalAdj.get(nodeId) || [])) {
+      if (dfs(next)) {
+        errors.push({ path: 'edges', message: `Ciclo detectado em edges normais envolvendo "${nodeId}" → "${next}". Use loop=true para ciclos intencionais.`, severity: 'error' });
+        return true;
+      }
+    }
+    inStack.delete(nodeId);
+    return false;
+  };
+  for (const nid of nodeIds) {
+    if (!visited.has(nid)) dfs(nid);
+  }
 
   // Check inputs reference existing nodes + validate loop delay
   if (workflow.inputs) {
@@ -167,6 +206,9 @@ export function exportWorkflowJson(workflow: Workflow): object {
       if (e.loop) {
         edge.loop = true;
         edge.max_iterations = e.max_iterations;
+        if (e.reopen_tasks && e.reopen_tasks.length > 0) {
+          edge.reopen_tasks = e.reopen_tasks;
+        }
       }
       return edge;
     }),
