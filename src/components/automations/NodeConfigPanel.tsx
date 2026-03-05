@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye, ShieldAlert, Info } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
 
 interface NodeConfigPanelProps {
@@ -35,6 +35,31 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
   const [inputsJson, setInputsJson] = useState(JSON.stringify(inputs || {}, null, 2));
   const [jsonError, setJsonError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+
+  // Loop delay state (from inputs)
+  const currentInputs = inputs || {};
+  const [loopDelaySeconds, setLoopDelaySeconds] = useState<string>(
+    currentInputs.loop_delay_seconds !== undefined ? String(currentInputs.loop_delay_seconds) : ''
+  );
+  const [loopDelayMs, setLoopDelayMs] = useState<string>(
+    currentInputs.loop_delay_ms !== undefined ? String(currentInputs.loop_delay_ms) : ''
+  );
+
+  const handleLoopDelayChange = (field: 'loop_delay_seconds' | 'loop_delay_ms', value: string) => {
+    if (field === 'loop_delay_seconds') setLoopDelaySeconds(value);
+    else setLoopDelayMs(value);
+
+    const num = value === '' ? undefined : Number(value);
+    if (value !== '' && (isNaN(num!) || num! < 0)) return; // don't persist invalid
+
+    const updated = { ...currentInputs };
+    if (value === '' || value === undefined) {
+      delete updated[field];
+    } else {
+      updated[field] = num!;
+    }
+    onUpdateInputs(node.id, updated);
+  };
 
   // Loop state
   const loopEnabled = !!loopEdge;
@@ -255,6 +280,56 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                 </div>
               </div>
 
+              {/* Loop Delay */}
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center gap-2">
+                  <Timer className="h-3.5 w-3.5 text-chart-4" />
+                  <Label className="text-xs font-semibold text-chart-4">Delay entre iterações</Label>
+                </div>
+                <p className="text-[10px] text-muted-foreground -mt-1">Delay entre execuções do loop (while). Se ambos forem preenchidos, segundos tem prioridade.</p>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Delay (segundos)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={loopDelaySeconds}
+                    onChange={(e) => handleLoopDelayChange('loop_delay_seconds', e.target.value)}
+                    placeholder="Ex: 10"
+                    className="h-8 text-sm font-mono"
+                  />
+                  {loopDelaySeconds !== '' && (isNaN(Number(loopDelaySeconds)) || Number(loopDelaySeconds) < 0) && (
+                    <p className="text-xs text-destructive">⚠ Valor deve ser um número ≥ 0</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Delay (ms)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={loopDelayMs}
+                    onChange={(e) => handleLoopDelayChange('loop_delay_ms', e.target.value)}
+                    placeholder="Ex: 5000"
+                    className="h-8 text-sm font-mono"
+                  />
+                  {loopDelayMs !== '' && (isNaN(Number(loopDelayMs)) || Number(loopDelayMs) < 0) && (
+                    <p className="text-xs text-destructive">⚠ Valor deve ser um número ≥ 0</p>
+                  )}
+                </div>
+
+                {loopDelaySeconds !== '' && loopDelayMs !== '' && (
+                  <div className="flex items-start gap-2 p-2 rounded bg-chart-4/10 border border-chart-4/20">
+                    <Info className="h-3.5 w-3.5 text-chart-4 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-foreground">
+                      <strong>loop_delay_seconds</strong> tem prioridade e será usado pelo motor. O valor em ms será ignorado.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Pseudo-code preview */}
               <div className="p-2.5 rounded bg-muted border border-border font-mono text-xs text-foreground leading-relaxed">
                 <div className="text-chart-4">// Pseudo-código do loop</div>
@@ -263,6 +338,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                     <div>i = 0</div>
                     <div><span className="text-chart-4 font-bold">while</span> ({loopData.condition}) {'{'}</div>
                     <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                    {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
+                      <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
+                    )}
                     <div className="pl-4">i++</div>
                     <div className="pl-4"><span className="text-destructive font-bold">if</span> (i &gt;= {loopData.max_iterations || '?'}) <span className="text-destructive font-bold">break</span></div>
                     <div>{'}'}</div>
@@ -271,6 +349,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, onUpdate, onUpdateInpu
                   <>
                     <div><span className="text-chart-4 font-bold">for</span> (i = 0; i &lt; {loopData.max_iterations || '?'}; i++) {'{'}</div>
                     <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                    {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
+                      <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
+                    )}
                     <div>{'}'}</div>
                   </>
                 )}

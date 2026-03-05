@@ -119,11 +119,24 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
     }
   });
 
-  // Check inputs reference existing nodes
+  // Check inputs reference existing nodes + validate loop delay
   if (workflow.inputs) {
-    Object.keys(workflow.inputs).forEach(nodeId => {
+    Object.entries(workflow.inputs).forEach(([nodeId, inp]) => {
       if (!nodeIds.has(nodeId)) {
         errors.push({ path: `inputs.${nodeId}`, message: `inputs["${nodeId}"] referencia nó inexistente`, severity: 'error' });
+      }
+      const inputObj = inp as Record<string, unknown>;
+      if (inputObj.loop_delay_seconds !== undefined) {
+        const v = Number(inputObj.loop_delay_seconds);
+        if (isNaN(v) || v < 0) {
+          errors.push({ path: `inputs.${nodeId}.loop_delay_seconds`, message: `inputs["${nodeId}"].loop_delay_seconds deve ser ≥ 0`, severity: 'error' });
+        }
+      }
+      if (inputObj.loop_delay_ms !== undefined) {
+        const v = Number(inputObj.loop_delay_ms);
+        if (isNaN(v) || v < 0) {
+          errors.push({ path: `inputs.${nodeId}.loop_delay_ms`, message: `inputs["${nodeId}"].loop_delay_ms deve ser ≥ 0`, severity: 'error' });
+        }
       }
     });
   }
