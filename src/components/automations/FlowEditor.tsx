@@ -451,6 +451,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         {/* Config Panels */}
         {selectedNode && (
           <NodeConfigPanel
+            key={selectedNode.id}
             node={selectedNode}
             inputs={nodeInputs[selectedNode.id] || {}}
             loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
