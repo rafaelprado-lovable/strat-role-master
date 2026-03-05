@@ -96,7 +96,11 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
 
   const updateForEach = (field: string, value: string) => {
     const current = d.for_each || { items: '', item_var: 'item', index_var: 'index' };
-    update({ for_each: { ...current, [field]: value }, hasForEach: true });
+    let parsedValue: any = value;
+    if (field === 'reopen_tasks') {
+      try { parsedValue = JSON.parse(value); } catch { return; }
+    }
+    update({ for_each: { ...current, [field]: parsedValue }, hasForEach: true });
   };
 
   const toggleForEach = (enabled: boolean) => {
@@ -484,6 +488,51 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
               {forEach?.item_var && forEach?.index_var && forEach.item_var === forEach.index_var && (
                 <p className="text-xs text-destructive">⚠ item_var e index_var não podem ser iguais</p>
               )}
+
+              {/* Reopen Tasks for for_each */}
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-3.5 w-3.5 text-chart-2" />
+                  <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks (reopen_tasks)</Label>
+                </div>
+                <p className="text-[10px] text-muted-foreground -mt-1">
+                  Selecione quais nós devem ser reexecutados a cada iteração do for_each. O nó atual ({node.id}) é incluído automaticamente.
+                </p>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {allNodes.map((n) => {
+                    const nd = n.data as Record<string, any>;
+                    const reopenTasks: string[] = forEach?.reopen_tasks || [];
+                    const isCurrentNode = n.id === node.id;
+                    const isChecked = isCurrentNode || reopenTasks.includes(n.id);
+                    return (
+                      <label
+                        key={n.id}
+                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer hover:bg-muted/50 ${isCurrentNode ? 'opacity-70' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isCurrentNode}
+                          onChange={(e) => {
+                            let updated = [...reopenTasks];
+                            if (e.target.checked) {
+                              if (!updated.includes(n.id)) updated.push(n.id);
+                            } else {
+                              updated = updated.filter(id => id !== n.id);
+                            }
+                            if (!updated.includes(node.id)) updated.push(node.id);
+                            updateForEach('reopen_tasks', JSON.stringify(updated));
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="font-mono text-foreground">{n.id}</span>
+                        <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
+                        {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
