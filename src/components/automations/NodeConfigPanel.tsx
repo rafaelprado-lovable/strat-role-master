@@ -463,12 +463,23 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
 
           {forEachEnabled && (
             <div className="space-y-3 pl-1">
-              {/* Stream toggle */}
+              {/* Items */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">items <span className="text-destructive">*</span></Label>
+                <Input
+                  value={forEach?.items || ''}
+                  onChange={(e) => updateForEach('items', e.target.value)}
+                  placeholder="{{node-x.output.items}}"
+                  className="h-8 text-sm font-mono"
+                />
+              </div>
+
+              {/* Stream toggle - fan-out from THIS node to children */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="h-3.5 w-3.5 text-chart-3" />
-                    <Label className="text-xs font-semibold text-chart-3">Stream (fan-out)</Label>
+                    <Label className="text-xs font-semibold text-chart-3">Stream (fan-out para filhos)</Label>
                   </div>
                   <Switch
                     checked={!!forEach?.stream}
@@ -478,24 +489,10 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
                 {forEach?.stream && (
                   <div className="p-2 rounded bg-chart-3/10 border border-chart-3/20">
                     <p className="text-[10px] text-foreground">
-                      <strong>Stream ativo:</strong> este nó receberá itens do nó pai (upstream) automaticamente, item a item. O campo <code className="bg-muted px-1 rounded">items</code> é opcional — se vazio, herda do output do nó conectado acima.
+                      <strong>Stream ativo:</strong> cada item processado por este nó será despachado individualmente para os nós filhos (downstream), criando loops aninhados. Os nós conectados abaixo receberão <code className="bg-muted px-1 rounded">item</code> a item automaticamente.
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Items - optional when stream=true */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  items {!forEach?.stream && <span className="text-destructive">*</span>}
-                  {forEach?.stream && <span className="text-muted-foreground ml-1">(opcional no stream)</span>}
-                </Label>
-                <Input
-                  value={forEach?.items || ''}
-                  onChange={(e) => updateForEach('items', e.target.value)}
-                  placeholder={forEach?.stream ? '(herda do nó pai)' : '{{node-x.output.items}}'}
-                  className="h-8 text-sm font-mono"
-                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">item_var</Label>

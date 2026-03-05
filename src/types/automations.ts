@@ -3,10 +3,10 @@
 // ==========================================
 
 export interface WorkflowForEach {
-  items?: string;      // "{{node-x.output.items}}" or array literal (optional when stream=true)
+  items: string;       // "{{node-x.output.items}}" or array literal
   item_var: string;    // e.g. "item"
   index_var: string;   // e.g. "index"
-  stream?: boolean;    // fan-out item a item from parent node
+  stream?: boolean;    // fan-out: dispatches items one-by-one to downstream child nodes
   reopen_tasks?: string[];  // node IDs to re-execute per iteration
 }
 
@@ -88,8 +88,8 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
       errors.push({ path: `nodes[${i}]`, message: `Nó "${node.id}" sem definition_id`, severity: 'error' });
     }
     if (node.for_each) {
-      if (!node.for_each.stream && !node.for_each.items?.trim()) {
-        errors.push({ path: `nodes[${i}].for_each.items`, message: `Nó "${node.id}": for_each sem stream ativo precisa de items`, severity: 'error' });
+      if (!node.for_each.items?.trim()) {
+        errors.push({ path: `nodes[${i}].for_each.items`, message: `Nó "${node.id}": for_each sem items`, severity: 'error' });
       }
       if (!node.for_each.item_var?.trim()) {
         errors.push({ path: `nodes[${i}].for_each.item_var`, message: `Nó "${node.id}": for_each sem item_var`, severity: 'error' });
