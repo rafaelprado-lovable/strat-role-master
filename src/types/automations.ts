@@ -6,6 +6,7 @@ export interface WorkflowForEach {
   items: string;       // "{{node-x.output.items}}" or array literal
   item_var: string;    // e.g. "item"
   index_var: string;   // e.g. "index"
+  reopen_tasks?: string[];  // node IDs to re-execute per iteration
 }
 
 export interface WorkflowNode {
