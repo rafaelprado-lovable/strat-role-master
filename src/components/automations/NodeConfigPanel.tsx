@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { type Node, type Edge } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
+import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 
 interface NodeConfigPanelProps {
   node: Node;
@@ -562,33 +563,262 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
           )}
         </div>
 
-        {/* Inputs JSON */}
-        <div className="border-t border-border pt-3 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Inputs (JSON)</Label>
-            <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowPreview(!showPreview)}>
-              <Eye className="h-3 w-3" />
-              {showPreview ? 'Ocultar' : 'Preview'}
-            </Button>
-          </div>
+        {/* ============ PLUGIN INPUTS ============ */}
+        <PluginInputsSection
+          nodeId={node.id}
+          definitionId={d.definition_id}
+          inputs={inputs}
+          allNodes={allNodes}
+          onUpdateInputs={onUpdateInputs}
+          currentNodeId={node.id}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ========== Plugin Inputs Section ==========
+
+interface PluginInputsSectionProps {
+  nodeId: string;
+  definitionId: string;
+  inputs: Record<string, unknown>;
+  allNodes: Node[];
+  onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
+  currentNodeId: string;
+}
+
+function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
+  const schema = PLUGIN_SCHEMAS[definitionId];
+  const [showRawJson, setShowRawJson] = useState(false);
+  const [rawJson, setRawJson] = useState(JSON.stringify(inputs || {}, null, 2));
+  const [jsonError, setJsonError] = useState('');
+  const [showOutputs, setShowOutputs] = useState(false);
+
+  // Upstream nodes for variable references
+  const upstreamNodes = allNodes.filter(n => n.id !== currentNodeId);
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    const updated = { ...(inputs || {}), [fieldName]: value === '' ? undefined : value };
+    // Clean undefined values
+    Object.keys(updated).forEach(k => {
+      if (updated[k] === undefined) delete updated[k];
+    });
+    onUpdateInputs(nodeId, updated);
+  };
+
+  const handleRawJsonChange = (val: string) => {
+    setRawJson(val);
+    const trimmed = val.trim();
+    if (!trimmed || trimmed === '{}') {
+      setJsonError('');
+      onUpdateInputs(nodeId, {});
+      return;
+    }
+    try {
+      let normalized = val;
+      if (!normalized.includes('"')) normalized = normalized.replace(/'/g, '"');
+      else normalized = normalized.replace(/'([^']*?)'/g, '"$1"');
+      normalized = normalized.replace(/:\s*(\{\{[^}]+\}\})\s*([,}\n])/g, ': "$1"$2');
+      const parsed = JSON.parse(normalized);
+      setJsonError('');
+      onUpdateInputs(nodeId, parsed);
+    } catch {
+      setJsonError('JSON inválido');
+    }
+  };
+
+  const insertReference = (fieldName: string, ref: string) => {
+    const current = String((inputs as any)?.[fieldName] || '');
+    handleFieldChange(fieldName, current + `{{${ref}}}`);
+  };
+
+  if (!schema) {
+    // Fallback: raw JSON for unknown plugins
+    return (
+      <div className="border-t border-border pt-3 space-y-1.5">
+        <Label className="text-xs font-semibold">Inputs (JSON)</Label>
+        <Textarea
+          value={rawJson}
+          onChange={(e) => handleRawJsonChange(e.target.value)}
+          placeholder={'{\n  "key": "value"\n}'}
+          className="text-sm min-h-[100px] font-mono"
+        />
+        {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
+        <p className="text-[10px] text-muted-foreground">
+          Plugin sem schema definido — use JSON livre.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border pt-3 space-y-3">
+      {/* Plugin header */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold">Inputs — {schema.name}</Label>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-xs gap-1 text-muted-foreground"
+            onClick={() => setShowRawJson(!showRawJson)}
+          >
+            <Code className="h-3 w-3" />
+            {showRawJson ? 'Campos' : 'JSON'}
+          </Button>
+        </div>
+        <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+      </div>
+
+      {showRawJson ? (
+        /* Raw JSON mode */
+        <div className="space-y-1.5">
           <Textarea
-            value={inputsJson}
-            onChange={(e) => handleInputsChange(e.target.value)}
-            placeholder={'{\n  "server": "{{item.campo}}",\n  "user": "nmws_app",\n  "command": "/path/script.sh"\n}'}
+            value={JSON.stringify(inputs || {}, null, 2)}
+            onChange={(e) => handleRawJsonChange(e.target.value)}
             className="text-sm min-h-[100px] font-mono"
           />
           {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
-
-          {showPreview && !jsonError && (
-            <div className="mt-2 p-2 rounded bg-muted text-xs font-mono whitespace-pre-wrap text-muted-foreground">
-              {resolveTemplate(inputsJson, mockData)}
-            </div>
-          )}
           <p className="text-[10px] text-muted-foreground">
-            Aceita aspas simples (') e templates: {'{{item.campo}}'}, {'{{index}}'}, {'{{node-id.output.campo}}'}
+            Aceita templates: {'{{node-id.output.campo}}'}, {'{{item.campo}}'}
           </p>
         </div>
+      ) : (
+        /* Structured fields */
+        <div className="space-y-2.5">
+          {schema.inputs.map((field) => (
+            <PluginFieldInput
+              key={field.name}
+              field={field}
+              value={String((inputs as any)?.[field.name] ?? '')}
+              onChange={(v) => handleFieldChange(field.name, v)}
+              upstreamNodes={upstreamNodes}
+              schema={schema}
+              onInsertRef={(ref) => insertReference(field.name, ref)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Outputs reference */}
+      <div className="border-t border-border pt-2">
+        <button
+          onClick={() => setShowOutputs(!showOutputs)}
+          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+        >
+          {showOutputs ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          <ArrowRight className="h-3 w-3" />
+          Outputs disponíveis ({schema.outputs.length})
+        </button>
+        {showOutputs && (
+          <div className="mt-2 space-y-1">
+            {schema.outputs.map((out) => (
+              <div key={out.name} className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 text-xs">
+                <code className="text-primary font-mono text-[11px]">{`{{${nodeId}.output.${out.name}}}`}</code>
+                <span className="text-muted-foreground ml-auto">{out.label}</span>
+              </div>
+            ))}
+            {schema.outputs.length > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Use estas referências nos inputs de nós downstream.
+              </p>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ========== Single Field Input ==========
+
+interface PluginFieldInputProps {
+  field: PluginField;
+  value: string;
+  onChange: (value: string) => void;
+  upstreamNodes: Node[];
+  schema: import('@/types/pluginSchemas').PluginSchema;
+  onInsertRef: (ref: string) => void;
+}
+
+function PluginFieldInput({ field, value, onChange, upstreamNodes, onInsertRef }: PluginFieldInputProps) {
+  const [showRefs, setShowRefs] = useState(false);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">
+          {field.label}
+          {field.required && <span className="text-destructive ml-0.5">*</span>}
+          <span className="text-muted-foreground font-normal ml-1.5 text-[10px]">{field.name}</span>
+        </Label>
+        {upstreamNodes.length > 0 && (
+          <button
+            onClick={() => setShowRefs(!showRefs)}
+            className="text-[10px] text-primary hover:underline"
+          >
+            {showRefs ? 'Fechar' : '{{ref}}'}
+          </button>
+        )}
+      </div>
+
+      {field.type === 'json' ? (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className="text-sm min-h-[60px] font-mono"
+        />
+      ) : (
+        <Input
+          type={field.type === 'number' ? 'number' : 'text'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className="h-8 text-sm font-mono"
+        />
+      )}
+
+      {field.description && (
+        <p className="text-[10px] text-muted-foreground">{field.description}</p>
+      )}
+
+      {/* Reference picker */}
+      {showRefs && (
+        <div className="p-2 rounded border border-border bg-muted/30 space-y-1 max-h-32 overflow-y-auto">
+          {upstreamNodes.map(n => {
+            const nd = n.data as Record<string, any>;
+            const nodeSchema = PLUGIN_SCHEMAS[nd.definition_id];
+            const outputs = nodeSchema?.outputs || [];
+            return (
+              <div key={n.id} className="space-y-0.5">
+                <p className="text-[10px] font-semibold text-foreground">{nd.label || n.id}</p>
+                {outputs.length > 0 ? outputs.map(out => (
+                  <button
+                    key={out.name}
+                    onClick={() => { onInsertRef(`${n.id}.output.${out.name}`); setShowRefs(false); }}
+                    className="block w-full text-left text-[10px] text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded font-mono"
+                  >
+                    {`{{${n.id}.output.${out.name}}}`}
+                  </button>
+                )) : (
+                  <button
+                    onClick={() => { onInsertRef(`${n.id}.output`); setShowRefs(false); }}
+                    className="block w-full text-left text-[10px] text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded font-mono"
+                  >
+                    {`{{${n.id}.output}}`}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {field.required && !value.trim() && (
+        <p className="text-[10px] text-destructive">⚠ Campo obrigatório</p>
+      )}
     </div>
   );
 }
