@@ -60,6 +60,7 @@ export const DEFINITION_IDS = [
   { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp', category: 'action' },
   { value: 'api_call_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
   { value: 'delay_v1', label: 'Delay', icon: 'timer', description: 'Aguarda um tempo antes de continuar', category: 'action' },
+  { value: 'llm_analyse_v1', label: 'LLM Analyse', icon: 'brain', description: 'Análise inteligente via LLM', category: 'action' },
 ] as const;
 
 export type DefinitionId = typeof DEFINITION_IDS[number]['value'];

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Repeat, Timer } from 'lucide-react';
+import { Terminal, MessageCircle, Globe, AlertTriangle, Repeat, Timer, Brain } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
   ssh_execution: Terminal,
@@ -8,6 +8,7 @@ const iconMap: Record<string, React.ElementType> = {
   api_call_v1: Globe,
   get_specific_incident_v1: AlertTriangle,
   delay_v1: Timer,
+  llm_analyse_v1: Brain,
 };
 
 const colorMap: Record<string, { border: string; bg: string; iconBg: string; accent: string }> = {
@@ -40,6 +41,12 @@ const colorMap: Record<string, { border: string; bg: string; iconBg: string; acc
     bg: 'bg-gradient-to-br from-chart-1/10 to-chart-1/5',
     iconBg: 'bg-chart-1/20 text-chart-1',
     accent: 'bg-chart-1',
+  },
+  llm_analyse_v1: {
+    border: 'border-purple-500/60',
+    bg: 'bg-gradient-to-br from-purple-500/10 to-purple-500/5',
+    iconBg: 'bg-purple-500/20 text-purple-500',
+    accent: 'bg-purple-500',
   },
 };
 
