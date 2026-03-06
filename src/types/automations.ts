@@ -101,6 +101,23 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
       if (node.for_each.item_var && node.for_each.index_var && node.for_each.item_var === node.for_each.index_var) {
         errors.push({ path: `nodes[${i}].for_each`, message: `Nó "${node.id}": item_var e index_var não podem ser iguais`, severity: 'error' });
       }
+      // Rule 1: check for .output.itens typo
+      if (node.for_each.items && node.for_each.items.includes('.output.itens')) {
+        errors.push({ path: `nodes[${i}].for_each.items`, message: `Nó "${node.id}": use ".output.items" ao invés de ".output.itens"`, severity: 'warning' });
+      }
+      // Rule 2: check for slice syntax
+      if (node.for_each.items && node.for_each.items.includes('[:]')) {
+        errors.push({ path: `nodes[${i}].for_each.items`, message: `Nó "${node.id}": slice "[:]" não é suportado pelo backend`, severity: 'warning' });
+      }
+    }
+
+    // Rule 3: check if inputs use {{item...}} without for_each
+    const nodeInputs = workflow.inputs?.[node.id];
+    if (nodeInputs && !node.for_each) {
+      const inputJson = JSON.stringify(nodeInputs);
+      if (/\{\{item[\.\[}]/.test(inputJson) || /\{\{index\}\}/.test(inputJson)) {
+        errors.push({ path: `nodes[${i}]`, message: `Nó "${node.id}": inputs usam {{item...}} mas não tem for_each configurado`, severity: 'error' });
+      }
     }
   });
 
@@ -125,6 +142,12 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
           errors.push({ path: `edges[${i}].reopen_tasks`, message: `reopen_tasks "${taskId}" referencia nó inexistente`, severity: 'error' });
         }
       });
+    }
+    // Rule 6: self-loop condition must reference its own node output
+    if (edge.loop && edge.from === edge.to && edge.condition) {
+      if (!edge.condition.includes(`${edge.from}.output`)) {
+        errors.push({ path: `edges[${i}].condition`, message: `Loop "${edge.from}": condição deve referenciar "${edge.from}.output..."`, severity: 'warning' });
+      }
     }
     if (edge.condition) {
       // Basic validation: must contain an operator
@@ -186,36 +209,152 @@ export function validateWorkflow(workflow: Partial<Workflow>): ValidationError[]
   return errors;
 }
 
+/**
+ * Sanitize a template string for backend compatibility:
+ * - Replace .output.itens with .output.items
+ * - Remove slice syntax [:]
+ */
+function sanitizeTemplate(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value
+      .replace(/\.output\.itens/g, '.output.items')
+      .replace(/\[:\]/g, '');
+  }
+  if (Array.isArray(value)) {
+    return value.map(sanitizeTemplate);
+  }
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[k] = sanitizeTemplate(v);
+    }
+    return result;
+  }
+  return value;
+}
+
+/**
+ * Check if an inputs object uses {{item...}} templates
+ */
+function inputsUseItemTemplate(inputs: Record<string, unknown>): boolean {
+  const json = JSON.stringify(inputs);
+  return /\{\{item[\.\[}]/.test(json) || /\{\{index\}\}/.test(json);
+}
+
+/**
+ * Sanitize and export workflow JSON for full backend compatibility.
+ * Rules enforced:
+ * 1. Always .output.items (never .output.itens)
+ * 2. No slice [:] in templates
+ * 3. Any node using {{item...}} in inputs MUST have for_each
+ * 4. for_each nodes get item_var:"item", index_var:"index" if missing
+ * 5. Loop edge condition must reference the loop node's own output
+ * 6. reopen_tasks only contains valid node IDs
+ * 7. loop_delay_seconds stays in inputs of the loop target node
+ * 8. Preserve all existing IDs
+ */
 export function exportWorkflowJson(workflow: Workflow): object {
+  const nodeIds = new Set(workflow.nodes.map(n => n.id));
+
+  // Build adjacency: for each node, find its upstream parent(s)
+  const upstreamMap = new Map<string, string[]>();
+  for (const e of workflow.edges) {
+    if (e.from !== e.to) { // skip self-loops
+      if (!upstreamMap.has(e.to)) upstreamMap.set(e.to, []);
+      upstreamMap.get(e.to)!.push(e.from);
+    }
+  }
+
+  // Find nodes with for_each to build the chain
+  const forEachNodes = new Set(workflow.nodes.filter(n => n.for_each).map(n => n.id));
+
+  // Sanitize and fix nodes
+  const nodes = workflow.nodes.map(n => {
+    const node: any = {
+      id: n.id,
+      definition_id: n.definition_id,
+      config: n.config || {},
+    };
+
+    let forEach = n.for_each ? { ...n.for_each } : undefined;
+
+    // Rule 3: If inputs use {{item...}} but node has no for_each, auto-add it
+    const nodeInputs = workflow.inputs?.[n.id];
+    if (!forEach && nodeInputs && inputsUseItemTemplate(nodeInputs as Record<string, unknown>)) {
+      // Find upstream for_each node to derive items from
+      const upstreams = upstreamMap.get(n.id) || [];
+      const upstreamForEach = upstreams.find(uid => forEachNodes.has(uid));
+      forEach = {
+        items: upstreamForEach ? `{{${upstreamForEach}.output.items}}` : '',
+        item_var: 'item',
+        index_var: 'index',
+      };
+    }
+
+    if (forEach) {
+      // Rule 1: sanitize items template
+      if (forEach.items) {
+        forEach.items = sanitizeTemplate(forEach.items) as string;
+      }
+      // Rule 5: ensure item_var and index_var
+      if (!forEach.item_var) forEach.item_var = 'item';
+      if (!forEach.index_var) forEach.index_var = 'index';
+
+      // Clean stream property — only include if true
+      if (!forEach.stream) delete forEach.stream;
+
+      node.for_each = forEach;
+    }
+
+    return node;
+  });
+
+  // Sanitize edges
+  const edges = workflow.edges.map(e => {
+    const edge: any = { from: e.from, to: e.to };
+    if (e.id) edge.id = e.id;
+
+    if (e.condition) {
+      // Rule 1: sanitize condition templates
+      edge.condition = sanitizeTemplate(e.condition) as string;
+    }
+
+    if (e.loop) {
+      edge.loop = true;
+      edge.max_iterations = e.max_iterations;
+
+      // Rule 6: self-loop condition must reference the loop node's own output
+      if (e.from === e.to && edge.condition) {
+        const selfId = e.from;
+        // If condition doesn't reference the self node, try to fix it
+        if (!edge.condition.includes(`${selfId}.output`)) {
+          // Replace any node-xxx.output with selfId.output
+          edge.condition = edge.condition.replace(/[\w-]+\.output/g, `${selfId}.output`);
+        }
+      }
+
+      // Rule 7: reopen_tasks only valid IDs
+      if (e.reopen_tasks && e.reopen_tasks.length > 0) {
+        edge.reopen_tasks = e.reopen_tasks.filter((id: string) => nodeIds.has(id));
+        if (edge.reopen_tasks.length === 0) delete edge.reopen_tasks;
+      }
+    }
+
+    return edge;
+  });
+
+  // Sanitize inputs (Rules 1, 2)
+  const inputs = sanitizeTemplate(workflow.inputs || {}) as Record<string, unknown>;
+
   return {
     id: workflow.id,
     name: workflow.name,
     description: workflow.description || '',
     status: workflow.status,
     schedule: workflow.schedule,
-    nodes: workflow.nodes.map(n => {
-      const node: any = {
-        id: n.id,
-        definition_id: n.definition_id,
-        config: n.config || {},
-      };
-      if (n.for_each) node.for_each = n.for_each;
-      return node;
-    }),
-    edges: workflow.edges.map(e => {
-      const edge: any = { from: e.from, to: e.to };
-      if (e.id) edge.id = e.id;
-      if (e.condition) edge.condition = e.condition;
-      if (e.loop) {
-        edge.loop = true;
-        edge.max_iterations = e.max_iterations;
-        if (e.reopen_tasks && e.reopen_tasks.length > 0) {
-          edge.reopen_tasks = e.reopen_tasks;
-        }
-      }
-      return edge;
-    }),
-    inputs: workflow.inputs || {},
+    nodes,
+    edges,
+    inputs,
     start_date: workflow.start_date || null,
   };
 }
