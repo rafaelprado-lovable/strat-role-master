@@ -616,6 +616,63 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
   );
 }
 
+// ========== Ref Dropdown (reusable) ==========
+
+function RefDropdown({ allNodes, currentNodeId, onSelect }: {
+  allNodes: Node[];
+  currentNodeId: string;
+  onSelect: (ref: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const upstreamNodes = allNodes.filter(n => n.id !== currentNodeId);
+  const schemas = upstreamNodes.map(n => {
+    const nd = n.data as Record<string, any>;
+    const schema = PLUGIN_SCHEMAS[nd.definition_id];
+    return { node: n, schema, nd };
+  });
+
+  if (upstreamNodes.length === 0) return null;
+
+  return (
+    <div className="relative">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-8 w-8 shrink-0 text-xs font-mono text-chart-4 border-chart-4/30 hover:bg-chart-4/10"
+        onClick={() => setOpen(!open)}
+        title="Inserir referência de outro nó"
+      >
+        {'{{}}'}
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-9 z-50 w-56 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-md space-y-1">
+          {schemas.map(({ node: n, schema, nd }) => (
+            <div key={n.id}>
+              <p className="text-[10px] font-semibold text-muted-foreground px-1 pt-1">{nd.label || n.id}</p>
+              <button
+                className="w-full text-left px-2 py-1 rounded text-xs font-mono hover:bg-muted truncate"
+                onClick={() => { onSelect(`${n.id}.output`); setOpen(false); }}
+              >
+                {`{{${n.id}.output}}`}
+              </button>
+              {schema?.outputs?.map(o => (
+                <button
+                  key={o.name}
+                  className="w-full text-left px-2 py-1 rounded text-xs font-mono hover:bg-muted truncate"
+                  onClick={() => { onSelect(`${n.id}.output.${o.name}`); setOpen(false); }}
+                >
+                  {`{{${n.id}.output.${o.name}}}`}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ========== Plugin Inputs Section ==========
 
 interface PluginInputsSectionProps {
