@@ -6,36 +6,73 @@ export interface WorkflowApiResponse {
   [key: string]: unknown;
 }
 
+const ORCHESTRATOR_HEADER = { orchestrator: 'lovable' };
+
+async function postWithOrchestrator<T>(url: string, body?: unknown): Promise<T> {
+  const response = await apiClient.rawFetch(url, {
+    method: 'POST',
+    headers: ORCHESTRATOR_HEADER,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json();
+}
+
+async function patchWithOrchestrator<T>(url: string, body?: unknown): Promise<T> {
+  const response = await apiClient.rawFetch(url, {
+    method: 'PATCH',
+    headers: ORCHESTRATOR_HEADER,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json();
+}
+
+async function deleteWithOrchestrator<T>(url: string): Promise<T> {
+  const response = await apiClient.rawFetch(url, {
+    method: 'DELETE',
+    headers: ORCHESTRATOR_HEADER,
+  });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json();
+}
+
 export const workflowService = {
-  /** Create a new workflow on the backend */
   async create(workflow: Workflow): Promise<WorkflowApiResponse> {
     const payload = exportWorkflowJson(workflow);
-    return apiClient.post<WorkflowApiResponse>('/v1/create/workflow', payload);
+    return postWithOrchestrator<WorkflowApiResponse>('/v1/create/workflow', payload);
   },
 
-  /** Update an existing workflow */
   async update(id: string, workflow: Workflow): Promise<WorkflowApiResponse> {
     const payload = exportWorkflowJson(workflow);
-    return apiClient.patch<WorkflowApiResponse>(`/v1/update/workflow/${id}`, payload);
+    return patchWithOrchestrator<WorkflowApiResponse>(`/v1/update/workflow/${id}`, payload);
   },
 
-  /** Delete a workflow */
   async delete(id: string): Promise<void> {
-    return apiClient.delete(`/v1/delete/workflow/${id}`);
+    return deleteWithOrchestrator(`/v1/delete/workflow/${id}`);
   },
 
-  /** List all workflows */
   async list(): Promise<WorkflowApiResponse[]> {
     return apiClient.get<WorkflowApiResponse[]>('/v1/list/workflows');
   },
 
-  /** Get a single workflow */
   async get(id: string): Promise<WorkflowApiResponse> {
     return apiClient.get<WorkflowApiResponse>(`/v1/get/workflow/${id}`);
   },
 
-  /** Run/execute a workflow */
   async run(id: string): Promise<WorkflowApiResponse> {
-    return apiClient.post<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
+    return postWithOrchestrator<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
   },
 };
