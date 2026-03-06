@@ -165,15 +165,19 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
     index: 0,
   };
 
-  return (
-    <div className="w-80 shrink-0 border rounded-lg bg-card overflow-y-auto flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h3 className="font-semibold text-sm text-foreground">Configuração do Nó</h3>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-          <X className="h-3 w-3" />
-        </Button>
-      </div>
+  const isMobile = useIsMobile();
+
+  const panelContent = (
+    <>
+      {/* Header - only on desktop */}
+      {!isMobile && (
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-semibold text-sm text-foreground">Configuração do Nó</h3>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       <div className="p-4 space-y-4 flex-1 overflow-y-auto">
         {/* ID (read-only) */}
