@@ -265,12 +265,19 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
                   <Label className="text-xs">
                     Condição do while <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    value={loopData.condition || ''}
-                    onChange={(e) => updateLoopEdge({ condition: e.target.value })}
-                    placeholder="node-id.output.status != 200"
-                    className="h-8 text-sm font-mono"
-                  />
+                  <div className="flex gap-1">
+                    <Input
+                      value={loopData.condition || ''}
+                      onChange={(e) => updateLoopEdge({ condition: e.target.value })}
+                      placeholder="node-id.output.status != 200"
+                      className="h-8 text-sm font-mono flex-1"
+                    />
+                    <RefDropdown
+                      allNodes={allNodes}
+                      currentNodeId={node.id}
+                      onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
+                    />
+                  </div>
                   {!loopData.condition?.trim() && (
                     <p className="text-xs text-destructive">⚠ Preencha a condição</p>
                   )}
