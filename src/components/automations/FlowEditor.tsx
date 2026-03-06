@@ -211,19 +211,22 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
 
       const position = { x: event.clientX - bounds.left - 90, y: event.clientY - bounds.top - 25 };
 
-      const existingIds = nodes.map(n => {
-        const match = n.id.match(/^node-(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
-      });
-      const nextIndex = (existingIds.length > 0 ? Math.max(...existingIds) : 0) + 1;
-      const newNode: Node = {
-        id: `node-${nextIndex}`,
-        type: 'task',
-        position,
-        data: { label, definition_id: defId, description: '', hasForEach: false },
-      };
+      setNodes((nds) => {
+        const existingIds = nds.map(n => {
+          const match = n.id.match(/^node-(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        });
+        const nextIndex = (existingIds.length > 0 ? Math.max(...existingIds) : 0) + 1;
 
-      setNodes((nds) => [...nds, newNode]);
+        const newNode: Node = {
+          id: `node-${nextIndex}`,
+          type: 'task',
+          position,
+          data: { label, definition_id: defId, description: '', hasForEach: false },
+        };
+
+        return [...nds, newNode];
+      });
     },
     [setNodes]
   );
