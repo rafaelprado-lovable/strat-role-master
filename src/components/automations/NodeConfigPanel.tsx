@@ -480,12 +480,19 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
               {/* Items */}
               <div className="space-y-1.5">
                 <Label className="text-xs">items <span className="text-destructive">*</span></Label>
-                <Input
-                  value={forEach?.items || ''}
-                  onChange={(e) => updateForEach('items', e.target.value)}
-                  placeholder="{{node-x.output.items}}"
-                  className="h-8 text-sm font-mono"
-                />
+                <div className="flex gap-1">
+                  <Input
+                    value={forEach?.items || ''}
+                    onChange={(e) => updateForEach('items', e.target.value)}
+                    placeholder="{{node-x.output.items}}"
+                    className="h-8 text-sm font-mono flex-1"
+                  />
+                  <RefDropdown
+                    allNodes={allNodes}
+                    currentNodeId={node.id}
+                    onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
+                  />
+                </div>
               </div>
 
               {/* Stream toggle - fan-out from THIS node to children */}
