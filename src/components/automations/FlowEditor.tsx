@@ -327,11 +327,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const validationErrors = validateWorkflow(currentWorkflow);
   const exportJson = exportWorkflowJson(currentWorkflow);
 
+  const [blocksPanelOpen, setBlocksPanelOpen] = useState(false);
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-border">
+        <div className="flex items-center gap-2 min-w-0">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -339,12 +341,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Nome do workflow"
-            className="max-w-[300px] font-medium"
+            className="max-w-[200px] md:max-w-[300px] font-medium"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={status} onValueChange={(v) => setStatus(v as 'active' | 'draft')}>
-            <SelectTrigger className="w-[130px] h-8 text-sm">
+            <SelectTrigger className="w-[110px] md:w-[130px] h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -362,13 +364,16 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" className="md:hidden" onClick={() => setBlocksPanelOpen(!blocksPanelOpen)}>
+            <FileJson className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setScheduleDialogOpen(true)}>
-            <Clock className="h-4 w-4 mr-2" />
-            {schedule ? `Agendado: ${schedule.type}` : 'Agendar'}
+            <Clock className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">{schedule ? `Agendado: ${schedule.type}` : 'Agendar'}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={handleValidate}>
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            Validar
+            <ShieldCheck className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Validar</span>
             {validationErrors.length > 0 && (
               <span className="ml-1 bg-destructive text-destructive-foreground rounded-full text-[10px] px-1.5">
                 {validationErrors.filter(e => e.severity === 'error').length}
@@ -376,86 +381,50 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             )}
           </Button>
           <Button variant="outline" size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
-            Salvar Rascunho
+            <Save className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Salvar Rascunho</span>
           </Button>
           <Button size="sm" onClick={handleExport}>
-            <FileDown className="h-4 w-4 mr-2" />
-            Exportar JSON
+            <FileDown className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Exportar JSON</span>
           </Button>
         </div>
       </div>
 
       {/* Editor */}
-      <div className="flex flex-1 mt-4 gap-4 overflow-hidden">
-        {/* Sidebar – Blocos */}
-        <div className="w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 rounded-lg bg-primary/10">
-              <FileJson className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <h3 className="font-semibold text-sm text-foreground">Blocos Disponíveis</h3>
-          </div>
-
-          {/* Gatilhos */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 px-1">
-              <Zap className="h-3 w-3 text-chart-4" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-4">Gatilhos</span>
-            </div>
-            {TRIGGERS.map((block) => (
-              <div
-                key={block.value}
-                draggable
-                onDragStart={(e) => onDragStart(e, block)}
-                className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-4/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-              >
-                <div className="p-1.5 rounded-md bg-chart-4/10 shrink-0">
-                  <block.Icon className="h-3.5 w-3.5 text-chart-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Ações */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 px-1">
-              <Cog className="h-3 w-3 text-primary" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Ações</span>
-            </div>
-            {ACTIONS.map((block) => (
-              <div
-                key={block.value}
-                draggable
-                onDragStart={(e) => onDragStart(e, block)}
-                className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-              >
-                <div className="p-1.5 rounded-md bg-muted/80 shrink-0">
-                  <block.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* start_date */}
-          <div className="border-t border-border mt-4 pt-3 space-y-1.5">
-            <Label className="text-xs">start_date (DD/MM/YYYY HH:MM)</Label>
-            <Input
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              placeholder="01/01/2025 10:00"
-              className="h-8 text-sm font-mono"
-            />
-          </div>
+      <div className="flex flex-1 mt-4 gap-4 overflow-hidden relative">
+        {/* Sidebar – Blocos (desktop) */}
+        <div className="hidden md:block w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
+          <BlocksSidebarContent
+            triggers={TRIGGERS}
+            actions={ACTIONS}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            onDragStart={onDragStart}
+          />
         </div>
+
+        {/* Sidebar – Blocos (mobile overlay) */}
+        {blocksPanelOpen && (
+          <div className="md:hidden absolute inset-0 z-20 flex">
+            <div className="w-64 shrink-0 border border-border/50 rounded-xl bg-card backdrop-blur-sm p-4 overflow-y-auto space-y-4 shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-sm text-foreground">Blocos</h3>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setBlocksPanelOpen(false)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <BlocksSidebarContent
+                triggers={TRIGGERS}
+                actions={ACTIONS}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                onDragStart={onDragStart}
+              />
+            </div>
+            <div className="flex-1 bg-background/50" onClick={() => setBlocksPanelOpen(false)} />
+          </div>
+        )}
 
         {/* Canvas */}
         <div ref={reactFlowWrapper} className="flex-1 border rounded-lg overflow-hidden bg-muted/30">
