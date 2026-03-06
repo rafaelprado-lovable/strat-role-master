@@ -212,14 +212,25 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       const position = { x: event.clientX - bounds.left - 90, y: event.clientY - bounds.top - 25 };
 
       setNodes((nds) => {
-        const existingIds = nds.map(n => {
-          const match = n.id.match(/^node-(\d+)$/);
-          return match ? parseInt(match[1], 10) : 0;
+        // Sanitize label to create node ID base
+        const base = label
+          .toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+          .replace(/[^a-z0-9]+/g, '-')                      // special chars → dash
+          .replace(/^-+|-+$/g, '');                          // trim dashes
+
+        // Find next available index for this base
+        const existing = nds.filter(n => n.id.startsWith(base)).map(n => {
+          const suffix = n.id.slice(base.length);
+          if (!suffix) return 1;
+          const num = parseInt(suffix.replace(/^-/, ''), 10);
+          return isNaN(num) ? 0 : num;
         });
-        const nextIndex = (existingIds.length > 0 ? Math.max(...existingIds) : 0) + 1;
+        const nextIndex = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+        const nodeId = existing.length === 0 ? base : `${base}-${nextIndex}`;
 
         const newNode: Node = {
-          id: `node-${nextIndex}`,
+          id: nodeId,
           type: 'task',
           position,
           data: { label, definition_id: defId, description: '', hasForEach: false },
