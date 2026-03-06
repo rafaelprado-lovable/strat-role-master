@@ -110,7 +110,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [description, setDescription] = useState(workflow?.description || '');
   const [status, setStatus] = useState<'active' | 'draft'>(workflow?.status || 'draft');
   const [schedule, setSchedule] = useState<AutomationSchedule | null>(workflow?.schedule || null);
-  const [startDate, setStartDate] = useState(workflow?.start_date || '');
+  const [startDate, setStartDate] = useState(() => {
+    if (workflow?.start_date) return workflow.start_date;
+    const d = new Date(Date.now() + 60_000);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
