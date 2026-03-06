@@ -579,6 +579,25 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
           currentNodeId={node.id}
         />
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <SheetContent side="right" className="w-[90vw] max-w-md p-0 overflow-y-auto">
+          <SheetHeader className="p-4 border-b border-border">
+            <SheetTitle className="text-sm">Configuração do Nó</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col">{panelContent}</div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="w-80 shrink-0 border rounded-lg bg-card overflow-y-auto flex flex-col">
+      {panelContent}
     </div>
   );
 }
