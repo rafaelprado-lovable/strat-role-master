@@ -60,7 +60,13 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: `hsl(${hsl} / 0.15)` }}
         >
-          <Icon className="w-5 h-5" style={{ color: `hsl(${hsl})` }} />
+          <Icon
+            size={20}
+            strokeWidth={2.4}
+            absoluteStrokeWidth
+            className="shrink-0"
+            style={{ color: `hsl(${hsl})` }}
+          />
         </div>
       </div>
 
