@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { type Node, type Edge } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
+import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 
 interface NodeConfigPanelProps {
   node: Node;
