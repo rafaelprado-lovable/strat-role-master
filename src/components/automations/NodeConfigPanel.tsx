@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NodeConfigPanelProps {
   node: Node;
@@ -163,15 +165,19 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
     index: 0,
   };
 
-  return (
-    <div className="w-80 shrink-0 border rounded-lg bg-card overflow-y-auto flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h3 className="font-semibold text-sm text-foreground">Configuração do Nó</h3>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-          <X className="h-3 w-3" />
-        </Button>
-      </div>
+  const isMobile = useIsMobile();
+
+  const panelContent = (
+    <>
+      {/* Header - only on desktop */}
+      {!isMobile && (
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-semibold text-sm text-foreground">Configuração do Nó</h3>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       <div className="p-4 space-y-4 flex-1 overflow-y-auto">
         {/* ID (read-only) */}
@@ -573,6 +579,25 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
           currentNodeId={node.id}
         />
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <SheetContent side="right" className="w-[90vw] max-w-md p-0 overflow-y-auto">
+          <SheetHeader className="p-4 border-b border-border">
+            <SheetTitle className="text-sm">Configuração do Nó</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col">{panelContent}</div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="w-80 shrink-0 border rounded-lg bg-card overflow-y-auto flex flex-col">
+      {panelContent}
     </div>
   );
 }
