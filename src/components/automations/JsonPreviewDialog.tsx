@@ -1,17 +1,23 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import { Copy, Download } from 'lucide-react';
+import { Copy, Download, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { workflowService } from '@/services/workflowService';
+import { Workflow } from '@/types/automations';
 
 interface JsonPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   json: object;
+  workflow?: Workflow;
+  onSaved?: () => void;
 }
 
-export function JsonPreviewDialog({ open, onOpenChange, json }: JsonPreviewDialogProps) {
+export function JsonPreviewDialog({ open, onOpenChange, json, workflow, onSaved }: JsonPreviewDialogProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const jsonStr = JSON.stringify(json, null, 2);
 
   const handleCopy = () => {
@@ -30,6 +36,28 @@ export function JsonPreviewDialog({ open, onOpenChange, json }: JsonPreviewDialo
     toast.success('JSON exportado');
   };
 
+  const handlePublish = async () => {
+    if (!workflow) return;
+    setIsSaving(true);
+    try {
+      // If workflow was previously saved (has a persistent ID), update; otherwise create
+      const isExisting = workflow.createdAt && workflow.updatedAt && workflow.createdAt !== workflow.updatedAt;
+      if (isExisting) {
+        await workflowService.update(workflow.id, workflow);
+        toast.success('Workflow atualizado no servidor');
+      } else {
+        await workflowService.create(workflow);
+        toast.success('Workflow cadastrado no servidor');
+      }
+      onSaved?.();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(`Erro ao cadastrar: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -44,9 +72,17 @@ export function JsonPreviewDialog({ open, onOpenChange, json }: JsonPreviewDialo
             <Copy className="h-4 w-4 mr-2" />
             Copiar
           </Button>
-          <Button onClick={handleDownload}>
+          <Button variant="outline" onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Exportar JSON
+          </Button>
+          <Button onClick={handlePublish} disabled={isSaving || !workflow}>
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
+            Cadastrar
           </Button>
         </DialogFooter>
       </DialogContent>
