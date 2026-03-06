@@ -211,8 +211,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
 
       const position = { x: event.clientX - bounds.left - 90, y: event.clientY - bounds.top - 25 };
 
+      const nextIndex = nodes.length + 1;
       const newNode: Node = {
-        id: `node-${crypto.randomUUID().slice(0, 8)}`,
+        id: `node-${nextIndex}`,
         type: 'task',
         position,
         data: { label, definition_id: defId, description: '', hasForEach: false },
