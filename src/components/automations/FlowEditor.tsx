@@ -108,6 +108,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [name, setName] = useState(workflow?.name || '');
   const [description, setDescription] = useState(workflow?.description || '');
+  const [status, setStatus] = useState<'active' | 'draft'>(workflow?.status || 'draft');
   const [schedule, setSchedule] = useState<AutomationSchedule | null>(workflow?.schedule || null);
   const [startDate, setStartDate] = useState(workflow?.start_date || '');
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
@@ -128,7 +129,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     id: workflow?.id || `wf-${Date.now()}`,
     name: name || '',
     description,
-    status: workflow?.status || 'draft',
+    status,
     schedule,
     nodes: nodes.map((n) => {
       const d = n.data as Record<string, any>;
@@ -161,7 +162,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     updatedAt: new Date().toISOString(),
     lastRunAt: workflow?.lastRunAt,
     runCount: workflow?.runCount,
-  }), [nodes, edges, name, description, schedule, startDate, nodeInputs, workflow]);
+  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, workflow]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -318,6 +319,25 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Select value={status} onValueChange={(v) => setStatus(v as 'active' | 'draft')}>
+            <SelectTrigger className="w-[130px] h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  Rascunho
+                </span>
+              </SelectItem>
+              <SelectItem value="active">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Ativo
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="sm" onClick={() => setScheduleDialogOpen(true)}>
             <Clock className="h-4 w-4 mr-2" />
             {schedule ? `Agendado: ${schedule.type}` : 'Agendar'}
