@@ -495,6 +495,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         open={jsonPreviewOpen}
         onOpenChange={setJsonPreviewOpen}
         json={exportJson}
+        workflow={currentWorkflow}
       />
 
       {/* Schedule Dialog */}
