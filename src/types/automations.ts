@@ -276,6 +276,11 @@ export function exportWorkflowJson(workflow: Workflow): object {
       config: n.config || {},
     };
 
+    // Preserve position for editor reopening
+    if (n.position) {
+      node.position = n.position;
+    }
+
     let forEach = n.for_each ? { ...n.for_each } : undefined;
 
     // Rule 3: If inputs use {{item...}} but node has no for_each, auto-add it
