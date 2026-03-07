@@ -65,11 +65,11 @@ export const workflowService = {
   },
 
   async list(): Promise<WorkflowApiResponse[]> {
-    return apiClient.get<WorkflowApiResponse[]>('/v1/list/workflows');
+    return apiClient.get<WorkflowApiResponse[]>('/v1/read/workflow');
   },
 
   async get(id: string): Promise<WorkflowApiResponse> {
-    return apiClient.get<WorkflowApiResponse>(`/v1/get/workflow/${id}`);
+    return apiClient.get<WorkflowApiResponse>(`/v1/read/workflow?id=${id}`);
   },
 
   async run(id: string): Promise<WorkflowApiResponse> {
