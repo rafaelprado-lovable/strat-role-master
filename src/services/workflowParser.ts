@@ -1,5 +1,5 @@
-import { Workflow, WorkflowApiResponse } from '@/services/workflowService';
-import { DefinitionId } from '@/types/automations';
+import { WorkflowApiResponse } from '@/services/workflowService';
+import { Workflow, DefinitionId } from '@/types/automations';
 
 /**
  * Parse a raw API workflow response into the internal Workflow type.
