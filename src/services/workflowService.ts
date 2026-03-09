@@ -8,10 +8,10 @@ export interface WorkflowApiResponse {
 
 const ORCHESTRATOR_HEADER = { orchestrator: 'lovable' };
 
-async function postWithOrchestrator<T>(url: string, body?: unknown): Promise<T> {
+async function postWithOrchestrator<T>(url: string, body?: unknown, additionalHeaders?: HeadersInit): Promise<T> {
   const response = await apiClient.rawFetch(url, {
     method: 'POST',
-    headers: ORCHESTRATOR_HEADER,
+    headers: { ...ORCHESTRATOR_HEADER, ...additionalHeaders },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
