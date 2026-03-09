@@ -158,6 +158,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       for_each: n.for_each,
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
+      isTrigger: DEFINITION_IDS.find(d => d.value === n.definition_id)?.category === 'trigger',
     },
   })) || [];
 
@@ -310,7 +311,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, description: '', hasForEach: false },
+          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: DEFINITION_IDS.find(d => d.value === defId)?.category === 'trigger' },
         };
 
         return [...nds, newNode];
