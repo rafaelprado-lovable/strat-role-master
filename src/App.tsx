@@ -226,6 +226,16 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/definitions"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Definitions />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route
               path="/automations"

@@ -112,7 +112,8 @@ export function AppSidebar() {
               { title: "Permissões", url: "/permissions" },
               { title: "Funções", url: "/roles" },
               { title: "Departamentos", url: "/departments" },
-              { title: "Usuários", url: "/users" }
+              { title: "Usuários", url: "/users" },
+              { title: "Blocos", url: "/definitions" }
             ]
           });
         }
