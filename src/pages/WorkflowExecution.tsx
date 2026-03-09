@@ -286,6 +286,14 @@ export default function WorkflowExecution() {
     toast.success('Execution exportada');
   }, [execution]);
 
+  if (loadingWorkflow) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    );
+  }
+
   if (!workflow) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
