@@ -183,7 +183,7 @@ export default function WorkflowExecution() {
     }
   }, []);
 
-  const handleExecute = useCallback(() => {
+  const handleExecute = useCallback(async () => {
     if (!workflow) return;
     if (!validatePayload(payloadJson)) {
       toast.error('JSON do payload é inválido');
@@ -193,14 +193,23 @@ export default function WorkflowExecution() {
     setLoading(true);
     setIsRunning(true);
 
-    // Simulate execution start
-    setTimeout(() => {
+    try {
+      const result = await workflowService.createExecution(workflow.id);
+      toast.success('Execução criada com sucesso');
+      console.log('Execution response:', result);
+
+      // Use mock visualization while we don't have SSE/polling for real-time status
       const exec = generateMockExecution(workflow);
+      // Override execution_id with real one if available
+      if (result && (result as any).execution_id) {
+        exec.execution_controller.execution_id = (result as any).execution_id;
+      } else if (result && result.id) {
+        exec.execution_controller.execution_id = result.id;
+      }
       setExecution(exec);
       setLoading(false);
-      toast.success('Execução iniciada');
 
-      // Simulate completion after a few seconds
+      // Simulate completion after a few seconds (until real SSE is wired)
       setTimeout(() => {
         setExecution(prev => {
           if (!prev) return prev;
@@ -222,7 +231,12 @@ export default function WorkflowExecution() {
         setIsRunning(false);
         toast.success('Execução finalizada');
       }, 5000);
-    }, 1500);
+    } catch (err: any) {
+      console.error('Erro ao criar execução:', err);
+      toast.error(`Erro ao criar execução: ${err.message}`);
+      setLoading(false);
+      setIsRunning(false);
+    }
   }, [workflow, payloadJson, validatePayload]);
 
   const handleStop = useCallback(() => {
