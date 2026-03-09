@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 const POLL_INTERVAL_MS = 3000;
-const TERMINAL_STATES: ExecutionState[] = ['finished', 'error', 'stopped'];
+const TERMINAL_STATES: ExecutionState[] = ['finished', 'success', 'error', 'stopped'];
 
 /** Mapeia a resposta do GET /v1/execution para ExecutionDTO */
 function mapApiResponseToDTO(raw: any, workflowDef: any): ExecutionDTO {
