@@ -78,19 +78,8 @@ export default function Automations() {
     toast.success('Status atualizado');
   };
 
-  const handleRun = async (id: string) => {
-    toast.info('Executando workflow...');
-    try {
-      await workflowService.run(id);
-      setWorkflows((prev) =>
-        prev.map((w) =>
-          w.id === id ? { ...w, lastRunAt: new Date().toISOString(), runCount: (w.runCount || 0) + 1 } : w
-        )
-      );
-      toast.success('Workflow executado com sucesso');
-    } catch (err: any) {
-      toast.error(`Erro ao executar: ${err.message}`);
-    }
+  const handleRun = (id: string) => {
+    navigate(`/automations/execute/${id}`);
   };
 
   const handleSave = (data: Partial<Workflow>) => {
