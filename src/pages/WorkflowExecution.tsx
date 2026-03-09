@@ -246,37 +246,12 @@ export default function WorkflowExecution() {
   }, []);
 
   const fetchExecutionStatus = useCallback(async () => {
-    if (!workflow) return;
+    if (!workflow || !executionIdRef.current) return;
     try {
-      const all = await workflowService.listExecutions();
-      console.log('[Polling] listExecutions response:', all);
-      
-      // Find by execution_id, _id, or fallback to latest for this workflow
-      let raw: any = null;
-      if (executionIdRef.current) {
-        raw = all.find((e: any) =>
-          e.execution_controller?.execution_id === executionIdRef.current ||
-          e._id === executionIdRef.current ||
-          (e as any).id === executionIdRef.current
-        );
-      }
-      // Fallback: find by workflow_id (most recent)
-      if (!raw) {
-        raw = all.find((e: any) =>
-          e.execution_controller?.workflow_id === workflow.id
-        );
-      }
+      const raw = await workflowService.getExecution(executionIdRef.current) as any;
+      console.log('[Polling] getExecution response:', raw);
 
-      if (!raw) {
-        console.log('[Polling] Nenhuma execução encontrada para', executionIdRef.current, 'ou workflow', workflow.id);
-        return;
-      }
-
-      // Capture execution_id if we didn't have one
-      if (!executionIdRef.current) {
-        executionIdRef.current = raw.execution_controller?.execution_id ?? raw._id ?? null;
-        console.log('[Polling] Captured execution_id:', executionIdRef.current);
-      }
+      if (!raw) return;
 
       const dto = mapApiResponseToDTO(raw, workflow);
       setExecution(dto);
