@@ -25,7 +25,7 @@ import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
 import { EdgeConfigPanel } from './EdgeConfigPanel';
 import { WorkflowValidator } from './WorkflowValidator';
-imworkflowService } from '@/services/workflowServicewDialog';
+import { workflowService } from '@/services/workflowService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
