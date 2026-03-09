@@ -475,9 +475,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             <Save className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Salvar Rascunho</span>
           </Button>
-          <Button size="sm" onClick={handleExport}>
-            <FileDown className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Exportar JSON</span>
+          <Button size="sm" onClick={handlePublish} disabled={isPublishing}>
+            {isPublishing ? (
+              <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 md:mr-2" />
+            )}
+            <span className="hidden md:inline">{isExisting ? 'Atualizar' : 'Cadastrar'}</span>
           </Button>
         </div>
       </div>
