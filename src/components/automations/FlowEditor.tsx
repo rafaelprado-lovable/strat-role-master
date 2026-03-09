@@ -373,16 +373,34 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setValidationDialogOpen(true);
   };
 
-  const handleExport = () => {
+  const isExisting = !!(workflow?.createdAt && workflow?.updatedAt);
+
+  const handlePublish = async () => {
     const wf = buildWorkflow();
     const errors = validateWorkflow(wf);
     const critical = errors.filter(e => e.severity === 'error');
     if (critical.length > 0) {
-      toast.error(`${critical.length} erro(s) impedem a exportação. Valide primeiro.`);
+      toast.error(`${critical.length} erro(s) impedem a publicação. Valide primeiro.`);
       setValidationDialogOpen(true);
       return;
     }
-    setJsonPreviewOpen(true);
+    setIsPublishing(true);
+    try {
+      const exportData = exportWorkflowJson(wf);
+      if (isExisting) {
+        await workflowService.update(wf.id, exportData);
+        toast.success('Workflow atualizado com sucesso');
+      } else {
+        await workflowService.create(exportData);
+        toast.success('Workflow cadastrado com sucesso');
+      }
+      onSave(wf);
+      onBack();
+    } catch (err: any) {
+      toast.error(`Erro ao ${isExisting ? 'atualizar' : 'cadastrar'}: ${err.message}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleSaveSchedule = () => {
