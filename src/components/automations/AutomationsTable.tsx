@@ -250,6 +250,20 @@ export function AutomationsTable({
                         </Badge>
                       </div>
 
+                      {/* Tags */}
+                      {wf.tags && wf.tags.length > 0 && (
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          {wf.tags.slice(0, 3).map(tag => (
+                            <TagBadge key={tag.id} tag={tag} size="sm" />
+                          ))}
+                          {wf.tags.length > 3 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border/50">
+                              +{wf.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
                       {/* Footer stats */}
                       <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
