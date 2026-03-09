@@ -16,11 +16,12 @@ function buildPath(
   waypoints: Waypoint[],
   isSelfLoop: boolean,
 ): string {
-  // Self-loop: draw a curve that goes down and comes back up
+  // Self-loop: draw a larger curve that goes right and loops back
   if (isSelfLoop && waypoints.length === 0) {
-    const loopWidth = 60;
-    const loopSize = 80;
-    return `M${sx},${sy} C${sx + loopWidth},${sy + loopSize} ${tx + loopWidth},${ty - loopSize} ${tx},${ty}`;
+    const loopWidth = 100;
+    const loopHeight = 60;
+    // Go right, curve down, then back up to top
+    return `M${sx},${sy} C${sx + loopWidth},${sy} ${sx + loopWidth},${ty} ${tx},${ty}`;
   }
 
   const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
@@ -159,15 +160,16 @@ export function WaypointEdge({
   // Label position
   let labelX: number, labelY: number;
   if (isSelfLoop) {
-    labelX = Math.max(sourceX, targetX) + 50;
+    // Position label further right, centered vertically between handles
+    labelX = Math.max(sourceX, targetX) + 90;
     labelY = (sourceY + targetY) / 2;
   } else if (waypoints.length > 0) {
     const mid = waypoints[Math.floor(waypoints.length / 2)];
     labelX = mid.x;
-    labelY = mid.y - 14;
+    labelY = mid.y - 18;
   } else {
     labelX = (sourceX + targetX) / 2;
-    labelY = (sourceY + targetY) / 2 - 14;
+    labelY = (sourceY + targetY) / 2 - 18;
   }
 
   return (
@@ -199,7 +201,14 @@ export function WaypointEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: 'none',
             }}
-            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-card border border-border shadow-sm text-foreground max-w-[220px] truncate"
+            className={`
+              text-[10px] font-semibold px-2 py-1 rounded-md shadow-md
+              border whitespace-nowrap
+              ${isLoop 
+                ? 'bg-chart-4/10 border-chart-4/30 text-chart-4' 
+                : 'bg-card border-border text-foreground'
+              }
+            `}
           >
             {edgeLabel}
           </div>
