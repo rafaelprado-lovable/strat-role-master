@@ -438,6 +438,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             placeholder="Nome do workflow"
             className="max-w-[200px] md:max-w-[300px] font-medium"
           />
+          <div className="hidden lg:block">
+            <TagInput tags={tags} onChange={setTags} placeholder="Tag..." />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={status} onValueChange={(v) => setStatus(v as 'active' | 'draft')}>
