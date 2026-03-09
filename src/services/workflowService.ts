@@ -50,13 +50,17 @@ async function deleteWithOrchestrator<T>(url: string): Promise<T> {
 }
 
 export const workflowService = {
-  async create(workflow: Workflow): Promise<WorkflowApiResponse> {
-    const payload = exportWorkflowJson(workflow);
+  async create(workflow: Workflow | object): Promise<WorkflowApiResponse> {
+    const payload = 'nodes' in workflow && 'edges' in workflow && 'id' in workflow
+      ? exportWorkflowJson(workflow as Workflow)
+      : workflow;
     return postWithOrchestrator<WorkflowApiResponse>('/v1/create/workflow', payload);
   },
 
-  async update(id: string, workflow: Workflow): Promise<WorkflowApiResponse> {
-    const payload = exportWorkflowJson(workflow);
+  async update(id: string, workflow: Workflow | object): Promise<WorkflowApiResponse> {
+    const payload = 'nodes' in workflow && 'edges' in workflow && 'id' in workflow
+      ? exportWorkflowJson(workflow as Workflow)
+      : workflow;
     return patchWithOrchestrator<WorkflowApiResponse>(`/v1/update/workflow/${id}`, payload);
   },
 

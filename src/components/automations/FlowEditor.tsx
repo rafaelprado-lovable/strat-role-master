@@ -18,14 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, FileDown, Timer, Zap, Cog, X,
+  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
 import { EdgeConfigPanel } from './EdgeConfigPanel';
 import { WorkflowValidator } from './WorkflowValidator';
-import { JsonPreviewDialog } from './JsonPreviewDialog';
+import { workflowService } from '@/services/workflowService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
@@ -196,7 +196,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [validationDialogOpen, setValidationDialogOpen] = useState(false);
-  const [jsonPreviewOpen, setJsonPreviewOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
@@ -373,16 +373,34 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setValidationDialogOpen(true);
   };
 
-  const handleExport = () => {
+  const isExisting = !!(workflow?.createdAt && workflow?.updatedAt);
+
+  const handlePublish = async () => {
     const wf = buildWorkflow();
     const errors = validateWorkflow(wf);
     const critical = errors.filter(e => e.severity === 'error');
     if (critical.length > 0) {
-      toast.error(`${critical.length} erro(s) impedem a exportação. Valide primeiro.`);
+      toast.error(`${critical.length} erro(s) impedem a publicação. Valide primeiro.`);
       setValidationDialogOpen(true);
       return;
     }
-    setJsonPreviewOpen(true);
+    setIsPublishing(true);
+    try {
+      const exportData = exportWorkflowJson(wf);
+      if (isExisting) {
+        await workflowService.update(wf.id, exportData);
+        toast.success('Workflow atualizado com sucesso');
+      } else {
+        await workflowService.create(exportData);
+        toast.success('Workflow cadastrado com sucesso');
+      }
+      onSave(wf);
+      onBack();
+    } catch (err: any) {
+      toast.error(`Erro ao ${isExisting ? 'atualizar' : 'cadastrar'}: ${err.message}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleSaveSchedule = () => {
@@ -457,9 +475,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             <Save className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Salvar Rascunho</span>
           </Button>
-          <Button size="sm" onClick={handleExport}>
-            <FileDown className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Exportar JSON</span>
+          <Button size="sm" onClick={handlePublish} disabled={isPublishing}>
+            {isPublishing ? (
+              <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 md:mr-2" />
+            )}
+            <span className="hidden md:inline">{isExisting ? 'Atualizar' : 'Cadastrar'}</span>
           </Button>
         </div>
       </div>
@@ -576,13 +598,6 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         </DialogContent>
       </Dialog>
 
-      {/* JSON Preview */}
-      <JsonPreviewDialog
-        open={jsonPreviewOpen}
-        onOpenChange={setJsonPreviewOpen}
-        json={exportJson}
-        workflow={currentWorkflow}
-      />
 
       {/* Schedule Dialog */}
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
