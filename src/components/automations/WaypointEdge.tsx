@@ -16,11 +16,12 @@ function buildPath(
   waypoints: Waypoint[],
   isSelfLoop: boolean,
 ): string {
-  // Self-loop: draw a curve that goes down and comes back up
+  // Self-loop: draw a larger curve that goes right and loops back
   if (isSelfLoop && waypoints.length === 0) {
-    const loopWidth = 60;
-    const loopSize = 80;
-    return `M${sx},${sy} C${sx + loopWidth},${sy + loopSize} ${tx + loopWidth},${ty - loopSize} ${tx},${ty}`;
+    const loopWidth = 100;
+    const loopHeight = 60;
+    // Go right, curve down, then back up to top
+    return `M${sx},${sy} C${sx + loopWidth},${sy} ${sx + loopWidth},${ty} ${tx},${ty}`;
   }
 
   const points = [{ x: sx, y: sy }, ...waypoints, { x: tx, y: ty }];
