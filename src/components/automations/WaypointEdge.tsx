@@ -201,7 +201,14 @@ export function WaypointEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
               pointerEvents: 'none',
             }}
-            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-card border border-border shadow-sm text-foreground max-w-[220px] truncate"
+            className={`
+              text-[10px] font-semibold px-2 py-1 rounded-md shadow-md
+              border whitespace-nowrap
+              ${isLoop 
+                ? 'bg-chart-4/10 border-chart-4/30 text-chart-4' 
+                : 'bg-card border-border text-foreground'
+              }
+            `}
           >
             {edgeLabel}
           </div>
