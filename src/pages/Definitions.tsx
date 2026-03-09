@@ -116,7 +116,7 @@ export default function Definitions() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-amber-500" />
+              <Zap className="h-5 w-5 text-accent-foreground" />
               <p className="text-3xl font-bold text-foreground">{triggerCount}</p>
             </div>
           </CardContent>
