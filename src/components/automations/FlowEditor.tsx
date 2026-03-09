@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2Loader2,
+  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
