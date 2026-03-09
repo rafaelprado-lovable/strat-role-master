@@ -160,15 +160,16 @@ export function WaypointEdge({
   // Label position
   let labelX: number, labelY: number;
   if (isSelfLoop) {
-    labelX = Math.max(sourceX, targetX) + 50;
+    // Position label further right, centered vertically between handles
+    labelX = Math.max(sourceX, targetX) + 90;
     labelY = (sourceY + targetY) / 2;
   } else if (waypoints.length > 0) {
     const mid = waypoints[Math.floor(waypoints.length / 2)];
     labelX = mid.x;
-    labelY = mid.y - 14;
+    labelY = mid.y - 18;
   } else {
     labelX = (sourceX + targetX) / 2;
-    labelY = (sourceY + targetY) / 2 - 14;
+    labelY = (sourceY + targetY) / 2 - 18;
   }
 
   return (
