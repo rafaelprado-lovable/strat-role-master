@@ -18,14 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2,
+  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2Loader2,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
 import { EdgeConfigPanel } from './EdgeConfigPanel';
 import { WorkflowValidator } from './WorkflowValidator';
-import { JsonPreviewDialog } from './JsonPreviewDialog';
+imworkflowService } from '@/services/workflowServicewDialog';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
