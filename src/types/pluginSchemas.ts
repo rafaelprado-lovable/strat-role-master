@@ -4,7 +4,7 @@
 export interface PluginField {
   name: string;
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'json';
+  type: 'string' | 'number' | 'boolean' | 'json' | 'list';
   required?: boolean;
   placeholder?: string;
   description?: string;
@@ -40,9 +40,8 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
     name: 'Envio de mensagem',
     description: 'Envia mensagem por WhatsApp no número informado',
     inputs: [
-      { name: 'phone_number', label: 'Número', type: 'string', required: true, placeholder: '+5511999999999 ou {{node-x.output.phone}}' },
-      { name: 'message', label: 'Mensagem', type: 'string', required: true, placeholder: 'Olá, {{item.name}}!' },
-      { name: 'template_id', label: 'Template ID', type: 'string', placeholder: 'template_alerta_v1' },
+      { name: 'phone', label: 'Número', type: 'string', required: true, placeholder: '+5511999999999 ou {{node-x.output.phone}}' },
+      { name: 'message', label: 'Mensagem', type: 'string', required: true, placeholder: 'Olá, {{item.name}}!' }
     ],
     outputs: [
       { name: 'message_id', label: 'ID da mensagem', type: 'string' },
@@ -71,14 +70,16 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
     name: 'Get Incident',
     description: 'Busca incidente específico por ID',
     inputs: [
-      { name: 'incident_id', label: 'ID do Incidente', type: 'string', required: true, placeholder: '{{trigger.output.incident_id}}' },
-      { name: 'source', label: 'Fonte', type: 'string', placeholder: 'zabbix | datadog | pagerduty' },
+      { name: 'description', label: 'Descrição alvo', type: 'string', required: true, placeholder: 'INC1234567' },
+      { name: 'departament', label: 'Fila atribuida', type: 'string', required: true, placeholder: 'CTIO IT - INTEGRATION SOLUTIONS MANAGEMENT - PMID - N3' },
+      { name: 'state', label: 'Estado do incidente', type: 'string', required: true, placeholder: 'Novo | Em andamento | Em espera | Resolvido' },
+      { name: 'descriptionType', label: 'Tipo da descrição', type: 'string', required: true, placeholder: 'short_description | description' },
+
     ],
     outputs: [
-      { name: 'incident', label: 'Incidente', type: 'json' },
-      { name: 'status', label: 'Status', type: 'string' },
-      { name: 'severity', label: 'Severidade', type: 'string' },
-      { name: 'items', label: 'Lista de itens', type: 'json', description: 'Array de hosts/serviços afetados' },
+      { name: 'status', label: 'Status da requisição', type: 'string' },
+      { name: 'response.incidents', label: 'Lista de incidentes', type: 'list' },
+
     ],
   },
 
@@ -97,15 +98,10 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
     name: 'LLM Analyse',
     description: 'Análise inteligente de dados via modelo de linguagem',
     inputs: [
-      { name: 'prompt', label: 'Prompt', type: 'string', required: true, placeholder: 'Analise o seguinte log: {{node-x.output.stdout}}' },
-      { name: 'context', label: 'Contexto', type: 'json', placeholder: '{"logs": "...", "metrics": "..."}' },
-      { name: 'model', label: 'Modelo', type: 'string', placeholder: 'gpt-4o | claude-3' },
-      { name: 'max_tokens', label: 'Max Tokens', type: 'number', placeholder: '2000' },
+      { name: 'prompt', label: 'Prompt', type: 'string', required: true, placeholder: 'Analise o seguinte log: {{node-x.output.stdout}}' }
     ],
     outputs: [
-      { name: 'analysis', label: 'Análise', type: 'string' },
-      { name: 'confidence', label: 'Confiança', type: 'number' },
-      { name: 'suggestions', label: 'Sugestões', type: 'json' },
+      { name: 'response.data', label: 'Análise', type: 'string' }
     ],
   },
 };
