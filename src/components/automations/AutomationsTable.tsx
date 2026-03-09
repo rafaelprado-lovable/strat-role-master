@@ -41,12 +41,27 @@ export function AutomationsTable({
   automations, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const filtered = automations.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Collect all unique tags from workflows
+  const allTags = useMemo(() => {
+    const tagMap = new Map<string, WorkflowTag>();
+    automations.forEach(wf => {
+      wf.tags?.forEach(tag => {
+        if (!tagMap.has(tag.id)) tagMap.set(tag.id, tag);
+      });
+    });
+    return Array.from(tagMap.values());
+  }, [automations]);
+
+  const filtered = automations.filter((a) => {
+    const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
+    const matchesTags = selectedTagIds.length === 0 || 
+      selectedTagIds.every(tagId => a.tags?.some(t => t.id === tagId));
+    return matchesSearch && matchesTags;
+  });
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
