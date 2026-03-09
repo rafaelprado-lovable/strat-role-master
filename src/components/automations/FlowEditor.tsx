@@ -158,6 +158,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       for_each: n.for_each,
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
+      isTrigger: DEFINITION_IDS.find(d => d.value === n.definition_id)?.category === 'trigger',
     },
   })) || [];
 
