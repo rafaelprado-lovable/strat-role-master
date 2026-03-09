@@ -1,5 +1,5 @@
 import { WorkflowApiResponse } from '@/services/workflowService';
-import { Workflow, DefinitionId } from '@/types/automations';
+import { Workflow, DefinitionId, WorkflowTag } from '@/types/automations';
 
 /**
  * Parse a raw API workflow response into the internal Workflow type.
@@ -33,6 +33,7 @@ export function parseWorkflowResponse(raw: WorkflowApiResponse): Workflow {
       : [],
     inputs: (raw.inputs as Record<string, Record<string, unknown>>) || {},
     start_date: (raw.start_date as string) || null,
+    tags: (raw.tags as WorkflowTag[]) || [],
     createdAt: (raw.createdAt as string) || (raw.created_at as string) || undefined,
     updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || undefined,
     lastRunAt: (raw.lastRunAt as string) || (raw.last_run_at as string) || null,

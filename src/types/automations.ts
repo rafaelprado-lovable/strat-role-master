@@ -368,5 +368,6 @@ export function exportWorkflowJson(workflow: Workflow): object {
     edges,
     inputs,
     start_date: workflow.start_date || null,
+    tags: workflow.tags || [],
   };
 }
