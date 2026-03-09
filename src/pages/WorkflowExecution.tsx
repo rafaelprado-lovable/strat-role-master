@@ -246,15 +246,37 @@ export default function WorkflowExecution() {
   }, []);
 
   const fetchExecutionStatus = useCallback(async () => {
-    if (!executionIdRef.current || !workflow) return;
+    if (!workflow) return;
     try {
       const all = await workflowService.listExecutions();
-      const raw = all.find((e: any) =>
-        e.execution_controller?.execution_id === executionIdRef.current ||
-        e._id === executionIdRef.current
-      ) as any;
+      console.log('[Polling] listExecutions response:', all);
+      
+      // Find by execution_id, _id, or fallback to latest for this workflow
+      let raw: any = null;
+      if (executionIdRef.current) {
+        raw = all.find((e: any) =>
+          e.execution_controller?.execution_id === executionIdRef.current ||
+          e._id === executionIdRef.current ||
+          (e as any).id === executionIdRef.current
+        );
+      }
+      // Fallback: find by workflow_id (most recent)
+      if (!raw) {
+        raw = all.find((e: any) =>
+          e.execution_controller?.workflow_id === workflow.id
+        );
+      }
 
-      if (!raw) return;
+      if (!raw) {
+        console.log('[Polling] Nenhuma execução encontrada para', executionIdRef.current, 'ou workflow', workflow.id);
+        return;
+      }
+
+      // Capture execution_id if we didn't have one
+      if (!executionIdRef.current) {
+        executionIdRef.current = raw.execution_controller?.execution_id ?? raw._id ?? null;
+        console.log('[Polling] Captured execution_id:', executionIdRef.current);
+      }
 
       const dto = mapApiResponseToDTO(raw, workflow);
       setExecution(dto);
@@ -293,8 +315,11 @@ export default function WorkflowExecution() {
       toast.success('Execução iniciada');
       console.log('Execution response:', result);
 
-      const execId = (result as any)?.execution_id ?? (result as any)?.id ?? null;
+      console.log('Execution create response:', result);
+      const r = result as any;
+      const execId = r?.execution_controller?.execution_id ?? r?.execution_id ?? r?.id ?? r?._id ?? null;
       executionIdRef.current = execId;
+      console.log('Captured execution_id from create:', execId);
 
       // Exibir estado inicial com dados da resposta
       const initialDTO: ExecutionDTO = {
