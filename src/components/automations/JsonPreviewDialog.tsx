@@ -36,12 +36,13 @@ export function JsonPreviewDialog({ open, onOpenChange, json, workflow, onSaved 
     toast.success('JSON exportado');
   };
 
+  // Check if workflow already exists on backend (has backend-assigned timestamps)
+  const isExisting = workflow?.createdAt && workflow?.updatedAt;
+
   const handlePublish = async () => {
     if (!workflow) return;
     setIsSaving(true);
     try {
-      // If workflow was previously saved (has a persistent ID), update; otherwise create
-      const isExisting = workflow.createdAt && workflow.updatedAt && workflow.createdAt !== workflow.updatedAt;
       if (isExisting) {
         await workflowService.update(workflow.id, workflow);
         toast.success('Workflow atualizado no servidor');
@@ -52,7 +53,7 @@ export function JsonPreviewDialog({ open, onOpenChange, json, workflow, onSaved 
       onSaved?.();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(`Erro ao cadastrar: ${err.message}`);
+      toast.error(`Erro ao ${isExisting ? 'atualizar' : 'cadastrar'}: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -82,7 +83,7 @@ export function JsonPreviewDialog({ open, onOpenChange, json, workflow, onSaved 
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
-            Cadastrar
+            {isExisting ? 'Atualizar' : 'Cadastrar'}
           </Button>
         </DialogFooter>
       </DialogContent>
