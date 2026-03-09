@@ -8,10 +8,10 @@ export interface WorkflowApiResponse {
 
 const ORCHESTRATOR_HEADER = { orchestrator: 'lovable' };
 
-async function postWithOrchestrator<T>(url: string, body?: unknown): Promise<T> {
+async function postWithOrchestrator<T>(url: string, body?: unknown, additionalHeaders?: HeadersInit): Promise<T> {
   const response = await apiClient.rawFetch(url, {
     method: 'POST',
-    headers: ORCHESTRATOR_HEADER,
+    headers: { ...ORCHESTRATOR_HEADER, ...additionalHeaders },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
@@ -80,10 +80,15 @@ export const workflowService = {
     return postWithOrchestrator<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
   },
 
-  async createExecution(workflowId: string): Promise<WorkflowApiResponse> {
+  async createExecution(workflowId: string, payload?: any): Promise<WorkflowApiResponse> {
+    const headers: Record<string, string> = {};
+    if (payload?.messageid) headers['messageid'] = payload.messageid;
+    else headers['messageid'] = `msg-${Date.now()}`;
+    
     return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
       workflow_id: workflowId,
-    });
+      ...(payload && Object.keys(payload).length > 0 ? { inputs: payload } : {})
+    }, headers);
   },
 
   async listExecutions(): Promise<WorkflowApiResponse[]> {

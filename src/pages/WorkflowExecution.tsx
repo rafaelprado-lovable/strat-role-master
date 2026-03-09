@@ -288,7 +288,8 @@ export default function WorkflowExecution() {
     stopPolling();
 
     try {
-      const result = await workflowService.createExecution(workflow.id);
+      const parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : undefined;
+      const result = await workflowService.createExecution(workflow.id, parsedPayload);
       toast.success('Execução iniciada');
       console.log('Execution response:', result);
 
