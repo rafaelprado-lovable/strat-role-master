@@ -196,7 +196,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [validationDialogOpen, setValidationDialogOpen] = useState(false);
-  const [jsonPreviewOpen, setJsonPreviewOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
