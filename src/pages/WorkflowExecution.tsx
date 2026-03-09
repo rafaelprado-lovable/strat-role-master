@@ -28,16 +28,9 @@ function mapApiResponseToDTO(raw: any, workflowDef: any): ExecutionDTO {
   // task_states: o backend retorna { nodeId: 'running' | 'finished' | ... }
   const task_states: Record<string, TaskState> = ctrl.task_states ?? {};
 
-  // Montar task_outputs a partir dos inputs disponíveis (backend ainda não retorna outputs detalhados)
-  const task_outputs: Record<string, any> = {};
+  // task_outputs: usar os dados reais retornados pela API
+  const task_outputs: Record<string, any> = ctrl.task_outputs ?? {};
   const inputs: Record<string, any> = ctrl.inputs ?? {};
-  Object.entries(task_states).forEach(([nodeId, state]) => {
-    task_outputs[nodeId] = {
-      output: inputs[nodeId] ?? {},
-      started_at: raw.started_at,
-      finished_at: state === 'finished' ? raw.finished_at : undefined,
-    };
-  });
 
   // Reconstruir nodes e edges a partir do workflowDef
   const nodes = workflowDef?.nodes ?? [];
