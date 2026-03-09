@@ -199,7 +199,10 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
         {/* Definition ID */}
         <div className="space-y-1.5">
           <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
-          <Select value={d.definition_id || ''} onValueChange={(v) => update({ definition_id: v })}>
+          <Select value={d.definition_id || ''} onValueChange={(v) => {
+            const def = DEFINITION_IDS.find(dd => dd.value === v);
+            update({ definition_id: v, label: def?.label || v });
+          }}>
             <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
