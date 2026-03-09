@@ -30,6 +30,7 @@ import WorkflowExecution from "./pages/WorkflowExecution";
 import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
+import Definitions from "./pages/Definitions";
 
 const queryClient = new QueryClient();
 
