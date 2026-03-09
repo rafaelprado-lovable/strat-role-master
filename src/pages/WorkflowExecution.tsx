@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,67 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, Play, Square, RotateCcw, Download, Zap,
-  AlertTriangle,
+  AlertTriangle, RefreshCw,
 } from 'lucide-react';
 import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
-import { generateMockExecution, type ExecutionDTO, type ExecutionState } from '@/types/execution';
+import { type ExecutionDTO, type ExecutionState, type TaskState } from '@/types/execution';
 import { workflowService } from '@/services/workflowService';
 import { parseWorkflowResponse } from '@/services/workflowParser';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_STATES: ExecutionState[] = ['finished', 'error', 'stopped'];
+
+/** Mapeia a resposta do GET /v1/execution para ExecutionDTO */
+function mapApiResponseToDTO(raw: any, workflowDef: any): ExecutionDTO {
+  const ctrl = raw.execution_controller ?? {};
+  const workflowId = ctrl.workflow_id ?? workflowDef?.id ?? '';
+
+  // task_states: o backend retorna { nodeId: 'running' | 'finished' | ... }
+  const task_states: Record<string, TaskState> = ctrl.task_states ?? {};
+
+  // Montar task_outputs a partir dos inputs disponíveis (backend ainda não retorna outputs detalhados)
+  const task_outputs: Record<string, any> = {};
+  const inputs: Record<string, any> = ctrl.inputs ?? {};
+  Object.entries(task_states).forEach(([nodeId, state]) => {
+    task_outputs[nodeId] = {
+      output: inputs[nodeId] ?? {},
+      started_at: raw.started_at,
+      finished_at: state === 'finished' ? raw.finished_at : undefined,
+    };
+  });
+
+  // Reconstruir nodes e edges a partir do workflowDef
+  const nodes = workflowDef?.nodes ?? [];
+  const edges = workflowDef?.edges ?? [];
+
+  return {
+    execution_controller: {
+      execution_id: ctrl.execution_id ?? raw._id ?? '',
+      state: (ctrl.state ?? 'running') as ExecutionState,
+      task_states,
+      task_outputs,
+      loop_counters: ctrl.loop_counters ?? {},
+      loop_not_before: ctrl.loop_not_before ?? {},
+      for_each_tracker: ctrl.for_each_tracker ?? {},
+      for_each_stream_tracker: ctrl.for_each_stream_tracker ?? {},
+    },
+    execution_data: {
+      id: workflowId,
+      name: workflowDef?.name ?? workflowId,
+      description: workflowDef?.description,
+      status: ctrl.state ?? 'running',
+      nodes,
+      edges,
+      inputs,
+    },
+    logs: raw.logs ?? [],
+    started_at: raw.started_at ?? new Date().toISOString(),
+    finished_at: raw.finished_at,
+  };
+}
 
 // Sample workflows for demo
 const SAMPLE_WORKFLOWS: Record<string, any> = {
@@ -183,6 +235,47 @@ export default function WorkflowExecution() {
     }
   }, []);
 
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const executionIdRef = useRef<string | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const fetchExecutionStatus = useCallback(async () => {
+    if (!executionIdRef.current || !workflow) return;
+    try {
+      const all = await workflowService.listExecutions();
+      const raw = all.find((e: any) =>
+        e.execution_controller?.execution_id === executionIdRef.current ||
+        e._id === executionIdRef.current
+      ) as any;
+
+      if (!raw) return;
+
+      const dto = mapApiResponseToDTO(raw, workflow);
+      setExecution(dto);
+
+      if (TERMINAL_STATES.includes(dto.execution_controller.state)) {
+        stopPolling();
+        setIsRunning(false);
+        if (dto.execution_controller.state === 'finished') {
+          toast.success('Execução finalizada com sucesso');
+        } else if (dto.execution_controller.state === 'error') {
+          toast.error('Execução finalizada com erro');
+        }
+      }
+    } catch (err: any) {
+      console.error('Erro ao buscar status da execução:', err);
+    }
+  }, [workflow, stopPolling]);
+
+  // Cleanup on unmount
+  useEffect(() => () => stopPolling(), [stopPolling]);
+
   const handleExecute = useCallback(async () => {
     if (!workflow) return;
     if (!validatePayload(payloadJson)) {
@@ -192,54 +285,56 @@ export default function WorkflowExecution() {
 
     setLoading(true);
     setIsRunning(true);
+    stopPolling();
 
     try {
       const result = await workflowService.createExecution(workflow.id);
-      toast.success('Execução criada com sucesso');
+      toast.success('Execução iniciada');
       console.log('Execution response:', result);
 
-      // Use mock visualization while we don't have SSE/polling for real-time status
-      const exec = generateMockExecution(workflow);
-      // Override execution_id with real one if available
-      if (result && (result as any).execution_id) {
-        exec.execution_controller.execution_id = (result as any).execution_id;
-      } else if (result && result.id) {
-        exec.execution_controller.execution_id = result.id;
-      }
-      setExecution(exec);
+      const execId = (result as any)?.execution_id ?? (result as any)?.id ?? null;
+      executionIdRef.current = execId;
+
+      // Exibir estado inicial com dados da resposta
+      const initialDTO: ExecutionDTO = {
+        execution_controller: {
+          execution_id: execId ?? `exec-${Date.now()}`,
+          state: 'running',
+          task_states: {},
+          task_outputs: {},
+          loop_counters: {},
+          loop_not_before: {},
+          for_each_tracker: {},
+          for_each_stream_tracker: {},
+        },
+        execution_data: {
+          id: workflow.id,
+          name: workflow.name,
+          description: workflow.description,
+          status: 'running',
+          nodes: workflow.nodes,
+          edges: workflow.edges,
+          inputs: workflow.inputs ?? {},
+        },
+        logs: [{ timestamp: new Date().toISOString(), type: 'execution_start', message: 'Execução iniciada' }],
+        started_at: new Date().toISOString(),
+      };
+      setExecution(initialDTO);
       setLoading(false);
 
-      // Simulate completion after a few seconds (until real SSE is wired)
-      setTimeout(() => {
-        setExecution(prev => {
-          if (!prev) return prev;
-          const updated = { ...prev };
-          updated.execution_controller = {
-            ...updated.execution_controller,
-            state: 'finished' as ExecutionState,
-            task_states: Object.fromEntries(
-              Object.entries(updated.execution_controller.task_states).map(([k]) => [k, 'finished' as const])
-            ),
-          };
-          updated.finished_at = new Date().toISOString();
-          updated.logs = [
-            ...updated.logs,
-            { timestamp: new Date().toISOString(), type: 'execution_finish' as const, message: 'Execução finalizada com sucesso' },
-          ];
-          return updated;
-        });
-        setIsRunning(false);
-        toast.success('Execução finalizada');
-      }, 5000);
+      // Buscar imediatamente e depois a cada POLL_INTERVAL_MS
+      await fetchExecutionStatus();
+      pollingRef.current = setInterval(fetchExecutionStatus, POLL_INTERVAL_MS);
     } catch (err: any) {
       console.error('Erro ao criar execução:', err);
       toast.error(`Erro ao criar execução: ${err.message}`);
       setLoading(false);
       setIsRunning(false);
     }
-  }, [workflow, payloadJson, validatePayload]);
+  }, [workflow, payloadJson, validatePayload, stopPolling, fetchExecutionStatus]);
 
   const handleStop = useCallback(() => {
+    stopPolling();
     setIsRunning(false);
     setExecution(prev => {
       if (!prev) return prev;
@@ -251,13 +346,15 @@ export default function WorkflowExecution() {
       };
     });
     toast.info('Execução parada');
-  }, []);
+  }, [stopPolling]);
 
   const handleRerun = useCallback(() => {
+    stopPolling();
     setExecution(null);
     setSelectedNodeId(null);
+    executionIdRef.current = null;
     setTimeout(() => handleExecute(), 100);
-  }, [handleExecute]);
+  }, [handleExecute, stopPolling]);
 
   const handleRerunNode = useCallback((nodeId: string) => {
     toast.info(`Reexecutando nó "${nodeId}"...`);
@@ -346,6 +443,11 @@ export default function WorkflowExecution() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isRunning && pollingRef.current && (
+            <Badge variant="outline" className="text-[10px] gap-1 animate-pulse">
+              <RefreshCw className="h-2.5 w-2.5" /> Atualizando...
+            </Badge>
+          )}
           {!isRunning ? (
             <Button size="sm" onClick={handleExecute} className="gap-1.5">
               <Play className="h-3.5 w-3.5" /> Executar agora
@@ -357,6 +459,9 @@ export default function WorkflowExecution() {
           )}
           {execution && (
             <>
+              <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
+                <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+              </Button>
               <Button size="sm" variant="outline" onClick={handleRerun} className="gap-1.5">
                 <RotateCcw className="h-3.5 w-3.5" /> Reexecutar
               </Button>
