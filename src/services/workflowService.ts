@@ -79,4 +79,10 @@ export const workflowService = {
   async run(id: string): Promise<WorkflowApiResponse> {
     return postWithOrchestrator<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
   },
+
+  async createExecution(workflowId: string): Promise<WorkflowApiResponse> {
+    return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
+      workflow_id: workflowId,
+    });
+  },
 };
