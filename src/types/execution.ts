@@ -3,7 +3,7 @@
 // ==========================================
 
 export type TaskState = 'waiting_start' | 'running' | 'finished' | 'error';
-export type ExecutionState = 'pending' | 'running' | 'finished' | 'error' | 'stopped';
+export type ExecutionState = 'pending' | 'running' | 'finished' | 'success' | 'error' | 'stopped';
 
 export interface TaskOutput {
   output?: Record<string, unknown>;
