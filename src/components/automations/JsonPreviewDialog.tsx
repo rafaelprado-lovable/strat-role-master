@@ -83,7 +83,7 @@ export function JsonPreviewDialog({ open, onOpenChange, json, workflow, onSaved 
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
-            Cadastrar
+            {isExisting ? 'Atualizar' : 'Cadastrar'}
           </Button>
         </DialogFooter>
       </DialogContent>
