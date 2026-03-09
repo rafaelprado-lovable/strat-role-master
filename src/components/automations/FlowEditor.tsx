@@ -626,6 +626,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             onUpdateEdge={handleEdgeDataUpdate}
             onCreateLoopEdge={handleCreateLoopEdge}
             onDeleteLoopEdge={handleDeleteLoopEdge}
+            onRenameNode={handleRenameNode}
             onClose={() => setSelectedNodeId(null)}
           />
         )}
