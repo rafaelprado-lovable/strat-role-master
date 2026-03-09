@@ -339,6 +339,51 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data } : n)));
   }, [setNodes]);
 
+  const handleRenameNode = useCallback((oldId: string, newLabel: string) => {
+    const base = newLabel
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    setNodes((nds) => {
+      const existing = nds.filter(n => n.id !== oldId && n.id.startsWith(base)).map(n => {
+        const suffix = n.id.slice(base.length);
+        if (!suffix) return 1;
+        const num = parseInt(suffix.replace(/^-/, ''), 10);
+        return isNaN(num) ? 0 : num;
+      });
+      const nextIndex = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+      const newId = existing.length === 0 && !nds.some(n => n.id === base && n.id !== oldId) ? base : `${base}-${nextIndex}`;
+
+      // Update edges
+      setEdges((eds) => eds.map(e => ({
+        ...e,
+        id: e.id === `loop-${oldId}` ? `loop-${newId}` : e.id,
+        source: e.source === oldId ? newId : e.source,
+        target: e.target === oldId ? newId : e.target,
+        data: e.data?.reopen_tasks
+          ? { ...e.data, reopen_tasks: (e.data.reopen_tasks as string[]).map((t: string) => t === oldId ? newId : t) }
+          : e.data,
+      })));
+
+      // Update inputs
+      setNodeInputs((prev) => {
+        const next = { ...prev };
+        if (next[oldId] !== undefined) {
+          next[newId] = next[oldId];
+          delete next[oldId];
+        }
+        return next;
+      });
+
+      // Update selected node
+      setSelectedNodeId((cur) => cur === oldId ? newId : cur);
+
+      return nds.map(n => n.id === oldId ? { ...n, id: newId } : n);
+    });
+  }, [setNodes, setEdges]);
+
   const handleEdgeDataUpdate = useCallback((id: string, data: Partial<Edge['data']>) => {
     setEdges((eds) => eds.map((e) => (e.id === id ? { ...e, data: { ...(e.data || {}), ...data } } : e)));
   }, [setEdges]);
@@ -581,6 +626,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             onUpdateEdge={handleEdgeDataUpdate}
             onCreateLoopEdge={handleCreateLoopEdge}
             onDeleteLoopEdge={handleDeleteLoopEdge}
+            onRenameNode={handleRenameNode}
             onClose={() => setSelectedNodeId(null)}
           />
         )}

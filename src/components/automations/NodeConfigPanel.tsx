@@ -22,6 +22,7 @@ interface NodeConfigPanelProps {
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
   onCreateLoopEdge: (nodeId: string) => void;
   onDeleteLoopEdge: (edgeId: string) => void;
+  onRenameNode: (oldId: string, newLabel: string) => void;
   onClose: () => void;
 }
 
@@ -32,7 +33,7 @@ function resolveTemplate(template: string, mockData: Record<string, unknown>): s
   });
 }
 
-export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onClose }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onRenameNode, onClose }: NodeConfigPanelProps) {
   const d = node.data as Record<string, any>;
   const forEach: WorkflowForEach | undefined = d.for_each;
   const [forEachEnabled, setForEachEnabled] = useState(!!forEach);
@@ -201,7 +202,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
           <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
           <Select value={d.definition_id || ''} onValueChange={(v) => {
             const def = DEFINITION_IDS.find(dd => dd.value === v);
-            update({ definition_id: v, label: def?.label || v });
+            const newLabel = def?.label || v;
+            update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
+            onRenameNode(node.id, newLabel);
           }}>
             <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Selecione..." />
