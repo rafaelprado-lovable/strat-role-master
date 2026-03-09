@@ -29,7 +29,9 @@ import { workflowService } from '@/services/workflowService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
+  type WorkflowTag,
 } from '@/types/automations';
+import { TagInput } from './TagInput';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
