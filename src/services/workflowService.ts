@@ -61,11 +61,11 @@ export const workflowService = {
     const payload = 'nodes' in workflow && 'edges' in workflow && 'id' in workflow
       ? exportWorkflowJson(workflow as Workflow)
       : workflow;
-    return patchWithOrchestrator<WorkflowApiResponse>(`/v1/update/workflow/${id}`, payload);
+    return postWithOrchestrator<WorkflowApiResponse>('/v1/update/workflow', payload);
   },
 
   async delete(id: string): Promise<void> {
-    return deleteWithOrchestrator(`/v1/delete/workflow/${id}`);
+    return deleteWithOrchestrator(`/v1/delete/workflow?id=${id}`);
   },
 
   async list(): Promise<WorkflowApiResponse[]> {
