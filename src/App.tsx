@@ -30,6 +30,7 @@ import WorkflowExecution from "./pages/WorkflowExecution";
 import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
+import Definitions from "./pages/Definitions";
 
 const queryClient = new QueryClient();
 
@@ -221,6 +222,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Analyses />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/definitions"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Definitions />
                   </AppLayout>
                 </ProtectedRoute>
               }
