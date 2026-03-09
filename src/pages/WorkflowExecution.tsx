@@ -15,6 +15,8 @@ import {
 import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
 import { generateMockExecution, type ExecutionDTO, type ExecutionState } from '@/types/execution';
+import { workflowService } from '@/services/workflowService';
+import { parseWorkflowResponse } from '@/services/workflowParser';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
