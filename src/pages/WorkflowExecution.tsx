@@ -443,6 +443,11 @@ export default function WorkflowExecution() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isRunning && pollingRef.current && (
+            <Badge variant="outline" className="text-[10px] gap-1 animate-pulse">
+              <RefreshCw className="h-2.5 w-2.5" /> Atualizando...
+            </Badge>
+          )}
           {!isRunning ? (
             <Button size="sm" onClick={handleExecute} className="gap-1.5">
               <Play className="h-3.5 w-3.5" /> Executar agora
@@ -454,6 +459,9 @@ export default function WorkflowExecution() {
           )}
           {execution && (
             <>
+              <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
+                <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+              </Button>
               <Button size="sm" variant="outline" onClick={handleRerun} className="gap-1.5">
                 <RotateCcw className="h-3.5 w-3.5" /> Reexecutar
               </Button>
