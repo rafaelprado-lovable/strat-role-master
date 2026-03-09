@@ -37,29 +37,29 @@ async function fetchWithOrchestrator<T>(url: string, options: RequestInit): Prom
 
 export const definitionService = {
   async list(): Promise<Definition[]> {
-    return apiClient.get<Definition[]>('/v1/read/definition');
+    return apiClient.get<Definition[]>('/v1/read/node');
   },
 
   async get(id: string): Promise<Definition> {
-    return apiClient.get<Definition>(`/v1/read/definition?id=${id}`);
+    return apiClient.get<Definition>(`/v1/read/node?id=${id}`);
   },
 
   async create(definition: Definition): Promise<Definition> {
-    return fetchWithOrchestrator<Definition>('/v1/create/definition', {
+    return fetchWithOrchestrator<Definition>('/v1/create/node', {
       method: 'POST',
       body: JSON.stringify(definition),
     });
   },
 
   async update(definition: Definition): Promise<Definition> {
-    return fetchWithOrchestrator<Definition>('/v1/update/definition', {
+    return fetchWithOrchestrator<Definition>('/v1/update/node', {
       method: 'PATCH',
       body: JSON.stringify(definition),
     });
   },
 
   async delete(id: string): Promise<void> {
-    return fetchWithOrchestrator<void>(`/v1/delete/definition?id=${id}`, {
+    return fetchWithOrchestrator<void>(`/v1/delete/node?id=${id}`, {
       method: 'DELETE',
     });
   },
