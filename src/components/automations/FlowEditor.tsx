@@ -239,11 +239,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     }),
     inputs: nodeInputs,
     start_date: startDate || null,
+    tags,
     createdAt: workflow?.createdAt,
     updatedAt: new Date().toISOString(),
     lastRunAt: workflow?.lastRunAt,
     runCount: workflow?.runCount,
-  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, workflow]);
+  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, workflow]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
