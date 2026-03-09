@@ -192,6 +192,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
+  const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
   const [scheduleValue, setScheduleValue] = useState(workflow?.schedule?.value || '5');
