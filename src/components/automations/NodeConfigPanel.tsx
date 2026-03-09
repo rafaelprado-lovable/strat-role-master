@@ -22,6 +22,7 @@ interface NodeConfigPanelProps {
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
   onCreateLoopEdge: (nodeId: string) => void;
   onDeleteLoopEdge: (edgeId: string) => void;
+  onRenameNode: (oldId: string, newLabel: string) => void;
   onClose: () => void;
 }
 
