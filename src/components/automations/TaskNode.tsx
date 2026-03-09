@@ -23,9 +23,10 @@ const colorMap: Record<string, string> = {
 const defaultHsl = '220 10% 50%';
 
 function TaskNodeComponent({ data, selected }: NodeProps) {
-  const d = data as { label: string; definition_id: string; description?: string; hasForEach?: boolean; hasLoop?: boolean };
+  const d = data as { label: string; definition_id: string; description?: string; hasForEach?: boolean; hasLoop?: boolean; isTrigger?: boolean };
   const Icon = iconMap[d.definition_id] || Globe;
   const hsl = colorMap[d.definition_id] || defaultHsl;
+  const isTrigger = !!d.isTrigger;
 
   return (
     <div
