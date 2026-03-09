@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +15,12 @@ import {
   Edit2, MoreVertical, Play, Pause, Trash2, Copy, Clock, Search, Plus,
   Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay,
 } from 'lucide-react';
-import { Workflow } from '@/types/automations';
+import { Workflow, WorkflowTag } from '@/types/automations';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TagBadge } from './TagBadge';
+import { TagFilter } from './TagFilter';
 
 interface AutomationsTableProps {
   automations: Workflow[];
