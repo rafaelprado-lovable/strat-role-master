@@ -35,14 +35,16 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
         w-[80px] group
       `}
     >
-      {/* Left (target) handle */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="left"
-        className="!w-2.5 !h-2.5 !border-2 !border-background !-left-1 !top-[36px]"
-        style={{ background: `hsl(${hsl})` }}
-      />
+      {/* Left (target) handle — hidden for triggers */}
+      {!isTrigger && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="left"
+          className="!w-2.5 !h-2.5 !border-2 !border-background !-left-1 !top-[36px]"
+          style={{ background: `hsl(${hsl})` }}
+        />
+      )}
 
       {/* Main icon box — n8n style */}
       <div
