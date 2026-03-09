@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
@@ -10,6 +11,7 @@ import { motion } from 'framer-motion';
 import { Workflow as WorkflowIcon, Loader2 } from 'lucide-react';
 
 export default function Automations() {
+  const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
@@ -78,19 +80,8 @@ export default function Automations() {
     toast.success('Status atualizado');
   };
 
-  const handleRun = async (id: string) => {
-    toast.info('Executando workflow...');
-    try {
-      await workflowService.run(id);
-      setWorkflows((prev) =>
-        prev.map((w) =>
-          w.id === id ? { ...w, lastRunAt: new Date().toISOString(), runCount: (w.runCount || 0) + 1 } : w
-        )
-      );
-      toast.success('Workflow executado com sucesso');
-    } catch (err: any) {
-      toast.error(`Erro ao executar: ${err.message}`);
-    }
+  const handleRun = (id: string) => {
+    navigate(`/automations/execute/${id}`);
   };
 
   const handleSave = (data: Partial<Workflow>) => {

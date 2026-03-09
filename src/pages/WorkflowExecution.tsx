@@ -12,6 +12,8 @@ import {
 import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
 import { generateMockExecution, type ExecutionDTO, type ExecutionState } from '@/types/execution';
+import { workflowService } from '@/services/workflowService';
+import { parseWorkflowResponse } from '@/services/workflowParser';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -120,12 +122,54 @@ export default function WorkflowExecution() {
   const [payloadJson, setPayloadJson] = useState('{}');
   const [payloadError, setPayloadError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [workflow, setWorkflow] = useState<any>(null);
+  const [loadingWorkflow, setLoadingWorkflow] = useState(true);
 
-  const workflow = useMemo(() => {
-    if (id && SAMPLE_WORKFLOWS[id]) return SAMPLE_WORKFLOWS[id];
-    // Try to find by partial match
-    const key = Object.keys(SAMPLE_WORKFLOWS).find(k => k.includes(id || ''));
-    return key ? SAMPLE_WORKFLOWS[key] : null;
+  // Try sample workflows first, then fetch from API
+  useEffect(() => {
+    if (!id) { setLoadingWorkflow(false); return; }
+    
+    // Check samples first
+    const sampleKey = Object.keys(SAMPLE_WORKFLOWS).find(k => k === id || k.includes(id));
+    if (sampleKey) {
+      setWorkflow(SAMPLE_WORKFLOWS[sampleKey]);
+      setLoadingWorkflow(false);
+      return;
+    }
+
+    // Fetch from API
+    workflowService.get(id).then(data => {
+      const parsed = parseWorkflowResponse(data);
+      // Convert to execution-compatible format
+      setWorkflow({
+        id: parsed.id,
+        name: parsed.name,
+        description: parsed.description,
+        status: parsed.status,
+        nodes: (parsed.nodes || []).map((n: any) => ({
+          id: n.id,
+          definition_id: n.data?.definition_id || n.definition_id || 'api_call_v1',
+          config: { label: n.data?.label || n.data?.config?.label || n.id },
+          for_each: n.data?.for_each || n.for_each,
+          position: n.position || { x: 0, y: 0 },
+        })),
+        edges: (parsed.edges || []).map((e: any) => ({
+          id: e.id,
+          from: e.source || e.from,
+          to: e.target || e.to,
+          condition: e.data?.condition || e.condition,
+          loop: e.data?.loop || e.loop,
+          max_iterations: e.data?.max_iterations || e.max_iterations,
+          reopen_tasks: e.data?.reopen_tasks || e.reopen_tasks,
+        })),
+        inputs: parsed.inputs || {},
+        schedule: parsed.schedule,
+        start_date: parsed.start_date,
+      });
+    }).catch(err => {
+      console.error('Erro ao buscar workflow:', err);
+      toast.error('Erro ao carregar workflow');
+    }).finally(() => setLoadingWorkflow(false));
   }, [id]);
 
   const validatePayload = useCallback((json: string) => {
@@ -241,6 +285,14 @@ export default function WorkflowExecution() {
     URL.revokeObjectURL(url);
     toast.success('Execution exportada');
   }, [execution]);
+
+  if (loadingWorkflow) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    );
+  }
 
   if (!workflow) {
     return (
