@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,67 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, Play, Square, RotateCcw, Download, Zap,
-  AlertTriangle,
+  AlertTriangle, RefreshCw,
 } from 'lucide-react';
 import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
-import { generateMockExecution, type ExecutionDTO, type ExecutionState } from '@/types/execution';
+import { type ExecutionDTO, type ExecutionState, type TaskState } from '@/types/execution';
 import { workflowService } from '@/services/workflowService';
 import { parseWorkflowResponse } from '@/services/workflowParser';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_STATES: ExecutionState[] = ['finished', 'error', 'stopped'];
+
+/** Mapeia a resposta do GET /v1/execution para ExecutionDTO */
+function mapApiResponseToDTO(raw: any, workflowDef: any): ExecutionDTO {
+  const ctrl = raw.execution_controller ?? {};
+  const workflowId = ctrl.workflow_id ?? workflowDef?.id ?? '';
+
+  // task_states: o backend retorna { nodeId: 'running' | 'finished' | ... }
+  const task_states: Record<string, TaskState> = ctrl.task_states ?? {};
+
+  // Montar task_outputs a partir dos inputs disponíveis (backend ainda não retorna outputs detalhados)
+  const task_outputs: Record<string, any> = {};
+  const inputs: Record<string, any> = ctrl.inputs ?? {};
+  Object.entries(task_states).forEach(([nodeId, state]) => {
+    task_outputs[nodeId] = {
+      output: inputs[nodeId] ?? {},
+      started_at: raw.started_at,
+      finished_at: state === 'finished' ? raw.finished_at : undefined,
+    };
+  });
+
+  // Reconstruir nodes e edges a partir do workflowDef
+  const nodes = workflowDef?.nodes ?? [];
+  const edges = workflowDef?.edges ?? [];
+
+  return {
+    execution_controller: {
+      execution_id: ctrl.execution_id ?? raw._id ?? '',
+      state: (ctrl.state ?? 'running') as ExecutionState,
+      task_states,
+      task_outputs,
+      loop_counters: ctrl.loop_counters ?? {},
+      loop_not_before: ctrl.loop_not_before ?? {},
+      for_each_tracker: ctrl.for_each_tracker ?? {},
+      for_each_stream_tracker: ctrl.for_each_stream_tracker ?? {},
+    },
+    execution_data: {
+      id: workflowId,
+      name: workflowDef?.name ?? workflowId,
+      description: workflowDef?.description,
+      status: ctrl.state ?? 'running',
+      nodes,
+      edges,
+      inputs,
+    },
+    logs: raw.logs ?? [],
+    started_at: raw.started_at ?? new Date().toISOString(),
+    finished_at: raw.finished_at,
+  };
+}
 
 // Sample workflows for demo
 const SAMPLE_WORKFLOWS: Record<string, any> = {
