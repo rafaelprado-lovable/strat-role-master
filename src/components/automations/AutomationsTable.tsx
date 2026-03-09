@@ -114,21 +114,30 @@ export function AutomationsTable({
         ))}
       </div>
 
-      {/* Search & Create */}
+      {/* Search & Filter & Create */}
       <motion.div
         className="flex items-center justify-between gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar workflows..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-10 bg-card/50 border-border/50"
-          />
+        <div className="flex items-center gap-2 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar workflows..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 h-10 bg-card/50 border-border/50"
+            />
+          </div>
+          {allTags.length > 0 && (
+            <TagFilter
+              availableTags={allTags}
+              selectedTags={selectedTagIds}
+              onChange={setSelectedTagIds}
+            />
+          )}
         </div>
         <Button onClick={onCreate} className="h-10 gap-2 font-semibold shadow-sm">
           <Plus className="h-4 w-4" />
