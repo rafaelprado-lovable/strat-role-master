@@ -23,7 +23,7 @@ export function TagInput({
 }: TagInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0].value);
+  const [selectedColor, setSelectedColor] = useState<string>(TAG_COLORS[0].value);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Filter available tags not already selected
