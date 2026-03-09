@@ -34,6 +34,12 @@ export interface AutomationSchedule {
   timezone: string;
 }
 
+export interface WorkflowTag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Workflow {
   id: string;
   name: string;
@@ -44,6 +50,7 @@ export interface Workflow {
   edges: WorkflowEdge[];
   inputs: Record<string, Record<string, unknown>>;  // nodeId → input object
   start_date: string | null;  // DD/MM/YYYY HH:MM
+  tags?: WorkflowTag[];  // categorization tags
   // UI-only metadata
   createdAt?: string;
   updatedAt?: string;
@@ -361,5 +368,6 @@ export function exportWorkflowJson(workflow: Workflow): object {
     edges,
     inputs,
     start_date: workflow.start_date || null,
+    tags: workflow.tags || [],
   };
 }

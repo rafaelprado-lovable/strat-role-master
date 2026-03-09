@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +15,12 @@ import {
   Edit2, MoreVertical, Play, Pause, Trash2, Copy, Clock, Search, Plus,
   Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay,
 } from 'lucide-react';
-import { Workflow } from '@/types/automations';
+import { Workflow, WorkflowTag } from '@/types/automations';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TagBadge } from './TagBadge';
+import { TagFilter } from './TagFilter';
 
 interface AutomationsTableProps {
   automations: Workflow[];
@@ -39,12 +41,27 @@ export function AutomationsTable({
   automations, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const filtered = automations.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Collect all unique tags from workflows
+  const allTags = useMemo(() => {
+    const tagMap = new Map<string, WorkflowTag>();
+    automations.forEach(wf => {
+      wf.tags?.forEach(tag => {
+        if (!tagMap.has(tag.id)) tagMap.set(tag.id, tag);
+      });
+    });
+    return Array.from(tagMap.values());
+  }, [automations]);
+
+  const filtered = automations.filter((a) => {
+    const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
+    const matchesTags = selectedTagIds.length === 0 || 
+      selectedTagIds.every(tagId => a.tags?.some(t => t.id === tagId));
+    return matchesSearch && matchesTags;
+  });
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
@@ -97,21 +114,30 @@ export function AutomationsTable({
         ))}
       </div>
 
-      {/* Search & Create */}
+      {/* Search & Filter & Create */}
       <motion.div
         className="flex items-center justify-between gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar workflows..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-10 bg-card/50 border-border/50"
-          />
+        <div className="flex items-center gap-2 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar workflows..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 h-10 bg-card/50 border-border/50"
+            />
+          </div>
+          {allTags.length > 0 && (
+            <TagFilter
+              availableTags={allTags}
+              selectedTags={selectedTagIds}
+              onChange={setSelectedTagIds}
+            />
+          )}
         </div>
         <Button onClick={onCreate} className="h-10 gap-2 font-semibold shadow-sm">
           <Plus className="h-4 w-4" />
@@ -223,6 +249,20 @@ export function AutomationsTable({
                           {wf.nodes?.length || 0} nós
                         </Badge>
                       </div>
+
+                      {/* Tags */}
+                      {wf.tags && wf.tags.length > 0 && (
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          {wf.tags.slice(0, 3).map(tag => (
+                            <TagBadge key={tag.id} tag={tag} size="sm" />
+                          ))}
+                          {wf.tags.length > 3 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border/50">
+                              +{wf.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
 
                       {/* Footer stats */}
                       <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">

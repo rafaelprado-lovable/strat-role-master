@@ -29,7 +29,9 @@ import { workflowService } from '@/services/workflowService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
+  type WorkflowTag,
 } from '@/types/automations';
+import { TagInput } from './TagInput';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -190,6 +192,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
+  const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
   const [scheduleValue, setScheduleValue] = useState(workflow?.schedule?.value || '5');
@@ -236,11 +239,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     }),
     inputs: nodeInputs,
     start_date: startDate || null,
+    tags,
     createdAt: workflow?.createdAt,
     updatedAt: new Date().toISOString(),
     lastRunAt: workflow?.lastRunAt,
     runCount: workflow?.runCount,
-  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, workflow]);
+  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, workflow]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -434,6 +438,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             placeholder="Nome do workflow"
             className="max-w-[200px] md:max-w-[300px] font-medium"
           />
+          <div className="hidden lg:block">
+            <TagInput tags={tags} onChange={setTags} placeholder="Tag..." />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={status} onValueChange={(v) => setStatus(v as 'active' | 'draft')}>
