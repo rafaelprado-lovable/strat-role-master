@@ -334,6 +334,7 @@ export default function WorkflowExecution() {
   }, [workflow, payloadJson, validatePayload, stopPolling, fetchExecutionStatus]);
 
   const handleStop = useCallback(() => {
+    stopPolling();
     setIsRunning(false);
     setExecution(prev => {
       if (!prev) return prev;
@@ -345,13 +346,15 @@ export default function WorkflowExecution() {
       };
     });
     toast.info('Execução parada');
-  }, []);
+  }, [stopPolling]);
 
   const handleRerun = useCallback(() => {
+    stopPolling();
     setExecution(null);
     setSelectedNodeId(null);
+    executionIdRef.current = null;
     setTimeout(() => handleExecute(), 100);
-  }, [handleExecute]);
+  }, [handleExecute, stopPolling]);
 
   const handleRerunNode = useCallback((nodeId: string) => {
     toast.info(`Reexecutando nó "${nodeId}"...`);
