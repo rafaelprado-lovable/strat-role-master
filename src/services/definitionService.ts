@@ -10,6 +10,7 @@ export interface DefinitionField {
 }
 
 export interface Definition {
+  _id?: string;
   id?: string;
   definition_id: string;
   label: string;
@@ -18,6 +19,8 @@ export interface Definition {
   category: 'trigger' | 'action';
   inputs: DefinitionField[];
   outputs: DefinitionField[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const ORCHESTRATOR_HEADER = { orchestrator: 'lovable' };
