@@ -11,6 +11,7 @@ import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowR
 import { type WorkflowForEach } from '@/types/automations';
 import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
+import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NodeConfigPanelProps {
@@ -19,6 +20,7 @@ interface NodeConfigPanelProps {
   loopEdge: Edge | null;
   allNodes: Node[];
   definitions: BlockDef[];
+  apiDefinitions: Definition[];
   onUpdate: (id: string, data: Record<string, unknown>) => void;
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
@@ -35,7 +37,7 @@ function resolveTemplate(template: string, mockData: Record<string, unknown>): s
   });
 }
 
-export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onRenameNode, onClose }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions, apiDefinitions, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onRenameNode, onClose }: NodeConfigPanelProps) {
   const d = node.data as Record<string, any>;
   const forEach: WorkflowForEach | undefined = d.for_each;
   const [forEachEnabled, setForEachEnabled] = useState(!!forEach);
@@ -283,6 +285,8 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                     <RefDropdown
                       allNodes={allNodes}
                       currentNodeId={node.id}
+                      definitions={definitions}
+                      apiDefinitions={apiDefinitions}
                       onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
                     />
                   </div>
@@ -498,6 +502,8 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                   <RefDropdown
                     allNodes={allNodes}
                     currentNodeId={node.id}
+                    definitions={definitions}
+                    apiDefinitions={apiDefinitions}
                     onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
                   />
                 </div>
@@ -597,6 +603,8 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           definitionId={d.definition_id}
           inputs={inputs}
           allNodes={allNodes}
+          definitions={definitions}
+          apiDefinitions={apiDefinitions}
           onUpdateInputs={onUpdateInputs}
           currentNodeId={node.id}
         />
@@ -626,18 +634,15 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
 
 // ========== Ref Dropdown (reusable) ==========
 
-function RefDropdown({ allNodes, currentNodeId, onSelect }: {
+function RefDropdown({ allNodes, currentNodeId, definitions, apiDefinitions, onSelect }: {
   allNodes: Node[];
   currentNodeId: string;
+  definitions: BlockDef[];
+  apiDefinitions?: Definition[];
   onSelect: (ref: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const upstreamNodes = allNodes.filter(n => n.id !== currentNodeId);
-  const schemas = upstreamNodes.map(n => {
-    const nd = n.data as Record<string, any>;
-    const schema = PLUGIN_SCHEMAS[nd.definition_id];
-    return { node: n, schema, nd };
-  });
 
   if (upstreamNodes.length === 0) return null;
 
@@ -655,26 +660,33 @@ function RefDropdown({ allNodes, currentNodeId, onSelect }: {
       </Button>
       {open && (
         <div className="absolute right-0 top-9 z-50 w-56 max-h-48 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-md space-y-1">
-          {schemas.map(({ node: n, schema, nd }) => (
-            <div key={n.id}>
-              <p className="text-[10px] font-semibold text-muted-foreground px-1 pt-1">{nd.label || n.id}</p>
-              <button
-                className="w-full text-left px-2 py-1 rounded text-xs font-mono hover:bg-muted truncate"
-                onClick={() => { onSelect(`${n.id}.output`); setOpen(false); }}
-              >
-                {`{{${n.id}.output}}`}
-              </button>
-              {schema?.outputs?.map(o => (
+          {upstreamNodes.map((n) => {
+            const nd = n.data as Record<string, any>;
+            const apiDef = apiDefinitions?.find(d => d.definition_id === nd.definition_id);
+            const outputs: { name: string; label: string }[] = apiDef?.outputs
+              ? apiDef.outputs.map(o => ({ name: o.name, label: o.label }))
+              : (PLUGIN_SCHEMAS[nd.definition_id]?.outputs || []);
+            return (
+              <div key={n.id}>
+                <p className="text-[10px] font-semibold text-muted-foreground px-1 pt-1">{nd.label || n.id}</p>
                 <button
-                  key={o.name}
                   className="w-full text-left px-2 py-1 rounded text-xs font-mono hover:bg-muted truncate"
-                  onClick={() => { onSelect(`${n.id}.output.${o.name}`); setOpen(false); }}
+                  onClick={() => { onSelect(`${n.id}.output`); setOpen(false); }}
                 >
-                  {`{{${n.id}.output.${o.name}}}`}
+                  {`{{${n.id}.output}}`}
                 </button>
-              ))}
-            </div>
-          ))}
+                {outputs.map(o => (
+                  <button
+                    key={o.name}
+                    className="w-full text-left px-2 py-1 rounded text-xs font-mono hover:bg-muted truncate"
+                    onClick={() => { onSelect(`${n.id}.output.${o.name}`); setOpen(false); }}
+                  >
+                    {`{{${n.id}.output.${o.name}}}`}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -688,12 +700,29 @@ interface PluginInputsSectionProps {
   definitionId: string;
   inputs: Record<string, unknown>;
   allNodes: Node[];
+  definitions: BlockDef[];
+  apiDefinitions: Definition[];
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   currentNodeId: string;
 }
 
-function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
-  const schema = PLUGIN_SCHEMAS[definitionId];
+function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
+  const staticSchema = PLUGIN_SCHEMAS[definitionId];
+  
+  // Find the API definition to get dynamic inputs/outputs
+  const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
+  
+  // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
+  const resolvedInputs: PluginField[] = apiDef?.inputs
+    ? apiDef.inputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
+    : (staticSchema?.inputs || []);
+  const resolvedOutputs: PluginField[] = apiDef?.outputs
+    ? apiDef.outputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
+    : (staticSchema?.outputs || []);
+  const resolvedName = apiDef?.label || staticSchema?.name || definitionId;
+  const resolvedDescription = apiDef?.description || staticSchema?.description || '';
+  const hasSchema = resolvedInputs.length > 0 || resolvedOutputs.length > 0;
+  
   const [showRawJson, setShowRawJson] = useState(false);
   const [rawJson, setRawJson] = useState(JSON.stringify(inputs || {}, null, 2));
   const [jsonError, setJsonError] = useState('');
@@ -704,7 +733,6 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
 
   const handleFieldChange = (fieldName: string, value: string) => {
     const updated = { ...(inputs || {}), [fieldName]: value === '' ? undefined : value };
-    // Clean undefined values
     Object.keys(updated).forEach(k => {
       if (updated[k] === undefined) delete updated[k];
     });
@@ -737,8 +765,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
     handleFieldChange(fieldName, current + `{{${ref}}}`);
   };
 
-  if (!schema) {
-    // Fallback: raw JSON for unknown plugins
+  if (!hasSchema) {
     return (
       <div className="border-t border-border pt-3 space-y-1.5">
         <Label className="text-xs font-semibold">Inputs (JSON)</Label>
@@ -761,7 +788,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
       {/* Plugin header */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <Label className="text-xs font-semibold">Inputs — {schema.name}</Label>
+          <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
           <Button
             variant="ghost"
             size="sm"
@@ -772,11 +799,10 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
             {showRawJson ? 'Campos' : 'JSON'}
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+        <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
 
       {showRawJson ? (
-        /* Raw JSON mode */
         <div className="space-y-1.5">
           <Textarea
             value={JSON.stringify(inputs || {}, null, 2)}
@@ -789,16 +815,16 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
           </p>
         </div>
       ) : (
-        /* Structured fields */
         <div className="space-y-2.5">
-          {schema.inputs.map((field) => (
+          {resolvedInputs.map((field) => (
             <PluginFieldInput
               key={field.name}
               field={field}
               value={String((inputs as any)?.[field.name] ?? '')}
               onChange={(v) => handleFieldChange(field.name, v)}
               upstreamNodes={upstreamNodes}
-              schema={schema}
+              allNodes={allNodes}
+              apiDefinitions={apiDefinitions}
               onInsertRef={(ref) => insertReference(field.name, ref)}
             />
           ))}
@@ -813,17 +839,17 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateI
         >
           {showOutputs ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           <ArrowRight className="h-3 w-3" />
-          Outputs disponíveis ({schema.outputs.length})
+          Outputs disponíveis ({resolvedOutputs.length})
         </button>
         {showOutputs && (
           <div className="mt-2 space-y-1">
-            {schema.outputs.map((out) => (
+            {resolvedOutputs.map((out) => (
               <div key={out.name} className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 text-xs">
                 <code className="text-primary font-mono text-[11px]">{`{{${nodeId}.output.${out.name}}}`}</code>
                 <span className="text-muted-foreground ml-auto">{out.label}</span>
               </div>
             ))}
-            {schema.outputs.length > 0 && (
+            {resolvedOutputs.length > 0 && (
               <p className="text-[10px] text-muted-foreground mt-1">
                 Use estas referências nos inputs de nós downstream.
               </p>
@@ -842,11 +868,12 @@ interface PluginFieldInputProps {
   value: string;
   onChange: (value: string) => void;
   upstreamNodes: Node[];
-  schema: import('@/types/pluginSchemas').PluginSchema;
+  allNodes: Node[];
+  apiDefinitions: Definition[];
   onInsertRef: (ref: string) => void;
 }
 
-function PluginFieldInput({ field, value, onChange, upstreamNodes, onInsertRef }: PluginFieldInputProps) {
+function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, apiDefinitions, onInsertRef }: PluginFieldInputProps) {
   const [showRefs, setShowRefs] = useState(false);
 
   return (
@@ -893,8 +920,11 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, onInsertRef }
         <div className="p-2 rounded border border-border bg-muted/30 space-y-1 max-h-32 overflow-y-auto">
           {upstreamNodes.map(n => {
             const nd = n.data as Record<string, any>;
-            const nodeSchema = PLUGIN_SCHEMAS[nd.definition_id];
-            const outputs = nodeSchema?.outputs || [];
+            // Prefer API definition outputs, fallback to static PLUGIN_SCHEMAS
+            const apiDef = apiDefinitions.find(d => d.definition_id === nd.definition_id);
+            const outputs: { name: string; label: string }[] = apiDef?.outputs
+              ? apiDef.outputs.map(o => ({ name: o.name, label: o.label }))
+              : (PLUGIN_SCHEMAS[nd.definition_id]?.outputs || []);
             return (
               <div key={n.id} className="space-y-0.5">
                 <p className="text-[10px] font-semibold text-foreground">{nd.label || n.id}</p>
