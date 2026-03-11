@@ -707,12 +707,28 @@ interface PluginInputsSectionProps {
   definitionId: string;
   inputs: Record<string, unknown>;
   allNodes: Node[];
+  definitions: BlockDef[];
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   currentNodeId: string;
 }
 
-function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
-  const schema = PLUGIN_SCHEMAS[definitionId];
+function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
+  const staticSchema = PLUGIN_SCHEMAS[definitionId];
+  
+  // Find the API definition to get dynamic inputs/outputs
+  const apiDef = definitions.find(d => d.value === definitionId);
+  
+  // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
+  const resolvedInputs: PluginField[] = apiDef
+    ? (apiDef as any)._apiInputs || []
+    : (staticSchema?.inputs || []);
+  const resolvedOutputs: PluginField[] = apiDef
+    ? (apiDef as any)._apiOutputs || []
+    : (staticSchema?.outputs || []);
+  const resolvedName = apiDef?.label || staticSchema?.name || definitionId;
+  const resolvedDescription = apiDef?.description || staticSchema?.description || '';
+  const hasSchema = resolvedInputs.length > 0 || resolvedOutputs.length > 0;
+  
   const [showRawJson, setShowRawJson] = useState(false);
   const [rawJson, setRawJson] = useState(JSON.stringify(inputs || {}, null, 2));
   const [jsonError, setJsonError] = useState('');
