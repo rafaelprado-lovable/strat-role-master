@@ -83,8 +83,8 @@ const edgeTypes = { waypoint: WaypointEdge };
 
 
 function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDragStart }: {
-  triggers: typeof BLOCK_LIBRARY;
-  actions: typeof BLOCK_LIBRARY;
+  triggers: BlockDef[];
+  actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
   onDragStart: (e: React.DragEvent, block: typeof BLOCK_LIBRARY[0]) => void;
