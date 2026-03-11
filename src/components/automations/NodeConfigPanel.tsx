@@ -500,6 +500,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                   <RefDropdown
                     allNodes={allNodes}
                     currentNodeId={node.id}
+                    definitions={definitions}
                     onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
                   />
                 </div>
