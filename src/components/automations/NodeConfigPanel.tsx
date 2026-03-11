@@ -877,11 +877,12 @@ interface PluginFieldInputProps {
   value: string;
   onChange: (value: string) => void;
   upstreamNodes: Node[];
-  schema: import('@/types/pluginSchemas').PluginSchema;
+  allNodes: Node[];
+  apiDefinitions: Definition[];
   onInsertRef: (ref: string) => void;
 }
 
-function PluginFieldInput({ field, value, onChange, upstreamNodes, onInsertRef }: PluginFieldInputProps) {
+function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, apiDefinitions, onInsertRef }: PluginFieldInputProps) {
   const [showRefs, setShowRefs] = useState(false);
 
   return (
@@ -928,8 +929,11 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, onInsertRef }
         <div className="p-2 rounded border border-border bg-muted/30 space-y-1 max-h-32 overflow-y-auto">
           {upstreamNodes.map(n => {
             const nd = n.data as Record<string, any>;
-            const nodeSchema = PLUGIN_SCHEMAS[nd.definition_id];
-            const outputs = nodeSchema?.outputs || [];
+            // Prefer API definition outputs, fallback to static PLUGIN_SCHEMAS
+            const apiDef = apiDefinitions.find(d => d.definition_id === nd.definition_id);
+            const outputs: { name: string; label: string }[] = apiDef?.outputs
+              ? apiDef.outputs.map(o => ({ name: o.name, label: o.label }))
+              : (PLUGIN_SCHEMAS[nd.definition_id]?.outputs || []);
             return (
               <div key={n.id} className="space-y-0.5">
                 <p className="text-[10px] font-semibold text-foreground">{nd.label || n.id}</p>
