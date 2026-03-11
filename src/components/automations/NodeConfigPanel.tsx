@@ -284,6 +284,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                     <RefDropdown
                       allNodes={allNodes}
                       currentNodeId={node.id}
+                      definitions={definitions}
                       onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
                     />
                   </div>
