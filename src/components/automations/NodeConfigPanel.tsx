@@ -503,6 +503,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                     allNodes={allNodes}
                     currentNodeId={node.id}
                     definitions={definitions}
+                    apiDefinitions={apiDefinitions}
                     onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
                   />
                 </div>
