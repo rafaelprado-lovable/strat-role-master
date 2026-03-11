@@ -42,14 +42,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-const iconResolver = (icon: string) => {
-  switch (icon) {
-    case 'terminal': return Terminal;
-    case 'message-circle': return MessageCircle;
-    case 'alert-triangle': return AlertTriangle;
-    case 'timer': return Timer;
-    default: return Globe;
-  }
+const iconResolver = (icon: string): React.ComponentType<any> => {
+  const pascal = icon
+    .split('-')
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  return (icons as Record<string, React.ComponentType<any>>)[pascal] || Globe;
 };
 
 export type BlockDef = {
