@@ -579,8 +579,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         {/* Sidebar – Blocos (desktop) */}
         <div className="hidden md:block w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
           <BlocksSidebarContent
-            triggers={TRIGGERS}
-            actions={ACTIONS}
+            triggers={triggers}
+            actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
             onDragStart={onDragStart}
