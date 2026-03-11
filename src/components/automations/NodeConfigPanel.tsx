@@ -8,7 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
-import { DEFINITION_IDS, type WorkflowForEach } from '@/types/automations';
+import { type WorkflowForEach } from '@/types/automations';
+import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -17,6 +18,7 @@ interface NodeConfigPanelProps {
   inputs: Record<string, unknown>;
   loopEdge: Edge | null;
   allNodes: Node[];
+  definitions: BlockDef[];
   onUpdate: (id: string, data: Record<string, unknown>) => void;
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
@@ -33,7 +35,7 @@ function resolveTemplate(template: string, mockData: Record<string, unknown>): s
   });
 }
 
-export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onRenameNode, onClose }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions, onUpdate, onUpdateInputs, onUpdateEdge, onCreateLoopEdge, onDeleteLoopEdge, onRenameNode, onClose }: NodeConfigPanelProps) {
   const d = node.data as Record<string, any>;
   const forEach: WorkflowForEach | undefined = d.for_each;
   const [forEachEnabled, setForEachEnabled] = useState(!!forEach);
@@ -201,7 +203,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
         <div className="space-y-1.5">
           <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
           <Select value={d.definition_id || ''} onValueChange={(v) => {
-            const def = DEFINITION_IDS.find(dd => dd.value === v);
+            const def = definitions.find(dd => dd.value === v);
             const newLabel = def?.label || v;
             update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
             onRenameNode(node.id, newLabel);
@@ -210,7 +212,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, onUpdate, on
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent>
-              {DEFINITION_IDS.map((def) => (
+              {definitions.map((def) => (
                 <SelectItem key={def.value} value={def.value}>
                   {def.label}
                 </SelectItem>

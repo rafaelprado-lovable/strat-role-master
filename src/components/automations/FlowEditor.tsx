@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -26,6 +26,7 @@ import { NodeConfigPanel } from './NodeConfigPanel';
 import { EdgeConfigPanel } from './EdgeConfigPanel';
 import { WorkflowValidator } from './WorkflowValidator';
 import { workflowService } from '@/services/workflowService';
+import { definitionService, type Definition } from '@/services/definitionService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
@@ -51,24 +52,42 @@ const iconResolver = (icon: string) => {
   }
 };
 
-const BLOCK_LIBRARY = DEFINITION_IDS.map(d => ({
+export type BlockDef = {
+  value: string;
+  label: string;
+  icon: string;
+  description: string;
+  category: 'trigger' | 'action';
+  Icon: React.ComponentType<any>;
+};
+
+function definitionsToBlocks(defs: Definition[]): BlockDef[] {
+  return defs.map(d => ({
+    value: d.definition_id,
+    label: d.label,
+    icon: d.icon,
+    description: d.description || '',
+    category: d.category,
+    Icon: iconResolver(d.icon),
+  }));
+}
+
+// Fallback from static list
+const STATIC_BLOCKS: BlockDef[] = DEFINITION_IDS.map(d => ({
   ...d,
   Icon: iconResolver(d.icon),
 }));
-
-const TRIGGERS = BLOCK_LIBRARY.filter(b => b.category === 'trigger');
-const ACTIONS = BLOCK_LIBRARY.filter(b => b.category === 'action');
 
 const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
 
 
 function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDragStart }: {
-  triggers: typeof BLOCK_LIBRARY;
-  actions: typeof BLOCK_LIBRARY;
+  triggers: BlockDef[];
+  actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
-  onDragStart: (e: React.DragEvent, block: typeof BLOCK_LIBRARY[0]) => void;
+  onDragStart: (e: React.DragEvent, block: BlockDef) => void;
 }) {
   return (
     <>
@@ -142,6 +161,22 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
+  // Fetch definitions from API
+  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>(STATIC_BLOCKS);
+
+  useEffect(() => {
+    definitionService.list().then(defs => {
+      if (Array.isArray(defs) && defs.length > 0) {
+        setBlockLibrary(definitionsToBlocks(defs));
+      }
+    }).catch(err => {
+      console.warn('Falha ao carregar definições da API, usando fallback estático:', err);
+    });
+  }, []);
+
+  const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
+  const actions = useMemo(() => blockLibrary.filter(b => b.category === 'action'), [blockLibrary]);
+
   // Build initial nodes from workflow
   const selfLoopNodeIds = new Set(
     workflow?.edges?.filter(e => e.from === e.to && e.loop).map(e => e.from) || []
@@ -152,13 +187,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     type: 'task',
     position: (n as any).position || { x: i * 280, y: 150 },
     data: {
-      label: (n.config as any)?.label || DEFINITION_IDS.find(d => d.value === n.definition_id)?.label || n.definition_id,
+      label: (n.config as any)?.label || blockLibrary.find(d => d.value === n.definition_id)?.label || n.definition_id,
       definition_id: n.definition_id,
       description: (n.config as any)?.description || '',
       for_each: n.for_each,
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
-      isTrigger: DEFINITION_IDS.find(d => d.value === n.definition_id)?.category === 'trigger',
+      isTrigger: blockLibrary.find(d => d.value === n.definition_id)?.category === 'trigger',
     },
   })) || [];
 
@@ -311,7 +346,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: DEFINITION_IDS.find(d => d.value === defId)?.category === 'trigger' },
+          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
         };
 
         return [...nds, newNode];
@@ -458,7 +493,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setScheduleDialogOpen(false);
   };
 
-  const onDragStart = (event: React.DragEvent, block: typeof BLOCK_LIBRARY[0]) => {
+  const onDragStart = (event: React.DragEvent, block: BlockDef) => {
     event.dataTransfer.setData('application/reactflow-defid', block.value);
     event.dataTransfer.setData('application/reactflow-label', block.label);
     event.dataTransfer.effectAllowed = 'move';
@@ -544,8 +579,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         {/* Sidebar – Blocos (desktop) */}
         <div className="hidden md:block w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
           <BlocksSidebarContent
-            triggers={TRIGGERS}
-            actions={ACTIONS}
+            triggers={triggers}
+            actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
             onDragStart={onDragStart}
@@ -563,8 +598,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
                 </Button>
               </div>
               <BlocksSidebarContent
-                triggers={TRIGGERS}
-                actions={ACTIONS}
+                triggers={triggers}
+                actions={actions}
                 startDate={startDate}
                 setStartDate={setStartDate}
                 onDragStart={onDragStart}
@@ -621,6 +656,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             inputs={nodeInputs[selectedNode.id] || {}}
             loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
             allNodes={nodes}
+            definitions={blockLibrary}
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
             onUpdateEdge={handleEdgeDataUpdate}
