@@ -18,7 +18,7 @@ export interface PluginSchema {
 }
 
 export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
-  ssh_execution: {
+  ssh_agent_v1: {
     name: 'SSH Execution',
     description: 'Executa comando via SSH no servidor informado',
     inputs: [
@@ -49,7 +49,7 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
     ],
   },
 
-  api_call_v1: {
+  http_agent_v1: {
     name: 'API Call',
     description: 'Chamada HTTP/API para endpoint externo',
     inputs: [
@@ -64,7 +64,7 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
       { name: 'body', label: 'Response Body', type: 'json' },
       { name: 'headers', label: 'Response Headers', type: 'json' },
     ],
-  },
+  }, 
 
   get_specific_incident_v1: {
     name: 'Get Incident',
@@ -94,7 +94,7 @@ export const PLUGIN_SCHEMAS: Record<string, PluginSchema> = {
     ],
   },
 
-  llm_analyse_v1: {
+  llm_agent_v1: {
     name: 'LLM Analyse',
     description: 'Análise inteligente de dados via modelo de linguagem',
     inputs: [

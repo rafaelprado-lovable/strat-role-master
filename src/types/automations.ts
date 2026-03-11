@@ -63,11 +63,11 @@ export const DEFINITION_IDS = [
   // Gatilhos
   { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico', category: 'trigger' },
   // Ações
-  { value: 'ssh_execution', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH', category: 'action' },
+  { value: 'ssh_agent_v1', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH', category: 'action' },
   { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp', category: 'action' },
-  { value: 'api_call_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
+  { value: 'http_agent_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
   { value: 'delay_v1', label: 'Delay', icon: 'timer', description: 'Aguarda um tempo antes de continuar', category: 'action' },
-  { value: 'llm_analyse_v1', label: 'LLM Analyse', icon: 'brain', description: 'Análise inteligente via LLM', category: 'action' },
+  { value: 'llm_agent_v1', label: 'LLM Analyse', icon: 'brain', description: 'Análise inteligente via LLM', category: 'action' },
 ] as const;
 
 export type DefinitionId = typeof DEFINITION_IDS[number]['value'];

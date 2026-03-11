@@ -62,7 +62,7 @@ export default function Definitions() {
     if (!deletingDef) return;
     setSaving(true);
     try {
-      await definitionService.delete(deletingDef.definition_id);
+      await definitionService.delete(deletingDef.id);
       toast({ title: "Bloco excluído" });
       setDeleteDialogOpen(false);
       setDeletingDef(null);
