@@ -598,6 +598,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           definitionId={d.definition_id}
           inputs={inputs}
           allNodes={allNodes}
+          definitions={definitions}
           onUpdateInputs={onUpdateInputs}
           currentNodeId={node.id}
         />
