@@ -87,7 +87,7 @@ function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDr
   actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
-  onDragStart: (e: React.DragEvent, block: typeof BLOCK_LIBRARY[0]) => void;
+  onDragStart: (e: React.DragEvent, block: BlockDef) => void;
 }) {
   return (
     <>
