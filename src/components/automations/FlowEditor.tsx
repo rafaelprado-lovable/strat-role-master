@@ -161,6 +161,22 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
+  // Fetch definitions from API
+  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>(STATIC_BLOCKS);
+
+  useEffect(() => {
+    definitionService.list().then(defs => {
+      if (Array.isArray(defs) && defs.length > 0) {
+        setBlockLibrary(definitionsToBlocks(defs));
+      }
+    }).catch(err => {
+      console.warn('Falha ao carregar definições da API, usando fallback estático:', err);
+    });
+  }, []);
+
+  const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
+  const actions = useMemo(() => blockLibrary.filter(b => b.category === 'action'), [blockLibrary]);
+
   // Build initial nodes from workflow
   const selfLoopNodeIds = new Set(
     workflow?.edges?.filter(e => e.from === e.to && e.loop).map(e => e.from) || []
@@ -171,13 +187,13 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     type: 'task',
     position: (n as any).position || { x: i * 280, y: 150 },
     data: {
-      label: (n.config as any)?.label || DEFINITION_IDS.find(d => d.value === n.definition_id)?.label || n.definition_id,
+      label: (n.config as any)?.label || blockLibrary.find(d => d.value === n.definition_id)?.label || n.definition_id,
       definition_id: n.definition_id,
       description: (n.config as any)?.description || '',
       for_each: n.for_each,
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
-      isTrigger: DEFINITION_IDS.find(d => d.value === n.definition_id)?.category === 'trigger',
+      isTrigger: blockLibrary.find(d => d.value === n.definition_id)?.category === 'trigger',
     },
   })) || [];
 
