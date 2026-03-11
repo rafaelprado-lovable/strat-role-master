@@ -346,7 +346,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: DEFINITION_IDS.find(d => d.value === defId)?.category === 'trigger' },
+          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
         };
 
         return [...nds, newNode];
