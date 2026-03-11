@@ -17,8 +17,8 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2,
+  ArrowLeft, Save, Clock, Globe,
+  FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, icons,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
