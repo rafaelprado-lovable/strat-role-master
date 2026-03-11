@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -26,6 +26,7 @@ import { NodeConfigPanel } from './NodeConfigPanel';
 import { EdgeConfigPanel } from './EdgeConfigPanel';
 import { WorkflowValidator } from './WorkflowValidator';
 import { workflowService } from '@/services/workflowService';
+import { definitionService, type Definition } from '@/services/definitionService';
 import {
   Workflow, AutomationSchedule, DEFINITION_IDS,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
@@ -51,13 +52,31 @@ const iconResolver = (icon: string) => {
   }
 };
 
-const BLOCK_LIBRARY = DEFINITION_IDS.map(d => ({
+export type BlockDef = {
+  value: string;
+  label: string;
+  icon: string;
+  description: string;
+  category: 'trigger' | 'action';
+  Icon: React.ComponentType<any>;
+};
+
+function definitionsToBlocks(defs: Definition[]): BlockDef[] {
+  return defs.map(d => ({
+    value: d.definition_id,
+    label: d.label,
+    icon: d.icon,
+    description: d.description || '',
+    category: d.category,
+    Icon: iconResolver(d.icon),
+  }));
+}
+
+// Fallback from static list
+const STATIC_BLOCKS: BlockDef[] = DEFINITION_IDS.map(d => ({
   ...d,
   Icon: iconResolver(d.icon),
 }));
-
-const TRIGGERS = BLOCK_LIBRARY.filter(b => b.category === 'trigger');
-const ACTIONS = BLOCK_LIBRARY.filter(b => b.category === 'action');
 
 const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
