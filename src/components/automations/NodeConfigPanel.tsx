@@ -286,6 +286,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                       allNodes={allNodes}
                       currentNodeId={node.id}
                       definitions={definitions}
+                      apiDefinitions={apiDefinitions}
                       onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
                     />
                   </div>
