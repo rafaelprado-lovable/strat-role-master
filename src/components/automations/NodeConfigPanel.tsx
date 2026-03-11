@@ -18,6 +18,7 @@ interface NodeConfigPanelProps {
   inputs: Record<string, unknown>;
   loopEdge: Edge | null;
   allNodes: Node[];
+  definitions: BlockDef[];
   onUpdate: (id: string, data: Record<string, unknown>) => void;
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   onUpdateEdge: (id: string, data: Partial<Edge['data']>) => void;
