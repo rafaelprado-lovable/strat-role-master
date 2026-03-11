@@ -203,7 +203,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
         <div className="space-y-1.5">
           <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
           <Select value={d.definition_id || ''} onValueChange={(v) => {
-            const def = DEFINITION_IDS.find(dd => dd.value === v);
+            const def = definitions.find(dd => dd.value === v);
             const newLabel = def?.label || v;
             update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
             onRenameNode(node.id, newLabel);
@@ -212,7 +212,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent>
-              {DEFINITION_IDS.map((def) => (
+              {definitions.map((def) => (
                 <SelectItem key={def.value} value={def.value}>
                   {def.label}
                 </SelectItem>
