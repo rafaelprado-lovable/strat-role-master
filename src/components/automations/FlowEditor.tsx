@@ -17,8 +17,8 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Terminal, MessageCircle, Globe, AlertTriangle,
-  FileJson, ShieldCheck, Upload, Timer, Zap, Cog, X, Loader2,
+  ArrowLeft, Save, Clock, Globe,
+  FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, icons,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
@@ -42,14 +42,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-const iconResolver = (icon: string) => {
-  switch (icon) {
-    case 'terminal': return Terminal;
-    case 'message-circle': return MessageCircle;
-    case 'alert-triangle': return AlertTriangle;
-    case 'timer': return Timer;
-    default: return Globe;
-  }
+const iconResolver = (icon: string): React.ComponentType<any> => {
+  const pascal = icon
+    .split('-')
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  return (icons as Record<string, React.ComponentType<any>>)[pascal] || Globe;
 };
 
 export type BlockDef = {
@@ -191,6 +189,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     data: {
       label: (n.config as any)?.label || blockLibrary.find(d => d.value === n.definition_id)?.label || n.definition_id,
       definition_id: n.definition_id,
+      icon: blockLibrary.find(d => d.value === n.definition_id)?.icon || '',
       description: (n.config as any)?.description || '',
       for_each: n.for_each,
       hasForEach: !!n.for_each,
@@ -348,7 +347,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
+          data: { label, definition_id: defId, icon: blockLibrary.find(d => d.value === defId)?.icon || '', description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
         };
 
         return [...nds, newNode];

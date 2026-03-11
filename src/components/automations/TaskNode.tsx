@@ -1,15 +1,16 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Repeat, Timer, Brain } from 'lucide-react';
+import { icons, Globe, Repeat } from 'lucide-react';
 
-const iconMap: Record<string, React.ElementType> = {
-  ssh_execution: Terminal,
-  send_whatsapp_message_v1: MessageCircle,
-  api_call_v1: Globe,
-  get_specific_incident_v1: AlertTriangle,
-  delay_v1: Timer,
-  llm_analyse_v1: Brain,
-};
+function resolveIcon(iconName?: string): React.ElementType {
+  if (!iconName) return Globe;
+  // Convert kebab-case to PascalCase: "message-circle" -> "MessageCircle"
+  const pascal = iconName
+    .split('-')
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+  return (icons as Record<string, React.ElementType>)[pascal] || Globe;
+}
 
 const colorMap: Record<string, string> = {
   ssh_execution: '270 75% 60%',       // chart-3 purple
@@ -23,8 +24,8 @@ const colorMap: Record<string, string> = {
 const defaultHsl = '220 10% 50%';
 
 function TaskNodeComponent({ data, selected }: NodeProps) {
-  const d = data as { label: string; definition_id: string; description?: string; hasForEach?: boolean; hasLoop?: boolean; isTrigger?: boolean };
-  const Icon = iconMap[d.definition_id] || Globe;
+  const d = data as { label: string; definition_id: string; icon?: string; description?: string; hasForEach?: boolean; hasLoop?: boolean; isTrigger?: boolean };
+  const Icon = resolveIcon(d.icon);
   const hsl = colorMap[d.definition_id] || defaultHsl;
   const isTrigger = !!d.isTrigger;
 
