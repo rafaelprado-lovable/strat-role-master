@@ -894,13 +894,23 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
         )}
       </div>
 
-      {field.type === 'json' ? (
+      {field.type === 'json' || field.type === 'text' ? (
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className="text-sm min-h-[60px] font-mono"
+          className={cn("text-sm min-h-[60px]", field.type === 'json' && "font-mono")}
         />
+      ) : field.type === 'boolean' ? (
+        <Select value={value || ''} onValueChange={onChange}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Selecione..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Sim</SelectItem>
+            <SelectItem value="false">Não</SelectItem>
+          </SelectContent>
+        </Select>
       ) : (
         <Input
           type={field.type === 'number' ? 'number' : 'text'}
