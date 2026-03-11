@@ -710,22 +710,23 @@ interface PluginInputsSectionProps {
   inputs: Record<string, unknown>;
   allNodes: Node[];
   definitions: BlockDef[];
+  apiDefinitions: Definition[];
   onUpdateInputs: (nodeId: string, inputs: Record<string, unknown>) => void;
   currentNodeId: string;
 }
 
-function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
+function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
   
   // Find the API definition to get dynamic inputs/outputs
-  const apiDef = definitions.find(d => d.value === definitionId);
+  const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
   
   // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
-  const resolvedInputs: PluginField[] = apiDef
-    ? (apiDef as any)._apiInputs || []
+  const resolvedInputs: PluginField[] = apiDef?.inputs
+    ? apiDef.inputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
     : (staticSchema?.inputs || []);
-  const resolvedOutputs: PluginField[] = apiDef
-    ? (apiDef as any)._apiOutputs || []
+  const resolvedOutputs: PluginField[] = apiDef?.outputs
+    ? apiDef.outputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
     : (staticSchema?.outputs || []);
   const resolvedName = apiDef?.label || staticSchema?.name || definitionId;
   const resolvedDescription = apiDef?.description || staticSchema?.description || '';
@@ -741,7 +742,6 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
 
   const handleFieldChange = (fieldName: string, value: string) => {
     const updated = { ...(inputs || {}), [fieldName]: value === '' ? undefined : value };
-    // Clean undefined values
     Object.keys(updated).forEach(k => {
       if (updated[k] === undefined) delete updated[k];
     });
@@ -774,8 +774,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
     handleFieldChange(fieldName, current + `{{${ref}}}`);
   };
 
-  if (!schema) {
-    // Fallback: raw JSON for unknown plugins
+  if (!hasSchema) {
     return (
       <div className="border-t border-border pt-3 space-y-1.5">
         <Label className="text-xs font-semibold">Inputs (JSON)</Label>
@@ -798,7 +797,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
       {/* Plugin header */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <Label className="text-xs font-semibold">Inputs — {schema.name}</Label>
+          <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
           <Button
             variant="ghost"
             size="sm"
@@ -809,11 +808,10 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
             {showRawJson ? 'Campos' : 'JSON'}
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+        <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
 
       {showRawJson ? (
-        /* Raw JSON mode */
         <div className="space-y-1.5">
           <Textarea
             value={JSON.stringify(inputs || {}, null, 2)}
@@ -826,16 +824,16 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
           </p>
         </div>
       ) : (
-        /* Structured fields */
         <div className="space-y-2.5">
-          {schema.inputs.map((field) => (
+          {resolvedInputs.map((field) => (
             <PluginFieldInput
               key={field.name}
               field={field}
               value={String((inputs as any)?.[field.name] ?? '')}
               onChange={(v) => handleFieldChange(field.name, v)}
               upstreamNodes={upstreamNodes}
-              schema={schema}
+              allNodes={allNodes}
+              apiDefinitions={apiDefinitions}
               onInsertRef={(ref) => insertReference(field.name, ref)}
             />
           ))}
@@ -850,17 +848,17 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
         >
           {showOutputs ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           <ArrowRight className="h-3 w-3" />
-          Outputs disponíveis ({schema.outputs.length})
+          Outputs disponíveis ({resolvedOutputs.length})
         </button>
         {showOutputs && (
           <div className="mt-2 space-y-1">
-            {schema.outputs.map((out) => (
+            {resolvedOutputs.map((out) => (
               <div key={out.name} className="flex items-center gap-2 px-2 py-1 rounded bg-muted/50 text-xs">
                 <code className="text-primary font-mono text-[11px]">{`{{${nodeId}.output.${out.name}}}`}</code>
                 <span className="text-muted-foreground ml-auto">{out.label}</span>
               </div>
             ))}
-            {schema.outputs.length > 0 && (
+            {resolvedOutputs.length > 0 && (
               <p className="text-[10px] text-muted-foreground mt-1">
                 Use estas referências nos inputs de nós downstream.
               </p>
