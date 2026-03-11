@@ -493,7 +493,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setScheduleDialogOpen(false);
   };
 
-  const onDragStart = (event: React.DragEvent, block: typeof BLOCK_LIBRARY[0]) => {
+  const onDragStart = (event: React.DragEvent, block: BlockDef) => {
     event.dataTransfer.setData('application/reactflow-defid', block.value);
     event.dataTransfer.setData('application/reactflow-label', block.label);
     event.dataTransfer.effectAllowed = 'move';
