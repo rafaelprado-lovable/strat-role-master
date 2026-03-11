@@ -189,6 +189,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     data: {
       label: (n.config as any)?.label || blockLibrary.find(d => d.value === n.definition_id)?.label || n.definition_id,
       definition_id: n.definition_id,
+      icon: blockLibrary.find(d => d.value === n.definition_id)?.icon || '',
       description: (n.config as any)?.description || '',
       for_each: n.for_each,
       hasForEach: !!n.for_each,
