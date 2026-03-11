@@ -3,7 +3,7 @@ import { apiClient } from './apiClient';
 export interface DefinitionField {
   name: string;
   label: string;
-  type: 'string' | 'number' | 'boolean' | 'json' | 'list';
+  type: 'string' | 'text' | 'number' | 'boolean' | 'json' | 'list';
   required?: boolean;
   placeholder?: string;
   description?: string;

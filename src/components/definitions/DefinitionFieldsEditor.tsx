@@ -11,7 +11,7 @@ interface Props {
   onChange: (fields: DefinitionField[]) => void;
 }
 
-const FIELD_TYPES: DefinitionField['type'][] = ['string', 'number', 'boolean', 'json', 'list'];
+const FIELD_TYPES: DefinitionField['type'][] = ['string', 'text', 'number', 'boolean', 'json', 'list'];
 
 export function DefinitionFieldsEditor({ label, fields, onChange }: Props) {
   const addField = () => {
