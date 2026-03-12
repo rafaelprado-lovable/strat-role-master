@@ -87,11 +87,11 @@ export const workflowService = {
   },
 
   async listExecutions(): Promise<WorkflowApiResponse[]> {
-    const data = await apiClient.get<WorkflowApiResponse[]>('/v1/read/execution');
+    const data = await apiClient.get<WorkflowApiResponse[]>('/v1/execution');
     return Array.isArray(data) ? data : [];
   },
 
   async getExecution(executionId: string): Promise<WorkflowApiResponse> {
-    return apiClient.get<WorkflowApiResponse>(`/v1/read/execution?id=${encodeURIComponent(executionId)}`);
+    return apiClient.get<WorkflowApiResponse>(`/v1/execution?id=${encodeURIComponent(executionId)}`);
   },
 };
