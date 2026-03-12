@@ -80,27 +80,18 @@ export const workflowService = {
     return postWithOrchestrator<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
   },
 
-  async createExecution(workflowId: string, payload?: any): Promise<WorkflowApiResponse & { _generated_execution_id: string }> {
-    const executionId = `exec-${Date.now()}`;
-    const messageId = payload?.messageid || `msg-${Date.now()}`;
-    const headers: Record<string, string> = { messageid: messageId };
-    
-    const result = await postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
+  async createExecution(workflowId: string, _payload?: any): Promise<WorkflowApiResponse> {
+    return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
       workflow_id: workflowId,
-      execution_id: executionId,
-      ...(payload && Object.keys(payload).length > 0 ? { inputs: payload } : {})
-    }, headers);
-    return { ...result, _generated_execution_id: executionId };
+    });
   },
 
   async listExecutions(): Promise<WorkflowApiResponse[]> {
-    const data = await postWithOrchestrator<WorkflowApiResponse[]>('/v1/create/execution', {});
+    const data = await apiClient.get<WorkflowApiResponse[]>('/v1/read/execution');
     return Array.isArray(data) ? data : [];
   },
 
   async getExecution(executionId: string): Promise<WorkflowApiResponse> {
-    return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
-      execution_id: executionId,
-    });
+    return apiClient.get<WorkflowApiResponse>(`/v1/read/execution?id=${encodeURIComponent(executionId)}`);
   },
 };
