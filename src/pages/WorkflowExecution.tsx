@@ -274,10 +274,27 @@ export default function WorkflowExecution() {
     }
 
     setLoading(true);
-    setIsRunning(true);
     stopPolling();
 
     try {
+      // Lock check: verify no active execution for this workflow
+      const executions = await workflowService.listExecutions();
+      const activeExec = executions.find((ex: any) => {
+        const ctrl = ex.execution_controller ?? ex;
+        const wfId = ctrl.workflow_id ?? ex.workflow_id;
+        const state = ctrl.state ?? ex.state;
+        return wfId === workflow.id && !TERMINAL_STATES.includes(state as ExecutionState);
+      });
+
+      if (activeExec) {
+        const ctrl = (activeExec as any).execution_controller ?? activeExec;
+        const execId = ctrl.execution_id ?? (activeExec as any)._id ?? '';
+        toast.error(`Workflow já possui uma execução em andamento (${execId}). Aguarde a finalização.`);
+        setLoading(false);
+        return;
+      }
+
+      setIsRunning(true);
       const parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : undefined;
       const result = await workflowService.createExecution(workflow.id, parsedPayload);
       toast.success('Execução iniciada');
