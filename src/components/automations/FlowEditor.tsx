@@ -321,12 +321,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     inputs: nodeInputs,
     start_date: startDate || null,
     tags,
-    correlated_workflow_id: correlatedWorkflowId !== 'none' ? correlatedWorkflowId : null,
+    correlated_workflow_ids: correlatedWorkflowIds.length > 0 ? correlatedWorkflowIds : undefined,
     createdAt: workflow?.createdAt,
     updatedAt: new Date().toISOString(),
     lastRunAt: workflow?.lastRunAt,
     runCount: workflow?.runCount,
-  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, correlatedWorkflowId, workflow]);
+  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, correlatedWorkflowIds, workflow]);
 
   const onConnect = useCallback(
     (connection: Connection) => {

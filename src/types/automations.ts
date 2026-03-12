@@ -370,6 +370,6 @@ export function exportWorkflowJson(workflow: Workflow): object {
     inputs,
     start_date: workflow.start_date || null,
     tags: workflow.tags || [],
-    ...(workflow.correlated_workflow_id ? { correlated_workflow_id: workflow.correlated_workflow_id } : {}),
+    ...(workflow.correlated_workflow_ids && workflow.correlated_workflow_ids.length > 0 ? { correlated_workflow_ids: workflow.correlated_workflow_ids } : {}),
   };
 }

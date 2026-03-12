@@ -280,8 +280,8 @@ export default function WorkflowExecution() {
       // Lock check: verify no active execution for this workflow or correlated workflow
       const executions = await workflowService.listExecutions();
       const idsToCheck = new Set([workflow.id]);
-      if (workflow.correlated_workflow_id) {
-        idsToCheck.add(workflow.correlated_workflow_id);
+      if (workflow.correlated_workflow_ids && workflow.correlated_workflow_ids.length > 0) {
+        workflow.correlated_workflow_ids.forEach(id => idsToCheck.add(id));
       }
 
       const activeExec = executions.find((ex: any) => {
