@@ -81,12 +81,14 @@ export const workflowService = {
   },
 
   async createExecution(workflowId: string, payload?: any): Promise<WorkflowApiResponse> {
+    const executionId = `exec-${Date.now()}`;
     const headers: Record<string, string> = {};
     if (payload?.messageid) headers['messageid'] = payload.messageid;
     else headers['messageid'] = `msg-${Date.now()}`;
     
     return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
       workflow_id: workflowId,
+      execution_id: executionId,
       ...(payload && Object.keys(payload).length > 0 ? { inputs: payload } : {})
     }, headers);
   },
