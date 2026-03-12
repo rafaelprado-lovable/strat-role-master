@@ -629,8 +629,8 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
-            correlatedWorkflowId={correlatedWorkflowId}
-            setCorrelatedWorkflowId={setCorrelatedWorkflowId}
+            correlatedWorkflowIds={correlatedWorkflowIds}
+            setCorrelatedWorkflowIds={setCorrelatedWorkflowIds}
             availableWorkflows={availableWorkflows}
             currentWorkflowId={workflow?.id}
             onDragStart={onDragStart}
