@@ -265,7 +265,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
   const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
-  const [correlatedWorkflowId, setCorrelatedWorkflowId] = useState<string>(workflow?.correlated_workflow_id || 'none');
+  const [correlatedWorkflowIds, setCorrelatedWorkflowIds] = useState<string[]>(workflow?.correlated_workflow_ids || []);
   const [availableWorkflows, setAvailableWorkflows] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
