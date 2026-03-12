@@ -80,13 +80,13 @@ const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
 
 
-function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, correlatedWorkflowId, setCorrelatedWorkflowId, availableWorkflows, currentWorkflowId, onDragStart }: {
+function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, correlatedWorkflowIds, setCorrelatedWorkflowIds, availableWorkflows, currentWorkflowId, onDragStart }: {
   triggers: BlockDef[];
   actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
-  correlatedWorkflowId: string;
-  setCorrelatedWorkflowId: (v: string) => void;
+  correlatedWorkflowIds: string[];
+  setCorrelatedWorkflowIds: (v: string[]) => void;
   availableWorkflows: { id: string; name: string }[];
   currentWorkflowId?: string;
   onDragStart: (e: React.DragEvent, block: BlockDef) => void;
