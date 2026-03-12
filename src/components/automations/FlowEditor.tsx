@@ -148,6 +148,25 @@ function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDr
           className="h-8 text-sm font-mono"
         />
       </div>
+      <div className="border-t border-border mt-4 pt-3 space-y-1.5">
+        <Label className="text-xs">Workflow Correlacionado</Label>
+        <Select value={correlatedWorkflowId} onValueChange={setCorrelatedWorkflowId}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Nenhum" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhum</SelectItem>
+            {availableWorkflows
+              .filter(w => w.id !== currentWorkflowId)
+              .map(w => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name || w.id}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <p className="text-[10px] text-muted-foreground">Impede execução simultânea com o workflow selecionado</p>
+      </div>
     </>
   );
 }
