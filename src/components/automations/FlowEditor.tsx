@@ -668,7 +668,21 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
+            onNodesChange={(changes) => {
+              // Clean up inputs when nodes are deleted
+              const removedIds = changes
+                .filter(c => c.type === 'remove')
+                .map(c => c.id);
+              if (removedIds.length > 0) {
+                setNodeInputs(prev => {
+                  const next = { ...prev };
+                  removedIds.forEach(id => delete next[id]);
+                  return next;
+                });
+                setSelectedNodeId(prev => removedIds.includes(prev || '') ? null : prev);
+              }
+              onNodesChange(changes);
+            }}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onDragOver={onDragOver}
