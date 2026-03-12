@@ -311,9 +311,9 @@ export default function WorkflowExecution() {
       toast.success('Execução iniciada');
       console.log('Execution create response:', result);
       const r = result as any;
-      const execId = r?.execution_controller?.execution_id ?? r?.execution_id ?? r?.id ?? r?._id ?? null;
+      const execId = r?._generated_execution_id ?? r?.execution_controller?.execution_id ?? r?.execution_id ?? r?.id ?? r?._id ?? null;
       executionIdRef.current = execId;
-      console.log('Captured execution_id from create:', execId);
+      console.log('Captured execution_id:', execId);
 
       // Exibir estado inicial com dados da resposta
       const initialDTO: ExecutionDTO = {

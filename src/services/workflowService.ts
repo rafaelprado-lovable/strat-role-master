@@ -80,17 +80,17 @@ export const workflowService = {
     return postWithOrchestrator<WorkflowApiResponse>(`/v1/run/workflow/${id}`);
   },
 
-  async createExecution(workflowId: string, payload?: any): Promise<WorkflowApiResponse> {
+  async createExecution(workflowId: string, payload?: any): Promise<WorkflowApiResponse & { _generated_execution_id: string }> {
     const executionId = `exec-${Date.now()}`;
-    const headers: Record<string, string> = {};
-    if (payload?.messageid) headers['messageid'] = payload.messageid;
-    else headers['messageid'] = `msg-${Date.now()}`;
+    const messageId = payload?.messageid || `msg-${Date.now()}`;
+    const headers: Record<string, string> = { messageid: messageId };
     
-    return postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
+    const result = await postWithOrchestrator<WorkflowApiResponse>('/v1/create/execution', {
       workflow_id: workflowId,
       execution_id: executionId,
       ...(payload && Object.keys(payload).length > 0 ? { inputs: payload } : {})
     }, headers);
+    return { ...result, _generated_execution_id: executionId };
   },
 
   async listExecutions(): Promise<WorkflowApiResponse[]> {
