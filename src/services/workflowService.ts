@@ -94,11 +94,27 @@ export const workflowService = {
   },
 
   async listExecutions(): Promise<WorkflowApiResponse[]> {
-    const data = await apiClient.get<WorkflowApiResponse[]>('/v1/execution');
+    const response = await apiClient.rawFetch('/v1/execution', {
+      method: 'GET',
+      headers: ORCHESTRATOR_HEADER,
+    });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+    }
+    const data = await response.json();
     return Array.isArray(data) ? data : [];
   },
 
   async getExecution(executionId: string): Promise<WorkflowApiResponse> {
-    return apiClient.get<WorkflowApiResponse>(`/v1/execution?execution_id=${executionId}`);
+    const response = await apiClient.rawFetch(`/v1/execution?execution_id=${encodeURIComponent(executionId)}`, {
+      method: 'GET',
+      headers: ORCHESTRATOR_HEADER,
+    });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
+    }
+    return response.json();
   },
 };
