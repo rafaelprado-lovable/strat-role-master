@@ -92,6 +92,6 @@ export const workflowService = {
   },
 
   async getExecution(executionId: string): Promise<WorkflowApiResponse> {
-    return apiClient.get<WorkflowApiResponse>(`/v1/execution?id=${encodeURIComponent(executionId)}`);
+    return apiClient.get<WorkflowApiResponse>(`/v1/execution?execution_id=${encodeURIComponent(executionId)}`);
   },
 };
