@@ -153,23 +153,35 @@ function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, corr
         />
       </div>
       <div className="border-t border-border mt-4 pt-3 space-y-1.5">
-        <Label className="text-xs">Workflow Correlacionado</Label>
-        <Select value={correlatedWorkflowId} onValueChange={setCorrelatedWorkflowId}>
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue placeholder="Nenhum" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Nenhum</SelectItem>
-            {availableWorkflows
-              .filter(w => w.id !== currentWorkflowId)
-              .map(w => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name || w.id}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-        <p className="text-[10px] text-muted-foreground">Impede execução simultânea com o workflow selecionado</p>
+        <Label className="text-xs">Workflows Correlacionados</Label>
+        <div className="space-y-1">
+          {availableWorkflows
+            .filter(w => w.id !== currentWorkflowId)
+            .map(w => {
+              const isChecked = correlatedWorkflowIds.includes(w.id);
+              return (
+                <label key={w.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      if (isChecked) {
+                        setCorrelatedWorkflowIds(correlatedWorkflowIds.filter(id => id !== w.id));
+                      } else {
+                        setCorrelatedWorkflowIds([...correlatedWorkflowIds, w.id]);
+                      }
+                    }}
+                    className="rounded border-border"
+                  />
+                  <span className="truncate text-foreground">{w.name || w.id}</span>
+                </label>
+              );
+            })}
+          {availableWorkflows.filter(w => w.id !== currentWorkflowId).length === 0 && (
+            <p className="text-[11px] text-muted-foreground px-2">Nenhum outro workflow disponível</p>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground">Impede execução simultânea com os workflows selecionados</p>
       </div>
     </>
   );
