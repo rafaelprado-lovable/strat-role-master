@@ -674,7 +674,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
                 .filter(c => c.type === 'remove')
                 .map(c => c.id);
               if (removedIds.length > 0) {
-                setInputs(prev => {
+                setNodeInputs(prev => {
                   const next = { ...prev };
                   removedIds.forEach(id => delete next[id]);
                   return next;
