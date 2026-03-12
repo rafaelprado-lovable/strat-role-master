@@ -277,19 +277,30 @@ export default function WorkflowExecution() {
     stopPolling();
 
     try {
-      // Lock check: verify no active execution for this workflow
+      // Lock check: verify no active execution for this workflow or correlated workflow
       const executions = await workflowService.listExecutions();
+      const idsToCheck = new Set([workflow.id]);
+      if (workflow.correlated_workflow_id) {
+        idsToCheck.add(workflow.correlated_workflow_id);
+      }
+
       const activeExec = executions.find((ex: any) => {
         const ctrl = ex.execution_controller ?? ex;
         const wfId = ctrl.workflow_id ?? ex.workflow_id;
         const state = ctrl.state ?? ex.state;
-        return wfId === workflow.id && !TERMINAL_STATES.includes(state as ExecutionState);
+        return idsToCheck.has(wfId) && !TERMINAL_STATES.includes(state as ExecutionState);
       });
 
       if (activeExec) {
         const ctrl = (activeExec as any).execution_controller ?? activeExec;
         const execId = ctrl.execution_id ?? (activeExec as any)._id ?? '';
-        toast.error(`Workflow já possui uma execução em andamento (${execId}). Aguarde a finalização.`);
+        const wfId = ctrl.workflow_id ?? (activeExec as any).workflow_id ?? '';
+        const isCorrelated = wfId !== workflow.id;
+        toast.error(
+          isCorrelated
+            ? `Workflow correlacionado (${wfId}) possui execução em andamento (${execId}). Aguarde a finalização.`
+            : `Workflow já possui uma execução em andamento (${execId}). Aguarde a finalização.`
+        );
         setLoading(false);
         return;
       }

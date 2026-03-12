@@ -80,11 +80,15 @@ const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
 
 
-function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDragStart }: {
+function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, correlatedWorkflowId, setCorrelatedWorkflowId, availableWorkflows, currentWorkflowId, onDragStart }: {
   triggers: BlockDef[];
   actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
+  correlatedWorkflowId: string;
+  setCorrelatedWorkflowId: (v: string) => void;
+  availableWorkflows: { id: string; name: string }[];
+  currentWorkflowId?: string;
   onDragStart: (e: React.DragEvent, block: BlockDef) => void;
 }) {
   return (
@@ -147,6 +151,25 @@ function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, onDr
           placeholder="01/01/2025 10:00"
           className="h-8 text-sm font-mono"
         />
+      </div>
+      <div className="border-t border-border mt-4 pt-3 space-y-1.5">
+        <Label className="text-xs">Workflow Correlacionado</Label>
+        <Select value={correlatedWorkflowId} onValueChange={setCorrelatedWorkflowId}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue placeholder="Nenhum" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhum</SelectItem>
+            {availableWorkflows
+              .filter(w => w.id !== currentWorkflowId)
+              .map(w => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name || w.id}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <p className="text-[10px] text-muted-foreground">Impede execução simultânea com o workflow selecionado</p>
       </div>
     </>
   );
@@ -230,6 +253,15 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
   const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
+  const [correlatedWorkflowId, setCorrelatedWorkflowId] = useState<string>(workflow?.correlated_workflow_id || 'none');
+  const [availableWorkflows, setAvailableWorkflows] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    workflowService.list().then(data => {
+      const list = Array.isArray(data) ? data : [];
+      setAvailableWorkflows(list.map((w: any) => ({ id: w.id, name: w.name || w.id })));
+    }).catch(() => {});
+  }, []);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
   const [scheduleValue, setScheduleValue] = useState(workflow?.schedule?.value || '5');
@@ -277,11 +309,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     inputs: nodeInputs,
     start_date: startDate || null,
     tags,
+    correlated_workflow_id: correlatedWorkflowId !== 'none' ? correlatedWorkflowId : null,
     createdAt: workflow?.createdAt,
     updatedAt: new Date().toISOString(),
     lastRunAt: workflow?.lastRunAt,
     runCount: workflow?.runCount,
-  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, workflow]);
+  }), [nodes, edges, name, description, status, schedule, startDate, nodeInputs, tags, correlatedWorkflowId, workflow]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -584,6 +617,10 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
+            correlatedWorkflowId={correlatedWorkflowId}
+            setCorrelatedWorkflowId={setCorrelatedWorkflowId}
+            availableWorkflows={availableWorkflows}
+            currentWorkflowId={workflow?.id}
             onDragStart={onDragStart}
           />
         </div>
@@ -603,6 +640,10 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
                 actions={actions}
                 startDate={startDate}
                 setStartDate={setStartDate}
+                correlatedWorkflowId={correlatedWorkflowId}
+                setCorrelatedWorkflowId={setCorrelatedWorkflowId}
+                availableWorkflows={availableWorkflows}
+                currentWorkflowId={workflow?.id}
                 onDragStart={onDragStart}
               />
             </div>

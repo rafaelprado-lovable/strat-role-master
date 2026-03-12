@@ -51,6 +51,7 @@ export interface Workflow {
   inputs: Record<string, Record<string, unknown>>;  // nodeId → input object
   start_date: string | null;  // DD/MM/YYYY HH:MM
   tags?: WorkflowTag[];  // categorization tags
+  correlated_workflow_id?: string | null;  // ID de outro workflow correlacionado (lock de execução)
   // UI-only metadata
   createdAt?: string;
   updatedAt?: string;
@@ -369,5 +370,6 @@ export function exportWorkflowJson(workflow: Workflow): object {
     inputs,
     start_date: workflow.start_date || null,
     tags: workflow.tags || [],
+    ...(workflow.correlated_workflow_id ? { correlated_workflow_id: workflow.correlated_workflow_id } : {}),
   };
 }
