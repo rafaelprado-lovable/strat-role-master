@@ -253,6 +253,15 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   });
   const [nodeInputs, setNodeInputs] = useState<Record<string, Record<string, unknown>>>(workflow?.inputs || {});
   const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
+  const [correlatedWorkflowId, setCorrelatedWorkflowId] = useState<string>(workflow?.correlated_workflow_id || 'none');
+  const [availableWorkflows, setAvailableWorkflows] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    workflowService.list().then(data => {
+      const list = Array.isArray(data) ? data : [];
+      setAvailableWorkflows(list.map((w: any) => ({ id: w.id, name: w.name || w.id })));
+    }).catch(() => {});
+  }, []);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [scheduleType, setScheduleType] = useState<'once' | 'interval' | 'cron'>(workflow?.schedule?.type || 'interval');
   const [scheduleValue, setScheduleValue] = useState(workflow?.schedule?.value || '5');
