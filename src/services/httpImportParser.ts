@@ -54,10 +54,39 @@ export function parseCurl(raw: string): ParsedHttpRequest {
   return result;
 }
 
+// Extracts a balanced brace block starting from a given index
+function extractBalancedBraces(str: string, startIdx: number): string | null {
+  if (str[startIdx] !== '{') return null;
+  let depth = 0;
+  for (let i = startIdx; i < str.length; i++) {
+    if (str[i] === '{') depth++;
+    else if (str[i] === '}') { depth--; if (depth === 0) return str.slice(startIdx, i + 1); }
+  }
+  return null;
+}
+
+// Find balanced dict assigned to a variable: `varName = { ... }`
+function extractVarDict(raw: string, varName: string): string | null {
+  const regex = new RegExp(`(?:^|\\n)\\s*${varName}\\s*=\\s*\\{`, 'm');
+  const m = regex.exec(raw);
+  if (!m) return null;
+  const braceStart = raw.indexOf('{', m.index + varName.length);
+  return extractBalancedBraces(raw, braceStart);
+}
+
+function pythonDictToJson(raw: string): string {
+  return raw
+    .replace(/'/g, '"')
+    .replace(/True/g, 'true')
+    .replace(/False/g, 'false')
+    .replace(/None/g, 'null')
+    .replace(/,\s*([}\]])/g, '$1'); // trailing commas
+}
+
 export function parsePythonRequests(raw: string): ParsedHttpRequest {
   const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
 
-  // Detect method: requests.get/post/put/patch/delete or method=
+  // Detect method
   const methodCallMatch = raw.match(/requests\.(get|post|put|patch|delete|head|options)\s*\(/i);
   if (methodCallMatch) {
     result.method = methodCallMatch[1].toUpperCase();
@@ -66,32 +95,62 @@ export function parsePythonRequests(raw: string): ParsedHttpRequest {
     if (methodArgMatch) result.method = methodArgMatch[1].toUpperCase();
   }
 
-  // Extract URL
-  const urlMatch = raw.match(/(?:requests\.\w+\s*\(\s*|url\s*=\s*)['"]([^'"]+)['"]/);
-  if (urlMatch) result.url = urlMatch[1];
-
-  // Extract headers dict
-  const headersMatch = raw.match(/headers\s*=\s*(\{[^}]+\})/s);
-  if (headersMatch) {
-    try {
-      // Convert Python dict to JSON: replace single quotes
-      const jsonStr = headersMatch[1].replace(/'/g, '"');
-      const parsed = JSON.parse(jsonStr);
-      result.headers = JSON.stringify(parsed, null, 2);
-    } catch {
-      result.headers = headersMatch[1];
+  // Extract URL (direct string or variable)
+  const urlDirectMatch = raw.match(/requests\.\w+\s*\(\s*['"]([^'"]+)['"]/);
+  if (urlDirectMatch) {
+    result.url = urlDirectMatch[1];
+  } else {
+    // URL from variable
+    const urlCallMatch = raw.match(/requests\.\w+\s*\(\s*(\w+)/);
+    if (urlCallMatch) {
+      const varMatch = raw.match(new RegExp(`(?:^|\\n)\\s*${urlCallMatch[1]}\\s*=\\s*['"]([^'"]+)['"]`, 'm'));
+      if (varMatch) result.url = varMatch[1];
+    }
+    // Fallback: url = "..."
+    if (!result.url) {
+      const urlVarMatch = raw.match(/(?:^|\n)\s*url\s*=\s*['"]([^'"]+)['"]/m);
+      if (urlVarMatch) result.url = urlVarMatch[1];
     }
   }
 
-  // Extract json= or data= body
-  const jsonBodyMatch = raw.match(/(?:json|data)\s*=\s*(\{[\s\S]*?\})\s*[,)]/);
-  if (jsonBodyMatch) {
-    try {
-      const jsonStr = jsonBodyMatch[1].replace(/'/g, '"').replace(/True/g, 'true').replace(/False/g, 'false').replace(/None/g, 'null');
-      const parsed = JSON.parse(jsonStr);
-      result.body = JSON.stringify(parsed, null, 2);
-    } catch {
-      result.body = jsonBodyMatch[1];
+  // Extract headers (inline or variable)
+  const headersInlineMatch = raw.match(/headers\s*=\s*\{/);
+  if (headersInlineMatch) {
+    // Check if it's a kwarg (inside function call) or standalone assignment
+    const standaloneDict = extractVarDict(raw, 'headers');
+    if (standaloneDict) {
+      try {
+        result.headers = JSON.stringify(JSON.parse(pythonDictToJson(standaloneDict)), null, 2);
+      } catch {
+        result.headers = standaloneDict;
+      }
+    }
+  }
+
+  // Extract body: json=payload or json={...} or data=payload or data={...}
+  const jsonKwargInline = raw.match(/(?:json|data)\s*=\s*\{/);
+  if (jsonKwargInline) {
+    const braceIdx = raw.indexOf('{', jsonKwargInline.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.body = JSON.stringify(JSON.parse(pythonDictToJson(block)), null, 2);
+      } catch {
+        result.body = block;
+      }
+    }
+  } else {
+    // json=variableName or data=variableName
+    const jsonVarMatch = raw.match(/(?:json|data)\s*=\s*(\w+)/);
+    if (jsonVarMatch && jsonVarMatch[1] !== 'True' && jsonVarMatch[1] !== 'False' && jsonVarMatch[1] !== 'None') {
+      const varDict = extractVarDict(raw, jsonVarMatch[1]);
+      if (varDict) {
+        try {
+          result.body = JSON.stringify(JSON.parse(pythonDictToJson(varDict)), null, 2);
+        } catch {
+          result.body = varDict;
+        }
+      }
     }
   }
 
@@ -109,31 +168,41 @@ export function parseFetch(raw: string): ParsedHttpRequest {
   const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
   if (methodMatch) result.method = methodMatch[1].toUpperCase();
 
-  // Extract headers object
-  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
-  if (headersMatch) {
-    try {
-      const jsonStr = headersMatch[1].replace(/'/g, '"');
-      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
-    } catch {
-      result.headers = headersMatch[1];
+  // Extract headers object (balanced braces)
+  const headersKw = raw.match(/headers\s*:\s*\{/);
+  if (headersKw) {
+    const braceIdx = raw.indexOf('{', headersKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.headers = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.headers = block; }
     }
   }
 
-  // Extract body from JSON.stringify(...) or body: '...' or body: `...`
-  const bodyStringifyMatch = raw.match(/body\s*:\s*JSON\.stringify\s*\((\{[\s\S]*?\})\s*\)/);
-  const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
-  const bodyObjMatch = raw.match(/body\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
-  const bodyRaw = bodyStringifyMatch?.[1] || bodyDirectMatch?.[1] || bodyObjMatch?.[1];
-  if (bodyRaw) {
-    try {
-      const cleaned = bodyRaw.replace(/'/g, '"');
-      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-    } catch {
-      result.body = bodyRaw;
+  // Extract body from JSON.stringify({...}) — balanced
+  const stringifyKw = raw.match(/body\s*:\s*JSON\.stringify\s*\(\s*\{/);
+  if (stringifyKw) {
+    const braceIdx = raw.indexOf('{', stringifyKw.index! + 20);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.body = block; }
     }
-    if (!methodMatch) result.method = 'POST';
   }
+
+  // Fallback: body: '{...}' or body: `{...}`
+  if (!result.body) {
+    const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
+    if (bodyDirectMatch) {
+      try {
+        result.body = JSON.stringify(JSON.parse(bodyDirectMatch[1].replace(/'/g, '"')), null, 2);
+      } catch { result.body = bodyDirectMatch[1]; }
+    }
+  }
+
+  if (result.body && !methodMatch) result.method = 'POST';
 
   return result;
 }
@@ -173,46 +242,40 @@ export function parseAxios(raw: string): ParsedHttpRequest {
   }
 
   // Extract headers from config object (3rd arg or config style)
-  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
-  if (headersMatch) {
-    try {
-      const jsonStr = headersMatch[1].replace(/'/g, '"');
-      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
-    } catch {
-      result.headers = headersMatch[1];
+  const headersKw = raw.match(/headers\s*:\s*\{/);
+  if (headersKw) {
+    const braceIdx = raw.indexOf('{', headersKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.headers = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.headers = block; }
     }
   }
 
   // Extract data from config style: data: {...}
-  const dataMatch = raw.match(/data\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
-  if (dataMatch) {
-    try {
-      const cleaned = dataMatch[1].replace(/'/g, '"');
-      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-    } catch {
-      result.body = dataMatch[1];
+  const dataKw = raw.match(/data\s*:\s*\{/);
+  if (dataKw) {
+    const braceIdx = raw.indexOf('{', dataKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.body = block; }
     }
   }
 
   // For shorthand post/put/patch, second arg is the body (variable or object)
-  if (!dataMatch && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
-    // Match second arg: axios.method(url, payload, ...) or axios.method(url, {...}, ...)
-    const afterFirstArg = raw.match(/axios\.\w+\s*\(\s*(?:['"`][^'"`]*['"`]|\w+)\s*,\s*(?:(['"`][^'"`]*['"`])|(\w+)|(\{[\s\S]*?\}))\s*[,)]/);
+  if (!result.body && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
+    const afterFirstArg = raw.match(/axios\.\w+\s*\(\s*(?:['"`][^'"`]*['"`]|\w+)\s*,\s*(\w+)/);
     if (afterFirstArg) {
-      let bodyRaw = afterFirstArg[3] || ''; // object literal
-      if (afterFirstArg[2]) {
-        // Variable reference for body — try to resolve from const payload = {...}
-        const varName = afterFirstArg[2];
-        const bodyVarMatch = raw.match(new RegExp(`(?:const|let|var)\\s+${varName}\\s*=\\s*(\\{[\\s\\S]*?\\})\\s*;`));
-        if (bodyVarMatch) bodyRaw = bodyVarMatch[1];
-      }
-      if (bodyRaw) {
+      const varName = afterFirstArg[1];
+      // Resolve variable to balanced dict
+      const varDict = extractVarDict(raw, varName);
+      if (varDict) {
         try {
-          const cleaned = bodyRaw.replace(/'/g, '"');
-          result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-        } catch {
-          result.body = bodyRaw;
-        }
+          result.body = JSON.stringify(JSON.parse(varDict.replace(/'/g, '"')), null, 2);
+        } catch { result.body = varDict; }
       }
     }
   }
