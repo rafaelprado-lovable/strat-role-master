@@ -77,9 +77,15 @@ function extractVarDict(raw: string, varName: string): string | null {
 function pythonDictToJson(raw: string): string {
   return raw
     .replace(/'/g, '"')
-    .replace(/True/g, 'true')
-    .replace(/False/g, 'false')
-    .replace(/None/g, 'null')
+    .replace(/\bTrue\b/g, 'true')
+    .replace(/\bFalse\b/g, 'false')
+    .replace(/\bNone\b/g, 'null')
+    .replace(/,\s*([}\]])/g, '$1'); // trailing commas
+}
+
+function jsObjToJson(raw: string): string {
+  return raw
+    .replace(/'/g, '"')
     .replace(/,\s*([}\]])/g, '$1'); // trailing commas
 }
 
