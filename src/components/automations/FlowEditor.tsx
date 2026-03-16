@@ -210,6 +210,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   }, []);
 
   const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
+  const filters = useMemo(() => blockLibrary.filter(b => b.category === 'filter'), [blockLibrary]);
   const actions = useMemo(() => blockLibrary.filter(b => b.category === 'action'), [blockLibrary]);
 
   // Build initial nodes from workflow
