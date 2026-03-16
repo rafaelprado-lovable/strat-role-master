@@ -15,6 +15,7 @@ import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ImportHttpDialog } from './ImportHttpDialog';
+import { ExportHttpDialog } from './ExportHttpDialog';
 import type { ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface NodeConfigPanelProps {
