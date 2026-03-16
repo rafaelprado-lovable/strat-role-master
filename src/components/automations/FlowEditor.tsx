@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   ArrowLeft, Save, Clock, Globe,
-  FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, icons,
+  FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
@@ -55,7 +55,7 @@ export type BlockDef = {
   label: string;
   icon: string;
   description: string;
-  category: 'trigger' | 'action';
+  category: 'trigger' | 'action' | 'filter';
   Icon: React.ComponentType<any>;
 };
 
@@ -80,8 +80,9 @@ const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
 
 
-function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, correlatedWorkflowIds, setCorrelatedWorkflowIds, availableWorkflows, currentWorkflowId, onDragStart }: {
+function BlocksSidebarContent({ triggers, filters, actions, startDate, setStartDate, correlatedWorkflowIds, setCorrelatedWorkflowIds, availableWorkflows, currentWorkflowId, onDragStart }: {
   triggers: BlockDef[];
+  filters: BlockDef[];
   actions: BlockDef[];
   startDate: string;
   setStartDate: (v: string) => void;
@@ -121,6 +122,30 @@ function BlocksSidebarContent({ triggers, actions, startDate, setStartDate, corr
           </div>
         ))}
       </div>
+      {filters.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <Filter className="h-3 w-3 text-chart-2" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-2">Filtros</span>
+          </div>
+          {filters.map((block) => (
+            <div
+              key={block.value}
+              draggable
+              onDragStart={(e) => onDragStart(e, block)}
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-2/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+            >
+              <div className="p-1.5 rounded-md bg-chart-2/10 shrink-0">
+                <block.Icon className="h-3.5 w-3.5 text-chart-2" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="space-y-1.5">
         <div className="flex items-center gap-1.5 px-1">
           <Cog className="h-3 w-3 text-primary" />
@@ -210,6 +235,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   }, []);
 
   const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
+  const filters = useMemo(() => blockLibrary.filter(b => b.category === 'filter'), [blockLibrary]);
   const actions = useMemo(() => blockLibrary.filter(b => b.category === 'action'), [blockLibrary]);
 
   // Build initial nodes from workflow
@@ -626,6 +652,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         <div className="hidden md:block w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
           <BlocksSidebarContent
             triggers={triggers}
+            filters={filters}
             actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
@@ -649,6 +676,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </div>
               <BlocksSidebarContent
                 triggers={triggers}
+                filters={filters}
                 actions={actions}
                 startDate={startDate}
                 setStartDate={setStartDate}

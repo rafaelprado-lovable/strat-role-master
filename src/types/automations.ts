@@ -63,6 +63,10 @@ export interface Workflow {
 export const DEFINITION_IDS = [
   // Gatilhos
   { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico', category: 'trigger' },
+  // Filtros
+  { value: 'condition_v1', label: 'Condition', icon: 'git-branch', description: 'Filtra fluxo com base em condição', category: 'filter' },
+  { value: 'switch_v1', label: 'Switch', icon: 'split', description: 'Divide fluxo em múltiplos caminhos', category: 'filter' },
+  { value: 'filter_v1', label: 'Filter', icon: 'filter', description: 'Filtra itens de uma lista por critério', category: 'filter' },
   // Ações
   { value: 'ssh_agent_v1', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH', category: 'action' },
   { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp', category: 'action' },

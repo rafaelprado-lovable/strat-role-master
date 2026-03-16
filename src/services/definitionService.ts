@@ -16,7 +16,7 @@ export interface Definition {
   label: string;
   icon: string;
   description: string;
-  category: 'trigger' | 'action';
+  category: 'trigger' | 'action' | 'filter';
   inputs: DefinitionField[];
   outputs: DefinitionField[];
   createdAt?: string;
