@@ -810,15 +810,26 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
           <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
           <div className="flex items-center gap-1">
             {isHttpPlugin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs gap-1 text-primary"
-                onClick={() => setShowImportDialog(true)}
-              >
-                <Import className="h-3 w-3" />
-                Importar
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs gap-1 text-primary"
+                  onClick={() => setShowImportDialog(true)}
+                >
+                  <Import className="h-3 w-3" />
+                  Importar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs gap-1 text-chart-2"
+                  onClick={() => setShowExportDialog(true)}
+                >
+                  <Share2 className="h-3 w-3" />
+                  Exportar
+                </Button>
+              </>
             )}
             <Button
               variant="ghost"
@@ -834,13 +845,20 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
         <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
 
-      {/* Import HTTP Dialog */}
+      {/* Import/Export HTTP Dialogs */}
       {isHttpPlugin && (
-        <ImportHttpDialog
-          open={showImportDialog}
-          onClose={() => setShowImportDialog(false)}
-          onImport={handleHttpImport}
-        />
+        <>
+          <ImportHttpDialog
+            open={showImportDialog}
+            onClose={() => setShowImportDialog(false)}
+            onImport={handleHttpImport}
+          />
+          <ExportHttpDialog
+            open={showExportDialog}
+            onClose={() => setShowExportDialog(false)}
+            inputs={inputs}
+          />
+        </>
       )}
 
       {showRawJson ? (
