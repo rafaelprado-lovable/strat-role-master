@@ -711,9 +711,22 @@ interface PluginInputsSectionProps {
 
 function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
+  const [showImportDialog, setShowImportDialog] = useState(false);
   
   // Find the API definition to get dynamic inputs/outputs
   const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
+  
+  // Check if this is an HTTP-type plugin
+  const isHttpPlugin = definitionId === 'http_agent_v1' || definitionId?.includes('http');
+
+  const handleHttpImport = (parsed: ParsedHttpRequest) => {
+    const updated: Record<string, unknown> = { ...(inputs || {}) };
+    if (parsed.url) updated.url = parsed.url;
+    if (parsed.method) updated.method = parsed.method;
+    if (parsed.headers) updated.headers = parsed.headers;
+    if (parsed.body) updated.body = parsed.body;
+    onUpdateInputs(nodeId, updated);
+  };
   
   // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
   const resolvedInputs: PluginField[] = apiDef?.inputs
