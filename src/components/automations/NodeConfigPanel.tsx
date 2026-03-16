@@ -14,6 +14,8 @@ import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ImportHttpDialog } from './ImportHttpDialog';
+import type { ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface NodeConfigPanelProps {
   node: Node;
