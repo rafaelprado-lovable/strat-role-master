@@ -713,6 +713,7 @@ interface PluginInputsSectionProps {
 function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   
   // Find the API definition to get dynamic inputs/outputs
   const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
