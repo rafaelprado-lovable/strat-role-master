@@ -39,15 +39,21 @@ export function parseCurl(raw: string): ParsedHttpRequest {
   }
 
   // Extract body: -d or --data or --data-raw or --data-binary
-  const bodyMatch = cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+'([^']*)'/) 
-    || cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+"([^"]*)"/);
+  const bodyMatch = cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+'([^']*)'/)
+    || cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+"([^"]*)"/)
+    // Fallback: grab everything after -d that looks like JSON (starts with {)
+    || cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+'([\s\S]*)/);
   if (bodyMatch) {
-    result.body = bodyMatch[1];
-    // Try to prettify if JSON
+    let bodyRaw = bodyMatch[1];
+    // Clean trailing quote if present
+    if (bodyRaw.endsWith("'")) bodyRaw = bodyRaw.slice(0, -1);
+    // Remove shell variable interpolations for cleaner display: '$var' → $var
+    bodyRaw = bodyRaw.replace(/'(\$\w+)'/g, '$1');
+    result.body = bodyRaw;
+    // Try to prettify if valid JSON
     try {
-      result.body = JSON.stringify(JSON.parse(bodyMatch[1]), null, 2);
-    } catch { /* keep raw */ }
-    // If has body and no explicit method, default to POST
+      result.body = JSON.stringify(JSON.parse(bodyRaw), null, 2);
+    } catch { /* keep raw — may contain shell variables */ }
     if (!methodMatch) result.method = 'POST';
   }
 
