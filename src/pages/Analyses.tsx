@@ -271,13 +271,19 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
 
                         <div className="space-y-2">
                           <Label htmlFor="dateTime">Data e hora</Label>
-                          <Input
-                            id="dateTime"
-                            type="text"
-                            placeholder="March 15th 2026, 23:41:34.516"
-                            value={dateTime}
-                            onChange={(e) => setDateTime(e.target.value)}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              id="dateTime"
+                              type="text"
+                              placeholder="March 15th 2026, 23:41:34.516"
+                              value={dateTime}
+                              onChange={(e) => setDateTime(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button type="button" variant="outline" size="icon" onClick={fillCurrentDateTime} title="Preencher data/hora atual">
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </>
                     ) : (
