@@ -9,20 +9,19 @@ export interface ParsedHttpRequest {
 
 export function parseCurl(raw: string): ParsedHttpRequest {
   const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
-  
+
   // Normalize: join line continuations, trim
   const cmd = raw.replace(/\\\s*\n/g, ' ').replace(/\\\s*$/gm, ' ').trim();
-  
-  // Extract URL (first thing that looks like a URL, or after curl)
-  const urlMatch = cmd.match(/(?:curl\s+)?(?:--?\w+\s+(?:'[^']*'|"[^"]*"|\S+)\s+)*['"]?(https?:\/\/[^\s'"]+)['"]?/) 
-    || cmd.match(/['"]?(https?:\/\/[^\s'"]+)['"]?/);
+
+  // Extract URL
+  const urlMatch = cmd.match(/['"]?(https?:\/\/[^\s'"]+)['"]?/);
   if (urlMatch) result.url = urlMatch[1];
 
-  // Extract method: -X or --request
+  // Extract method
   const methodMatch = cmd.match(/(?:-X|--request)\s+['"]?(\w+)['"]?/i);
   if (methodMatch) result.method = methodMatch[1].toUpperCase();
 
-  // Extract headers: -H or --header
+  // Extract headers
   const headers: Record<string, string> = {};
   const headerRegex = /(?:-H|--header)\s+['"]([^'"]+)['"]/gi;
   let hMatch;
@@ -38,22 +37,31 @@ export function parseCurl(raw: string): ParsedHttpRequest {
     result.headers = JSON.stringify(headers, null, 2);
   }
 
-  // Extract body: -d or --data or --data-raw or --data-binary
-  const bodyMatch = cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+'([^']*)'/)
-    || cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+"([^"]*)"/)
-    // Fallback: grab everything after -d that looks like JSON (starts with {)
-    || cmd.match(/(?:-d|--data(?:-raw|-binary)?)\s+'([\s\S]*)/);
-  if (bodyMatch) {
-    let bodyRaw = bodyMatch[1];
-    // Clean trailing quote if present
-    if (bodyRaw.endsWith("'")) bodyRaw = bodyRaw.slice(0, -1);
-    // Remove shell variable interpolations for cleaner display: '$var' → $var
-    bodyRaw = bodyRaw.replace(/'(\$\w+)'/g, '$1');
+  // Extract body robustly: capture everything after -d/--data*, then trim next known flags if present
+  const dataFlagMatch = cmd.match(/(?:^|\s)(-d|--data(?:-raw|-binary)?)(?:\s+)/);
+  if (dataFlagMatch && dataFlagMatch.index !== undefined) {
+    const start = dataFlagMatch.index + dataFlagMatch[0].length;
+    let bodyRaw = cmd.slice(start).trim();
+
+    // Stop at next common curl flag if it exists after the JSON/body
+    const nextFlagMatch = bodyRaw.match(/\s+(--max-time|-H|--header|-X|--request|--compressed|--location)\b/);
+    if (nextFlagMatch && nextFlagMatch.index !== undefined) {
+      bodyRaw = bodyRaw.slice(0, nextFlagMatch.index).trim();
+    }
+
+    // Strip one layer of wrapping quotes if present
+    if ((bodyRaw.startsWith("'") && bodyRaw.endsWith("'")) || (bodyRaw.startsWith('"') && bodyRaw.endsWith('"'))) {
+      bodyRaw = bodyRaw.slice(1, -1);
+    }
+
     result.body = bodyRaw;
-    // Try to prettify if valid JSON
+
     try {
       result.body = JSON.stringify(JSON.parse(bodyRaw), null, 2);
-    } catch { /* keep raw — may contain shell variables */ }
+    } catch {
+      // keep raw; may contain shell interpolation or partial JSON
+    }
+
     if (!methodMatch) result.method = 'POST';
   }
 
