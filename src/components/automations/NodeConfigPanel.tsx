@@ -960,6 +960,7 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           className={cn("text-sm min-h-[60px]", field.type === 'json' && "font-mono")}
+          autoFormatJson={field.type === 'json'}
         />
       ) : field.type === 'boolean' ? (
         <Select value={value || ''} onValueChange={onChange}>
