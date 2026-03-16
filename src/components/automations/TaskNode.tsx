@@ -19,6 +19,9 @@ const colorMap: Record<string, string> = {
   get_specific_incident_v1: '35 95% 55%',  // orange
   delay_v1: '210 100% 50%',           // chart-1 blue
   llm_analyse_v1: '280 80% 55%',      // violet
+  condition_v1: '160 60% 45%',        // teal (filter)
+  switch_v1: '160 60% 45%',           // teal (filter)
+  filter_v1: '160 60% 45%',           // teal (filter)
 };
 
 const defaultHsl = '220 10% 50%';
