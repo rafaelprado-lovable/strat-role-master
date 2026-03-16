@@ -70,6 +70,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
         }}
         onChange={handleChange}
+        onBlur={handleBlur}
+        onPaste={handlePaste}
         {...props}
       />
     );
