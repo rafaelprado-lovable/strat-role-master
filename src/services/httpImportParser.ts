@@ -306,7 +306,7 @@ export function parseAxios(raw: string): ParsedHttpRequest {
       const varDict = extractVarDict(raw, varName);
       if (varDict) {
         try {
-          result.body = JSON.stringify(JSON.parse(varDict.replace(/'/g, '"')), null, 2);
+          result.body = JSON.stringify(JSON.parse(jsObjToJson(varDict)), null, 2);
         } catch { result.body = varDict; }
       }
     }
