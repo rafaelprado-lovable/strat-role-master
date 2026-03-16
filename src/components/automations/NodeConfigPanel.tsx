@@ -792,6 +792,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
           onChange={(e) => handleRawJsonChange(e.target.value)}
           placeholder={'{\n  "key": "value"\n}'}
           className="text-sm min-h-[100px] font-mono"
+          autoFormatJson
         />
         {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
         <p className="text-[10px] text-muted-foreground">
@@ -866,6 +867,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
             value={JSON.stringify(inputs || {}, null, 2)}
             onChange={(e) => handleRawJsonChange(e.target.value)}
             className="text-sm min-h-[100px] font-mono"
+            autoFormatJson
           />
           {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
           <p className="text-[10px] text-muted-foreground">
@@ -958,6 +960,7 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           className={cn("text-sm min-h-[60px]", field.type === 'json' && "font-mono")}
+          autoFormatJson={field.type === 'json'}
         />
       ) : field.type === 'boolean' ? (
         <Select value={value || ''} onValueChange={onChange}>

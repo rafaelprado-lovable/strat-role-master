@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   autoResize?: boolean;
+  autoFormatJson?: boolean;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, autoResize = true, onChange, ...props }, ref) => {
+  ({ className, autoResize = true, autoFormatJson = false, onChange, onBlur, onPaste, ...props }, ref) => {
     const innerRef = React.useRef<HTMLTextAreaElement | null>(null);
 
     const resize = React.useCallback((el: HTMLTextAreaElement) => {
@@ -22,9 +23,39 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       }
     });
 
+    const tryFormatJson = (el: HTMLTextAreaElement) => {
+      if (!autoFormatJson) return;
+      const val = el.value.trim();
+      if (!val) return;
+      try {
+        const parsed = JSON.parse(val);
+        const formatted = JSON.stringify(parsed, null, 2);
+        if (formatted !== val) {
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+          nativeInputValueSetter?.call(el, formatted);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          if (autoResize) resize(el);
+        }
+      } catch { /* not valid JSON, skip */ }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       if (autoResize) resize(e.target);
       onChange?.(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      tryFormatJson(e.target);
+      onBlur?.(e);
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      onPaste?.(e);
+      if (autoFormatJson) {
+        setTimeout(() => {
+          if (innerRef.current) tryFormatJson(innerRef.current);
+        }, 0);
+      }
     };
 
     return (
@@ -39,6 +70,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           else if (ref) (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
         }}
         onChange={handleChange}
+        onBlur={handleBlur}
+        onPaste={handlePaste}
         {...props}
       />
     );
