@@ -168,31 +168,41 @@ export function parseFetch(raw: string): ParsedHttpRequest {
   const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
   if (methodMatch) result.method = methodMatch[1].toUpperCase();
 
-  // Extract headers object
-  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
-  if (headersMatch) {
-    try {
-      const jsonStr = headersMatch[1].replace(/'/g, '"');
-      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
-    } catch {
-      result.headers = headersMatch[1];
+  // Extract headers object (balanced braces)
+  const headersKw = raw.match(/headers\s*:\s*\{/);
+  if (headersKw) {
+    const braceIdx = raw.indexOf('{', headersKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.headers = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.headers = block; }
     }
   }
 
-  // Extract body from JSON.stringify(...) or body: '...' or body: `...`
-  const bodyStringifyMatch = raw.match(/body\s*:\s*JSON\.stringify\s*\((\{[\s\S]*?\})\s*\)/);
-  const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
-  const bodyObjMatch = raw.match(/body\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
-  const bodyRaw = bodyStringifyMatch?.[1] || bodyDirectMatch?.[1] || bodyObjMatch?.[1];
-  if (bodyRaw) {
-    try {
-      const cleaned = bodyRaw.replace(/'/g, '"');
-      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-    } catch {
-      result.body = bodyRaw;
+  // Extract body from JSON.stringify({...}) — balanced
+  const stringifyKw = raw.match(/body\s*:\s*JSON\.stringify\s*\(\s*\{/);
+  if (stringifyKw) {
+    const braceIdx = raw.indexOf('{', stringifyKw.index! + 20);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.body = block; }
     }
-    if (!methodMatch) result.method = 'POST';
   }
+
+  // Fallback: body: '{...}' or body: `{...}`
+  if (!result.body) {
+    const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
+    if (bodyDirectMatch) {
+      try {
+        result.body = JSON.stringify(JSON.parse(bodyDirectMatch[1].replace(/'/g, '"')), null, 2);
+      } catch { result.body = bodyDirectMatch[1]; }
+    }
+  }
+
+  if (result.body && !methodMatch) result.method = 'POST';
 
   return result;
 }
