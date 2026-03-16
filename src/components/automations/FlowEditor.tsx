@@ -55,7 +55,7 @@ export type BlockDef = {
   label: string;
   icon: string;
   description: string;
-  category: 'trigger' | 'action';
+  category: 'trigger' | 'action' | 'filter';
   Icon: React.ComponentType<any>;
 };
 
