@@ -8,12 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight, Import } from 'lucide-react';
 import { type WorkflowForEach } from '@/types/automations';
 import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ImportHttpDialog } from './ImportHttpDialog';
+import type { ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface NodeConfigPanelProps {
   node: Node;
@@ -709,9 +711,22 @@ interface PluginInputsSectionProps {
 
 function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
+  const [showImportDialog, setShowImportDialog] = useState(false);
   
   // Find the API definition to get dynamic inputs/outputs
   const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
+  
+  // Check if this is an HTTP-type plugin
+  const isHttpPlugin = definitionId === 'http_agent_v1' || definitionId?.includes('http');
+
+  const handleHttpImport = (parsed: ParsedHttpRequest) => {
+    const updated: Record<string, unknown> = { ...(inputs || {}) };
+    if (parsed.url) updated.url = parsed.url;
+    if (parsed.method) updated.method = parsed.method;
+    if (parsed.headers) updated.headers = parsed.headers;
+    if (parsed.body) updated.body = parsed.body;
+    onUpdateInputs(nodeId, updated);
+  };
   
   // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
   const resolvedInputs: PluginField[] = apiDef?.inputs
@@ -790,18 +805,40 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs gap-1 text-muted-foreground"
-            onClick={() => setShowRawJson(!showRawJson)}
-          >
-            <Code className="h-3 w-3" />
-            {showRawJson ? 'Campos' : 'JSON'}
-          </Button>
+          <div className="flex items-center gap-1">
+            {isHttpPlugin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs gap-1 text-primary"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Import className="h-3 w-3" />
+                Importar
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs gap-1 text-muted-foreground"
+              onClick={() => setShowRawJson(!showRawJson)}
+            >
+              <Code className="h-3 w-3" />
+              {showRawJson ? 'Campos' : 'JSON'}
+            </Button>
+          </div>
         </div>
         <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
+
+      {/* Import HTTP Dialog */}
+      {isHttpPlugin && (
+        <ImportHttpDialog
+          open={showImportDialog}
+          onClose={() => setShowImportDialog(false)}
+          onImport={handleHttpImport}
+        />
+      )}
 
       {showRawJson ? (
         <div className="space-y-1.5">
