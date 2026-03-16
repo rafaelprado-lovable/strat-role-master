@@ -40,7 +40,7 @@ export function ImportHttpDialog({ open, onClose, onImport }: ImportHttpDialogPr
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <Import className="h-4 w-4 text-primary" />
