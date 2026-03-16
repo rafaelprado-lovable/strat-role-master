@@ -166,9 +166,22 @@ export function parsePythonRequests(raw: string): ParsedHttpRequest {
 export function parseFetch(raw: string): ParsedHttpRequest {
   const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
 
-  // Extract URL from fetch('url' or fetch("url"
-  const urlMatch = raw.match(/fetch\s*\(\s*['"`]([^'"`]+)['"`]/);
-  if (urlMatch) result.url = urlMatch[1];
+  // Resolve a JS variable to its string value
+  const resolveStringVar = (varName: string): string | null => {
+    const m = raw.match(new RegExp(`(?:const|let|var)\\s+${varName}\\s*=\\s*['"\`]([^'"\`]+)['"\`]`));
+    return m ? m[1] : null;
+  };
+
+  // Extract URL from fetch('url') or fetch(variable)
+  const urlLiteralMatch = raw.match(/fetch\s*\(\s*['"`]([^'"`]+)['"`]/);
+  if (urlLiteralMatch) {
+    result.url = urlLiteralMatch[1];
+  } else {
+    const urlVarMatch = raw.match(/fetch\s*\(\s*(\w+)/);
+    if (urlVarMatch) {
+      result.url = resolveStringVar(urlVarMatch[1]) || urlVarMatch[1];
+    }
+  }
 
   // Extract method
   const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
@@ -181,7 +194,7 @@ export function parseFetch(raw: string): ParsedHttpRequest {
     const block = extractBalancedBraces(raw, braceIdx);
     if (block) {
       try {
-        result.headers = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+        result.headers = JSON.stringify(JSON.parse(jsObjToJson(block)), null, 2);
       } catch { result.headers = block; }
     }
   }
@@ -193,8 +206,21 @@ export function parseFetch(raw: string): ParsedHttpRequest {
     const block = extractBalancedBraces(raw, braceIdx);
     if (block) {
       try {
-        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+        result.body = JSON.stringify(JSON.parse(jsObjToJson(block)), null, 2);
       } catch { result.body = block; }
+    }
+  }
+
+  // JSON.stringify(variable)
+  if (!result.body) {
+    const stringifyVarMatch = raw.match(/body\s*:\s*JSON\.stringify\s*\(\s*(\w+)\s*\)/);
+    if (stringifyVarMatch) {
+      const varDict = extractVarDict(raw, stringifyVarMatch[1]);
+      if (varDict) {
+        try {
+          result.body = JSON.stringify(JSON.parse(jsObjToJson(varDict)), null, 2);
+        } catch { result.body = varDict; }
+      }
     }
   }
 
@@ -203,7 +229,7 @@ export function parseFetch(raw: string): ParsedHttpRequest {
     const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
     if (bodyDirectMatch) {
       try {
-        result.body = JSON.stringify(JSON.parse(bodyDirectMatch[1].replace(/'/g, '"')), null, 2);
+        result.body = JSON.stringify(JSON.parse(jsObjToJson(bodyDirectMatch[1])), null, 2);
       } catch { result.body = bodyDirectMatch[1]; }
     }
   }
