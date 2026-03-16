@@ -141,21 +141,38 @@ export function parseFetch(raw: string): ParsedHttpRequest {
 export function parseAxios(raw: string): ParsedHttpRequest {
   const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
 
-  // Detect shorthand: axios.get/post/put/patch/delete('url', ...)
-  const shorthandMatch = raw.match(/axios\.(get|post|put|patch|delete|head|options)\s*\(\s*['"`]([^'"`]+)['"`]/i);
+  // Helper: resolve a variable name to its string value from const/let/var declarations
+  const resolveVar = (varName: string): string | null => {
+    const varMatch = raw.match(new RegExp(`(?:const|let|var)\\s+${varName}\\s*=\\s*['"\`]([^'"\`]+)['"\`]`));
+    return varMatch ? varMatch[1] : null;
+  };
+
+  // Detect shorthand: axios.get/post/put/patch/delete(urlOrString, ...)
+  const shorthandMatch = raw.match(/axios\.(get|post|put|patch|delete|head|options)\s*\(\s*(['"`]([^'"`]+)['"`]|(\w+))/i);
   if (shorthandMatch) {
     result.method = shorthandMatch[1].toUpperCase();
-    result.url = shorthandMatch[2];
+    if (shorthandMatch[3]) {
+      // Direct string literal
+      result.url = shorthandMatch[3];
+    } else if (shorthandMatch[4]) {
+      // Variable reference — resolve it
+      result.url = resolveVar(shorthandMatch[4]) || shorthandMatch[4];
+    }
   }
 
   // Detect config style: axios({ method, url, ... })
-  const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
-  if (methodMatch) result.method = methodMatch[1].toUpperCase();
+  if (!shorthandMatch) {
+    const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
+    if (methodMatch) result.method = methodMatch[1].toUpperCase();
+  }
 
-  const urlMatch = raw.match(/url\s*:\s*['"`]([^'"`]+)['"`]/);
-  if (urlMatch) result.url = urlMatch[1];
+  // URL from config object or standalone variable
+  if (!result.url) {
+    const urlPropMatch = raw.match(/url\s*:\s*['"`]([^'"`]+)['"`]/);
+    if (urlPropMatch) result.url = urlPropMatch[1];
+  }
 
-  // Extract headers
+  // Extract headers from config object (3rd arg or config style)
   const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
   if (headersMatch) {
     try {
@@ -166,7 +183,7 @@ export function parseAxios(raw: string): ParsedHttpRequest {
     }
   }
 
-  // Extract data/body
+  // Extract data from config style: data: {...}
   const dataMatch = raw.match(/data\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
   if (dataMatch) {
     try {
@@ -177,15 +194,25 @@ export function parseAxios(raw: string): ParsedHttpRequest {
     }
   }
 
-  // For shorthand post/put/patch, second arg is body
+  // For shorthand post/put/patch, second arg is the body (variable or object)
   if (!dataMatch && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
-    const secondArgMatch = raw.match(/axios\.\w+\s*\(\s*['"`][^'"`]+['"`]\s*,\s*(\{[\s\S]*?\})\s*[,)]/);
-    if (secondArgMatch) {
-      try {
-        const cleaned = secondArgMatch[1].replace(/'/g, '"');
-        result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-      } catch {
-        result.body = secondArgMatch[1];
+    // Match second arg: axios.method(url, payload, ...) or axios.method(url, {...}, ...)
+    const afterFirstArg = raw.match(/axios\.\w+\s*\(\s*(?:['"`][^'"`]*['"`]|\w+)\s*,\s*(?:(['"`][^'"`]*['"`])|(\w+)|(\{[\s\S]*?\}))\s*[,)]/);
+    if (afterFirstArg) {
+      let bodyRaw = afterFirstArg[3] || ''; // object literal
+      if (afterFirstArg[2]) {
+        // Variable reference for body — try to resolve from const payload = {...}
+        const varName = afterFirstArg[2];
+        const bodyVarMatch = raw.match(new RegExp(`(?:const|let|var)\\s+${varName}\\s*=\\s*(\\{[\\s\\S]*?\\})\\s*;`));
+        if (bodyVarMatch) bodyRaw = bodyVarMatch[1];
+      }
+      if (bodyRaw) {
+        try {
+          const cleaned = bodyRaw.replace(/'/g, '"');
+          result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
+        } catch {
+          result.body = bodyRaw;
+        }
       }
     }
   }
