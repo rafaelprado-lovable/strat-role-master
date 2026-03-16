@@ -792,6 +792,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
           onChange={(e) => handleRawJsonChange(e.target.value)}
           placeholder={'{\n  "key": "value"\n}'}
           className="text-sm min-h-[100px] font-mono"
+          autoFormatJson
         />
         {jsonError && <p className="text-xs text-destructive">{jsonError}</p>}
         <p className="text-[10px] text-muted-foreground">
