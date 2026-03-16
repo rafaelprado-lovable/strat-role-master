@@ -272,7 +272,8 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
                           <Label htmlFor="dateTime">Data e hora</Label>
                           <Input
                             id="dateTime"
-                            type="datetime-local"
+                            type="text"
+                            placeholder="March 15th 2026, 23:41:34.516"
                             value={dateTime}
                             onChange={(e) => setDateTime(e.target.value)}
                           />
