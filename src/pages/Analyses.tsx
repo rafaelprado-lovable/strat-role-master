@@ -38,7 +38,7 @@ export default function Analyses() {
     setDateTime(`${month} ${day}${suffix} ${year}, ${time}.${ms}`);
   }, []);
 
-
+  const handleTidAnalysis = async () => {
     setIsLoading(true);
     try {
       setAnalysisResult(null);
@@ -532,3 +532,4 @@ ${analysisResult.analise_log_api.causa_raiz_sugerida}`}
     </div>
   );
 }
+
