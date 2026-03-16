@@ -232,46 +232,40 @@ export function parseAxios(raw: string): ParsedHttpRequest {
   }
 
   // Extract headers from config object (3rd arg or config style)
-  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
-  if (headersMatch) {
-    try {
-      const jsonStr = headersMatch[1].replace(/'/g, '"');
-      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
-    } catch {
-      result.headers = headersMatch[1];
+  const headersKw = raw.match(/headers\s*:\s*\{/);
+  if (headersKw) {
+    const braceIdx = raw.indexOf('{', headersKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.headers = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.headers = block; }
     }
   }
 
   // Extract data from config style: data: {...}
-  const dataMatch = raw.match(/data\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
-  if (dataMatch) {
-    try {
-      const cleaned = dataMatch[1].replace(/'/g, '"');
-      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-    } catch {
-      result.body = dataMatch[1];
+  const dataKw = raw.match(/data\s*:\s*\{/);
+  if (dataKw) {
+    const braceIdx = raw.indexOf('{', dataKw.index!);
+    const block = extractBalancedBraces(raw, braceIdx);
+    if (block) {
+      try {
+        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+      } catch { result.body = block; }
     }
   }
 
   // For shorthand post/put/patch, second arg is the body (variable or object)
-  if (!dataMatch && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
-    // Match second arg: axios.method(url, payload, ...) or axios.method(url, {...}, ...)
-    const afterFirstArg = raw.match(/axios\.\w+\s*\(\s*(?:['"`][^'"`]*['"`]|\w+)\s*,\s*(?:(['"`][^'"`]*['"`])|(\w+)|(\{[\s\S]*?\}))\s*[,)]/);
+  if (!result.body && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
+    const afterFirstArg = raw.match(/axios\.\w+\s*\(\s*(?:['"`][^'"`]*['"`]|\w+)\s*,\s*(\w+)/);
     if (afterFirstArg) {
-      let bodyRaw = afterFirstArg[3] || ''; // object literal
-      if (afterFirstArg[2]) {
-        // Variable reference for body — try to resolve from const payload = {...}
-        const varName = afterFirstArg[2];
-        const bodyVarMatch = raw.match(new RegExp(`(?:const|let|var)\\s+${varName}\\s*=\\s*(\\{[\\s\\S]*?\\})\\s*;`));
-        if (bodyVarMatch) bodyRaw = bodyVarMatch[1];
-      }
-      if (bodyRaw) {
+      const varName = afterFirstArg[1];
+      // Resolve variable to balanced dict
+      const varDict = extractVarDict(raw, varName);
+      if (varDict) {
         try {
-          const cleaned = bodyRaw.replace(/'/g, '"');
-          result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
-        } catch {
-          result.body = bodyRaw;
-        }
+          result.body = JSON.stringify(JSON.parse(varDict.replace(/'/g, '"')), null, 2);
+        } catch { result.body = varDict; }
       }
     }
   }
