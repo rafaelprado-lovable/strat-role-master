@@ -532,3 +532,4 @@ ${analysisResult.analise_log_api.causa_raiz_sugerida}`}
     </div>
   );
 }
+
