@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Import, Terminal, Code2 } from 'lucide-react';
+import { Import, Terminal, Code2, Braces, Box } from 'lucide-react';
 import { detectAndParse, type ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface ImportHttpDialogProps {
@@ -49,12 +49,18 @@ export function ImportHttpDialog({ open, onClose, onImport }: ImportHttpDialogPr
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="gap-1 text-[10px]">
               <Terminal className="h-3 w-3" /> cURL
             </Badge>
             <Badge variant="outline" className="gap-1 text-[10px]">
-              <Code2 className="h-3 w-3" /> Python requests
+              <Code2 className="h-3 w-3" /> Python
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-[10px]">
+              <Braces className="h-3 w-3" /> Fetch
+            </Badge>
+            <Badge variant="outline" className="gap-1 text-[10px]">
+              <Box className="h-3 w-3" /> Axios
             </Badge>
           </div>
 
@@ -63,7 +69,7 @@ export function ImportHttpDialog({ open, onClose, onImport }: ImportHttpDialogPr
             <Textarea
               value={code}
               onChange={(e) => { setCode(e.target.value); setPreview(null); }}
-              placeholder={`curl -X POST 'https://api.example.com/data' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"key": "value"}'\n\nou\n\nrequests.post('https://api.example.com/data', headers={'Content-Type': 'application/json'}, json={'key': 'value'})`}
+              placeholder={`curl -X POST 'https://api.example.com/data' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"key": "value"}'\n\n// ou: requests.post, fetch(), axios.post`}
               className="min-h-[140px] font-mono text-xs"
             />
           </div>

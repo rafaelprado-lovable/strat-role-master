@@ -98,6 +98,101 @@ export function parsePythonRequests(raw: string): ParsedHttpRequest {
   return result;
 }
 
+export function parseFetch(raw: string): ParsedHttpRequest {
+  const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
+
+  // Extract URL from fetch('url' or fetch("url"
+  const urlMatch = raw.match(/fetch\s*\(\s*['"`]([^'"`]+)['"`]/);
+  if (urlMatch) result.url = urlMatch[1];
+
+  // Extract method
+  const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
+  if (methodMatch) result.method = methodMatch[1].toUpperCase();
+
+  // Extract headers object
+  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
+  if (headersMatch) {
+    try {
+      const jsonStr = headersMatch[1].replace(/'/g, '"');
+      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
+    } catch {
+      result.headers = headersMatch[1];
+    }
+  }
+
+  // Extract body from JSON.stringify(...) or body: '...' or body: `...`
+  const bodyStringifyMatch = raw.match(/body\s*:\s*JSON\.stringify\s*\((\{[\s\S]*?\})\s*\)/);
+  const bodyDirectMatch = raw.match(/body\s*:\s*['"`](\{[\s\S]*?\})['"`]/);
+  const bodyObjMatch = raw.match(/body\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
+  const bodyRaw = bodyStringifyMatch?.[1] || bodyDirectMatch?.[1] || bodyObjMatch?.[1];
+  if (bodyRaw) {
+    try {
+      const cleaned = bodyRaw.replace(/'/g, '"');
+      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
+    } catch {
+      result.body = bodyRaw;
+    }
+    if (!methodMatch) result.method = 'POST';
+  }
+
+  return result;
+}
+
+export function parseAxios(raw: string): ParsedHttpRequest {
+  const result: ParsedHttpRequest = { url: '', method: 'GET', headers: '', body: '' };
+
+  // Detect shorthand: axios.get/post/put/patch/delete('url', ...)
+  const shorthandMatch = raw.match(/axios\.(get|post|put|patch|delete|head|options)\s*\(\s*['"`]([^'"`]+)['"`]/i);
+  if (shorthandMatch) {
+    result.method = shorthandMatch[1].toUpperCase();
+    result.url = shorthandMatch[2];
+  }
+
+  // Detect config style: axios({ method, url, ... })
+  const methodMatch = raw.match(/method\s*:\s*['"`](\w+)['"`]/i);
+  if (methodMatch) result.method = methodMatch[1].toUpperCase();
+
+  const urlMatch = raw.match(/url\s*:\s*['"`]([^'"`]+)['"`]/);
+  if (urlMatch) result.url = urlMatch[1];
+
+  // Extract headers
+  const headersMatch = raw.match(/headers\s*:\s*(\{[^}]+\})/s);
+  if (headersMatch) {
+    try {
+      const jsonStr = headersMatch[1].replace(/'/g, '"');
+      result.headers = JSON.stringify(JSON.parse(jsonStr), null, 2);
+    } catch {
+      result.headers = headersMatch[1];
+    }
+  }
+
+  // Extract data/body
+  const dataMatch = raw.match(/data\s*:\s*(\{[\s\S]*?\})\s*[,\n}]/);
+  if (dataMatch) {
+    try {
+      const cleaned = dataMatch[1].replace(/'/g, '"');
+      result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
+    } catch {
+      result.body = dataMatch[1];
+    }
+  }
+
+  // For shorthand post/put/patch, second arg is body
+  if (!dataMatch && shorthandMatch && ['POST', 'PUT', 'PATCH'].includes(result.method)) {
+    const secondArgMatch = raw.match(/axios\.\w+\s*\(\s*['"`][^'"`]+['"`]\s*,\s*(\{[\s\S]*?\})\s*[,)]/);
+    if (secondArgMatch) {
+      try {
+        const cleaned = secondArgMatch[1].replace(/'/g, '"');
+        result.body = JSON.stringify(JSON.parse(cleaned), null, 2);
+      } catch {
+        result.body = secondArgMatch[1];
+      }
+    }
+  }
+
+  return result;
+}
+
 export function detectAndParse(raw: string): ParsedHttpRequest {
   const trimmed = raw.trim();
   if (trimmed.startsWith('curl ') || trimmed.startsWith('curl\n')) {
@@ -106,6 +201,12 @@ export function detectAndParse(raw: string): ParsedHttpRequest {
   if (trimmed.includes('requests.') || trimmed.includes('import requests')) {
     return parsePythonRequests(trimmed);
   }
-  // Try curl as fallback
+  if (trimmed.includes('axios') || trimmed.includes('import axios')) {
+    return parseAxios(trimmed);
+  }
+  if (trimmed.includes('fetch(') || trimmed.includes('fetch (')) {
+    return parseFetch(trimmed);
+  }
+  // Fallback
   return parseCurl(trimmed);
 }
