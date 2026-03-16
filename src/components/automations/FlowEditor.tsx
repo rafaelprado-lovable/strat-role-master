@@ -676,6 +676,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </div>
               <BlocksSidebarContent
                 triggers={triggers}
+                filters={filters}
                 actions={actions}
                 startDate={startDate}
                 setStartDate={setStartDate}
