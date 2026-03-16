@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +27,18 @@ export default function Analyses() {
   const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
   const [selectedDepartmentSysId, setSelectedDepartmentSysId] = useState("");
 
-  const handleTidAnalysis = async () => {
+  const fillCurrentDateTime = useCallback(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
+    const month = now.toLocaleString('en-US', { month: 'long' });
+    const year = now.getFullYear();
+    const time = now.toTimeString().slice(0, 8);
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    setDateTime(`${month} ${day}${suffix} ${year}, ${time}.${ms}`);
+  }, []);
+
+
     setIsLoading(true);
     try {
       setAnalysisResult(null);
@@ -270,13 +282,19 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
 
                         <div className="space-y-2">
                           <Label htmlFor="dateTime">Data e hora</Label>
-                          <Input
-                            id="dateTime"
-                            type="text"
-                            placeholder="March 15th 2026, 23:41:34.516"
-                            value={dateTime}
-                            onChange={(e) => setDateTime(e.target.value)}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              id="dateTime"
+                              type="text"
+                              placeholder="March 15th 2026, 23:41:34.516"
+                              value={dateTime}
+                              onChange={(e) => setDateTime(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button type="button" variant="outline" size="icon" onClick={fillCurrentDateTime} title="Preencher data/hora atual">
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </>
                     ) : (
@@ -305,13 +323,19 @@ ${analysisResult!.analise_log_api.causa_raiz_sugerida}
 
                         <div className="space-y-2">
                           <Label htmlFor="dateTime">Data e hora</Label>
-                          <Input
-                            id="dateTime"
-                            type="text"
-                            placeholder="March 15th 2026, 23:41:34.516"
-                            value={dateTime}
-                            onChange={(e) => setDateTime(e.target.value)}
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              id="dateTime"
+                              type="text"
+                              placeholder="March 15th 2026, 23:41:34.516"
+                              value={dateTime}
+                              onChange={(e) => setDateTime(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button type="button" variant="outline" size="icon" onClick={fillCurrentDateTime} title="Preencher data/hora atual">
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
