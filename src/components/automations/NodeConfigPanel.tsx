@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight, Import } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight, Import, Share2 } from 'lucide-react';
 import { type WorkflowForEach } from '@/types/automations';
 import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
 import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ImportHttpDialog } from './ImportHttpDialog';
+import { ExportHttpDialog } from './ExportHttpDialog';
 import type { ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface NodeConfigPanelProps {
@@ -712,6 +713,7 @@ interface PluginInputsSectionProps {
 function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitions, apiDefinitions, onUpdateInputs, currentNodeId }: PluginInputsSectionProps) {
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   
   // Find the API definition to get dynamic inputs/outputs
   const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
@@ -807,15 +809,26 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
           <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
           <div className="flex items-center gap-1">
             {isHttpPlugin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs gap-1 text-primary"
-                onClick={() => setShowImportDialog(true)}
-              >
-                <Import className="h-3 w-3" />
-                Importar
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs gap-1 text-primary"
+                  onClick={() => setShowImportDialog(true)}
+                >
+                  <Import className="h-3 w-3" />
+                  Importar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs gap-1 text-chart-2"
+                  onClick={() => setShowExportDialog(true)}
+                >
+                  <Share2 className="h-3 w-3" />
+                  Exportar
+                </Button>
+              </>
             )}
             <Button
               variant="ghost"
@@ -831,13 +844,20 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
         <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
 
-      {/* Import HTTP Dialog */}
+      {/* Import/Export HTTP Dialogs */}
       {isHttpPlugin && (
-        <ImportHttpDialog
-          open={showImportDialog}
-          onClose={() => setShowImportDialog(false)}
-          onImport={handleHttpImport}
-        />
+        <>
+          <ImportHttpDialog
+            open={showImportDialog}
+            onClose={() => setShowImportDialog(false)}
+            onImport={handleHttpImport}
+          />
+          <ExportHttpDialog
+            open={showExportDialog}
+            onClose={() => setShowExportDialog(false)}
+            inputs={inputs}
+          />
+        </>
       )}
 
       {showRawJson ? (
