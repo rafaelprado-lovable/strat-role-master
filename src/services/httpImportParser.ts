@@ -65,9 +65,9 @@ function extractBalancedBraces(str: string, startIdx: number): string | null {
   return null;
 }
 
-// Find balanced dict assigned to a variable: `varName = { ... }`
+// Find balanced dict assigned to a variable: `varName = { ... }` or `const varName = { ... }`
 function extractVarDict(raw: string, varName: string): string | null {
-  const regex = new RegExp(`(?:^|\\n)\\s*${varName}\\s*=\\s*\\{`, 'm');
+  const regex = new RegExp(`(?:^|\\n)\\s*(?:const|let|var)?\\s*${varName}\\s*=\\s*\\{`, 'm');
   const m = regex.exec(raw);
   if (!m) return null;
   const braceStart = raw.indexOf('{', m.index + varName.length);
