@@ -31,9 +31,8 @@ export default function Analyses() {
     try {
       setAnalysisResult(null);
 
-      // Format dateTime for the API: "February 18th 2026, 15:03:23.623"
-      const now = dateTime ? new Date(dateTime) : new Date();
-      const formatted = now.toLocaleString('en-US', {
+      // Use the raw dateTime string directly (expected format: "March 15th 2026, 23:41:34.516")
+      const formatted = dateTime.trim() || new Date().toLocaleString('en-US', {
         month: 'long', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
       });
