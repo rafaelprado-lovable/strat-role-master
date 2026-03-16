@@ -805,18 +805,40 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold">Inputs — {resolvedName}</Label>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs gap-1 text-muted-foreground"
-            onClick={() => setShowRawJson(!showRawJson)}
-          >
-            <Code className="h-3 w-3" />
-            {showRawJson ? 'Campos' : 'JSON'}
-          </Button>
+          <div className="flex items-center gap-1">
+            {isHttpPlugin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs gap-1 text-primary"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Import className="h-3 w-3" />
+                Importar
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs gap-1 text-muted-foreground"
+              onClick={() => setShowRawJson(!showRawJson)}
+            >
+              <Code className="h-3 w-3" />
+              {showRawJson ? 'Campos' : 'JSON'}
+            </Button>
+          </div>
         </div>
         <p className="text-[10px] text-muted-foreground">{resolvedDescription}</p>
       </div>
+
+      {/* Import HTTP Dialog */}
+      {isHttpPlugin && (
+        <ImportHttpDialog
+          open={showImportDialog}
+          onClose={() => setShowImportDialog(false)}
+          onImport={handleHttpImport}
+        />
+      )}
 
       {showRawJson ? (
         <div className="space-y-1.5">
