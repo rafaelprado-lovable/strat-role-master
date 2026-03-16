@@ -652,6 +652,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         <div className="hidden md:block w-60 shrink-0 border border-border/50 rounded-xl bg-card/90 backdrop-blur-sm p-4 overflow-y-auto space-y-4">
           <BlocksSidebarContent
             triggers={triggers}
+            filters={filters}
             actions={actions}
             startDate={startDate}
             setStartDate={setStartDate}
