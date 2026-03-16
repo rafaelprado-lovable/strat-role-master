@@ -101,12 +101,13 @@ export function DefinitionDialog({ open, onOpenChange, definition, onSave, loadi
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Categoria <span className="text-destructive">*</span></Label>
-                  <Select value={form.category} onValueChange={(v) => update({ category: v as 'trigger' | 'action' })}>
+                  <Select value={form.category} onValueChange={(v) => update({ category: v as 'trigger' | 'action' | 'filter' })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="trigger">Gatilho (Trigger)</SelectItem>
+                      <SelectItem value="filter">Filtro (Filter)</SelectItem>
                       <SelectItem value="action">Ação (Action)</SelectItem>
                     </SelectContent>
                   </Select>
