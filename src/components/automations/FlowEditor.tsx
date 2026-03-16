@@ -122,6 +122,30 @@ function BlocksSidebarContent({ triggers, filters, actions, startDate, setStartD
           </div>
         ))}
       </div>
+      {filters.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <Filter className="h-3 w-3 text-chart-2" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-2">Filtros</span>
+          </div>
+          {filters.map((block) => (
+            <div
+              key={block.value}
+              draggable
+              onDragStart={(e) => onDragStart(e, block)}
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-2/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+            >
+              <div className="p-1.5 rounded-md bg-chart-2/10 shrink-0">
+                <block.Icon className="h-3.5 w-3.5 text-chart-2" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="space-y-1.5">
         <div className="flex items-center gap-1.5 px-1">
           <Cog className="h-3 w-3 text-primary" />
