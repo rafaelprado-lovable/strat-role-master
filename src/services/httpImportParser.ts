@@ -292,7 +292,7 @@ export function parseAxios(raw: string): ParsedHttpRequest {
     const block = extractBalancedBraces(raw, braceIdx);
     if (block) {
       try {
-        result.body = JSON.stringify(JSON.parse(block.replace(/'/g, '"')), null, 2);
+        result.body = JSON.stringify(JSON.parse(jsObjToJson(block)), null, 2);
       } catch { result.body = block; }
     }
   }
