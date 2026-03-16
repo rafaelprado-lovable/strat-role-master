@@ -27,7 +27,18 @@ export default function Analyses() {
   const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
   const [selectedDepartmentSysId, setSelectedDepartmentSysId] = useState("");
 
-  const handleTidAnalysis = async () => {
+  const fillCurrentDateTime = useCallback(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
+    const month = now.toLocaleString('en-US', { month: 'long' });
+    const year = now.getFullYear();
+    const time = now.toTimeString().slice(0, 8);
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    setDateTime(`${month} ${day}${suffix} ${year}, ${time}.${ms}`);
+  }, []);
+
+
     setIsLoading(true);
     try {
       setAnalysisResult(null);
