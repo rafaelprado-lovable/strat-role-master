@@ -13,6 +13,7 @@ const ICON_OPTIONS = [
   'alert-triangle', 'terminal', 'message-circle', 'globe', 'timer',
   'brain', 'mail', 'database', 'code', 'zap', 'shield', 'server',
   'file-text', 'search', 'cpu', 'cloud', 'lock', 'key', 'webhook',
+  'git-branch', 'split', 'filter',
 ];
 
 interface Props {
