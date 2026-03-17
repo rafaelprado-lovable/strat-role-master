@@ -602,7 +602,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             className="max-w-[200px] md:max-w-[300px] font-medium"
           />
           <div className="hidden lg:block">
-            <TagInput tags={tags} onChange={setTags} placeholder="Tag..." />
+            <TagInput tags={tags} onChange={setTags} availableTags={allAvailableTags} placeholder="Tag..." />
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
