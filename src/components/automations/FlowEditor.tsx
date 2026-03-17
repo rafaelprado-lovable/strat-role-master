@@ -293,11 +293,21 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [tags, setTags] = useState<WorkflowTag[]>(workflow?.tags || []);
   const [correlatedWorkflowIds, setCorrelatedWorkflowIds] = useState<string[]>(workflow?.correlated_workflow_ids || []);
   const [availableWorkflows, setAvailableWorkflows] = useState<{ id: string; name: string }[]>([]);
+  const [allAvailableTags, setAllAvailableTags] = useState<WorkflowTag[]>([]);
 
   useEffect(() => {
     workflowService.list().then(data => {
       const list = Array.isArray(data) ? data : [];
       setAvailableWorkflows(list.map((w: any) => ({ id: w.id, name: w.name || w.id })));
+      // Collect all unique tags from existing workflows
+      const tagMap = new Map<string, WorkflowTag>();
+      list.forEach((w: any) => {
+        const wTags = Array.isArray(w.tags) ? w.tags : [];
+        wTags.forEach((t: any) => {
+          if (t?.id && t?.name) tagMap.set(t.id, t as WorkflowTag);
+        });
+      });
+      setAllAvailableTags(Array.from(tagMap.values()));
     }).catch(() => {});
   }, []);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
