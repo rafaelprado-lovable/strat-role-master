@@ -33,6 +33,7 @@ import SanityCheck from "./pages/SanityCheck";
 import Definitions from "./pages/Definitions";
 import NodeDocs from "./pages/NodeDocs";
 import Audit from "./pages/Audit";
+import Runbooks from "./pages/Runbooks";
 
 const queryClient = new QueryClient();
 
