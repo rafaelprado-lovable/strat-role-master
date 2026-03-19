@@ -30,6 +30,7 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
   const userId = apiClient.getUserId() || 'unknown';
 
   const runbookData = {
+    id: crypto.randomUUID(),
     userId,
     title: data.title,
     description: data.description,
