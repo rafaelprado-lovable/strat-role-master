@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
+import { Image, FileText } from "lucide-react";
 import { RunbookDialog } from "@/components/runbooks/RunbookDialog";
 import { DeleteRunbookDialog } from "@/components/runbooks/DeleteRunbookDialog";
 import { BookOpen, Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
