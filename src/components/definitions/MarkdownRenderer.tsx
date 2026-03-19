@@ -10,8 +10,14 @@ interface Props {
  * Simple markdown renderer — converts MD to HTML without external deps.
  * Supports: headings, code blocks, inline code, bold, italic, lists, links, hr, paragraphs.
  */
-export function MarkdownRenderer({ content }: Props) {
-  const html = useMemo(() => renderMarkdown(content), [content]);
+export function MarkdownRenderer({ content, attachmentMap }: Props) {
+  const html = useMemo(() => {
+    let processed = content;
+    if (attachmentMap) {
+      processed = processed.replace(/attachment:([a-f0-9-]+)/g, (match, id) => attachmentMap[id] || match);
+    }
+    return renderMarkdown(processed);
+  }, [content, attachmentMap]);
 
   return (
     <div
