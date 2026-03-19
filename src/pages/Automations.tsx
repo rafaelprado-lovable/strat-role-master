@@ -166,6 +166,7 @@ export default function Automations() {
       ) : (
         <AutomationsTable
           automations={workflows}
+          totalExecutions={totalExecutions}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
