@@ -32,6 +32,7 @@ import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
 import Definitions from "./pages/Definitions";
 import NodeDocs from "./pages/NodeDocs";
+import Audit from "./pages/Audit";
 
 const queryClient = new QueryClient();
 
