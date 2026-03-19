@@ -65,16 +65,22 @@ export default function Runbooks() {
     );
   }, [runbooks, search]);
 
-  const handleSave = (data: Omit<Runbook, "id" | "createdAt" | "updatedAt">) => {
+  const handleSave = async (data: Omit<Runbook, "id" | "createdAt" | "updatedAt">) => {
     if (editingRunbook) {
       setRunbooks((prev) =>
         prev.map((r) => (r.id === editingRunbook.id ? { ...r, ...data, updatedAt: new Date() } : r))
       );
       toast({ title: "Runbook atualizado" });
     } else {
-      const newRb: Runbook = { ...data, id: crypto.randomUUID(), createdAt: new Date(), updatedAt: new Date() };
-      setRunbooks((prev) => [newRb, ...prev]);
-      toast({ title: "Runbook criado" });
+      try {
+        await createRunbook(data);
+        const newRb: Runbook = { ...data, id: crypto.randomUUID(), createdAt: new Date(), updatedAt: new Date() };
+        setRunbooks((prev) => [newRb, ...prev]);
+        toast({ title: "Runbook criado com sucesso" });
+      } catch (err) {
+        console.error("Erro ao criar runbook:", err);
+        toast({ title: "Erro ao criar runbook", description: err instanceof Error ? err.message : "Erro desconhecido", variant: "destructive" });
+      }
     }
     setEditingRunbook(null);
   };
