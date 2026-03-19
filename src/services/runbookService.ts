@@ -133,7 +133,7 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
     sistemas: data.sistemas,
     attachments: data.attachments.map((a) => ({
       id: a.id,
-      name: a.name,
+      name: a.type === 'image' && !a.name.match(/\.(png|jpe?g|gif|webp|svg|bmp)$/i) ? `${a.name}.png` : a.name,
       type: a.type,
     })),
   };
