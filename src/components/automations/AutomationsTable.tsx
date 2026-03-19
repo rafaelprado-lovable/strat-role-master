@@ -25,6 +25,7 @@ import { TagFilter } from './TagFilter';
 interface AutomationsTableProps {
   automations: Workflow[];
   totalExecutions?: number;
+  executionCounts?: Record<string, number>;
   onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
   onDuplicate: (workflow: Workflow) => void;
