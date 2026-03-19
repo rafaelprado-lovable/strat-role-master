@@ -63,9 +63,8 @@ export default function Runbooks() {
     } else {
       try {
         await createRunbook(data);
-        const newRb: Runbook = { ...data, id: crypto.randomUUID(), createdAt: new Date(), updatedAt: new Date() };
-        setRunbooks((prev) => [newRb, ...prev]);
         toast({ title: "Runbook criado com sucesso" });
+        await loadRunbooks();
       } catch (err) {
         console.error("Erro ao criar runbook:", err);
         toast({ title: "Erro ao criar runbook", description: err instanceof Error ? err.message : "Erro desconhecido", variant: "destructive" });
