@@ -96,6 +96,8 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
   const [form, setForm] = useState(EMPTY_FORM);
   const [tagInput, setTagInput] = useState("");
   const [previewMd, setPreviewMd] = useState(false);
+  const [attachName, setAttachName] = useState("");
+  const [attachUrl, setAttachUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleOpenChange = (v: boolean) => {
