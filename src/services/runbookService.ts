@@ -48,15 +48,12 @@ function mapRunbookItem(item: any): Runbook {
   }
 
   // Build attachmentMap for resolving attachment:ID references in markdown
-  // The content uses ![name](attachment:UUID) but the API returns filenames, not UUIDs.
-  // Strategy: extract attachment:UUID from content, match by alt-text (name) to image URLs.
   const content = item.content || '';
   const attachRefRegex = /!\[([^\]]*)\]\(attachment:([a-f0-9-]+)\)/g;
   let match: RegExpExecArray | null;
   while ((match = attachRefRegex.exec(content)) !== null) {
-    const altName = match[1]; // e.g. "teste-1773909872444"
-    const uuid = match[2];    // e.g. "6d03c87b-..."
-    // Find matching image by name (with or without extension)
+    const altName = match[1];
+    const uuid = match[2];
     const img = (item.attachment_images || []).find((i: any) =>
       i.attachment === altName || i.attachment.replace(/\.[^.]+$/, '') === altName
     );
@@ -65,11 +62,20 @@ function mapRunbookItem(item: any): Runbook {
     }
   }
 
+  // Replace attachment:UUID references directly in content with signed URLs
+  let resolvedContent = content.replace(
+    /!\[([^\]]*)\]\(attachment:([a-f0-9-]+)\)/g,
+    (full, alt, uuid) => {
+      const url = attachmentMap[uuid];
+      return url ? `![${alt}](${url})` : full;
+    }
+  );
+
   return {
     id: item.id,
     title: item.title || '',
     description: item.description || '',
-    content: item.content || '',
+    content: resolvedContent,
     tags: item.tags || [],
     service: item.service || '',
     incident: item.record || '',
