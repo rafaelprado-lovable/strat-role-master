@@ -183,6 +183,7 @@ export default function Automations() {
           automations={workflows}
           totalExecutions={totalExecutions}
           executionCounts={executionCounts}
+          lastRunDates={lastRunDates}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
