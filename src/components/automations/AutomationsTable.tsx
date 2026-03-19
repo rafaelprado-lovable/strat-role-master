@@ -24,6 +24,7 @@ import { TagFilter } from './TagFilter';
 
 interface AutomationsTableProps {
   automations: Workflow[];
+  totalExecutions?: number;
   onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
   onDuplicate: (workflow: Workflow) => void;
@@ -38,7 +39,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export function AutomationsTable({
-  automations, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
+  automations, totalExecutions, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -82,7 +83,6 @@ export function AutomationsTable({
   };
 
   const activeCount = automations.filter(a => a.status === 'active').length;
-  const totalRuns = automations.reduce((sum, a) => sum + (a.runCount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -91,7 +91,7 @@ export function AutomationsTable({
         {[
           { label: 'Total de Workflows', value: automations.length, icon: GitBranch, color: 'text-primary' },
           { label: 'Ativos', value: activeCount, icon: Zap, color: 'text-emerald-500' },
-          { label: 'Execuções Totais', value: totalRuns, icon: Activity, color: 'text-accent' },
+          { label: 'Execuções Totais', value: totalExecutions ?? 0, icon: Activity, color: 'text-accent' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}

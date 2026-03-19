@@ -14,6 +14,7 @@ export default function Automations() {
   const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalExecutions, setTotalExecutions] = useState(0);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -22,7 +23,19 @@ export default function Automations() {
       setLoading(true);
       const data = await workflowService.list();
       const list = Array.isArray(data) ? data : [];
-      setWorkflows(list.map(parseWorkflowResponse));
+      const parsed = list.map(parseWorkflowResponse);
+      setWorkflows(parsed);
+
+      // Fetch execution counts for all workflows in parallel
+      try {
+        const execResults = await Promise.all(
+          parsed.map((w) => workflowService.listExecutions(w.id).catch(() => []))
+        );
+        const total = execResults.reduce((sum, execs) => sum + (Array.isArray(execs) ? execs.length : 0), 0);
+        setTotalExecutions(total);
+      } catch {
+        setTotalExecutions(0);
+      }
     } catch (err: any) {
       console.error('Erro ao buscar workflows:', err);
       toast.error(`Erro ao carregar workflows: ${err.message}`);
@@ -153,6 +166,7 @@ export default function Automations() {
       ) : (
         <AutomationsTable
           automations={workflows}
+          totalExecutions={totalExecutions}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
