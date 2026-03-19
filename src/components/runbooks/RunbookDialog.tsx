@@ -270,7 +270,7 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
 
             {previewMd ? (
               <div className="rounded-lg border border-border p-4 min-h-[300px]">
-                {form.content ? <MarkdownRenderer content={form.content} /> : <p className="text-muted-foreground text-sm">Nenhum conteúdo</p>}
+                {form.content ? <MarkdownRenderer content={form.content} attachmentMap={Object.fromEntries(form.attachments.map(a => [a.id, a.url]))} /> : <p className="text-muted-foreground text-sm">Nenhum conteúdo</p>}
               </div>
             ) : (
               <Textarea
