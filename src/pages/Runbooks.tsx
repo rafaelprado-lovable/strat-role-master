@@ -12,6 +12,7 @@ import { DeleteRunbookDialog } from "@/components/runbooks/DeleteRunbookDialog";
 import { BookOpen, Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Runbook } from "@/types/runbooks";
+import { createRunbook } from "@/services/runbookService";
 
 const initialRunbooks: Runbook[] = [
   {
