@@ -14,6 +14,7 @@ export default function Automations() {
   const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalExecutions, setTotalExecutions] = useState(0);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
