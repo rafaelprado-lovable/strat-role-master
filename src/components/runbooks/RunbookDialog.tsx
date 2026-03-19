@@ -284,19 +284,15 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                       e.preventDefault();
                       const file = item.getAsFile();
                       if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (evt) => {
-                        const dataUri = evt.target?.result as string;
-                        const name = `${form.title.trim() || "runbook"}-${Date.now()}`;
-                        const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: dataUri, type: "image" };
-                        const target = e.target as HTMLTextAreaElement;
-                        const pos = target.selectionStart || form.content.length;
-                        const imgMd = `![${name}](attachment:${att.id})\n`;
-                        const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
-                        update({ content: newContent, attachments: [...form.attachments, att] });
-                        toast({ title: "Imagem adicionada aos anexos" });
-                      };
-                      reader.readAsDataURL(file);
+                      const blobUrl = URL.createObjectURL(file);
+                      const name = `${form.title.trim() || "runbook"}-${Date.now()}`;
+                      const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: blobUrl, type: "image" };
+                      const target = e.target as HTMLTextAreaElement;
+                      const pos = target.selectionStart || form.content.length;
+                      const imgMd = `![${name}](attachment:${att.id})\n`;
+                      const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
+                      update({ content: newContent, attachments: [...form.attachments, att] });
+                      toast({ title: "Imagem adicionada aos anexos" });
                       return;
                     }
                   }
