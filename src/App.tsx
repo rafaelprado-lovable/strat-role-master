@@ -261,6 +261,16 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route
+              path="/audit"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Audit />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
