@@ -124,7 +124,14 @@ export default function Runbooks() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 && (
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    Carregando runbooks...
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     Nenhum runbook encontrado
