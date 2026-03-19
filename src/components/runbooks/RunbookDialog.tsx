@@ -284,40 +284,61 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                 onPaste={(e) => {
                   const items = e.clipboardData?.items;
                   if (!items) return;
+
                   for (const item of Array.from(items)) {
                     if (item.type.startsWith("image/")) {
                       e.preventDefault();
                       const file = item.getAsFile();
                       if (!file) return;
+
                       const blobUrl = URL.createObjectURL(file);
-                      const name = `${form.title.trim() || "runbook"}-${Date.now()}`;
-                      const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: blobUrl, type: "image" };
+                      const name = createAttachmentName(form.title);
+                      const att: RunbookAttachment = {
+                        id: crypto.randomUUID(),
+                        name,
+                        url: blobUrl,
+                        type: "image",
+                        file,
+                      };
                       const target = e.target as HTMLTextAreaElement;
-                      const pos = target.selectionStart || form.content.length;
+                      const pos = target.selectionStart ?? form.content.length;
                       const imgMd = `![${name}](attachment:${att.id})\n`;
-                      const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
-                      update({ content: newContent, attachments: [...form.attachments, att] });
+
+                      setForm((prev) => ({
+                        ...prev,
+                        content: prev.content.slice(0, pos) + imgMd + prev.content.slice(pos),
+                        attachments: [...prev.attachments, att],
+                      }));
                       toast({ title: "Imagem adicionada aos anexos" });
                       return;
                     }
                   }
+
                   const text = e.clipboardData.getData("text/plain").trim();
                   if (text && /^https?:\/\/.+/i.test(text)) {
                     e.preventDefault();
                     const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(text);
                     const target = e.target as HTMLTextAreaElement;
-                    const pos = target.selectionStart || form.content.length;
+                    const pos = target.selectionStart ?? form.content.length;
+
                     if (isImage) {
                       const name = text.split("/").pop()?.split("?")[0] || "imagem";
                       const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: text, type: "image" };
                       const imgMd = `![${name}](${text})\n`;
-                      const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
-                      update({ content: newContent, attachments: [...form.attachments, att] });
+
+                      setForm((prev) => ({
+                        ...prev,
+                        content: prev.content.slice(0, pos) + imgMd + prev.content.slice(pos),
+                        attachments: [...prev.attachments, att],
+                      }));
                       toast({ title: "Imagem adicionada aos anexos" });
                     } else {
                       const md = `[${text.split("/").pop() || "arquivo"}](${text})\n`;
-                      const newContent = form.content.slice(0, pos) + md + form.content.slice(pos);
-                      update({ content: newContent });
+
+                      setForm((prev) => ({
+                        ...prev,
+                        content: prev.content.slice(0, pos) + md + prev.content.slice(pos),
+                      }));
                       toast({ title: "Link inserido" });
                     }
                   }
