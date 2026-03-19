@@ -31,6 +31,7 @@ import ChangeExecution from "./pages/ChangeExecution";
 import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
 import Definitions from "./pages/Definitions";
+import NodeDocs from "./pages/NodeDocs";
 
 const queryClient = new QueryClient();
 
@@ -232,6 +233,14 @@ const App = () => (
                   <AppLayout>
                     <Definitions />
                   </AppLayout>
+              }
+            />
+            <Route
+              path="/docs/nodes"
+              element={
+                <AppLayout>
+                  <NodeDocs />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
