@@ -25,6 +25,7 @@ import { TagFilter } from './TagFilter';
 interface AutomationsTableProps {
   automations: Workflow[];
   totalExecutions?: number;
+  executionCounts?: Record<string, number>;
   onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
   onDuplicate: (workflow: Workflow) => void;
@@ -39,7 +40,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export function AutomationsTable({
-  automations, totalExecutions, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
+  automations, totalExecutions, executionCounts = {}, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -274,7 +275,7 @@ export function AutomationsTable({
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Hash className="h-3 w-3" />
-                          {wf.runCount} execuções
+                          {executionCounts[wf.id] ?? 0} execuções
                         </div>
                       </div>
                     </div>

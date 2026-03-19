@@ -15,6 +15,7 @@ export default function Automations() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalExecutions, setTotalExecutions] = useState(0);
+  const [executionCounts, setExecutionCounts] = useState<Record<string, number>>({});
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -29,11 +30,21 @@ export default function Automations() {
       // Fetch all executions in a single call
       try {
         const execCounts = await workflowService.listExecutions();
-        const total = Array.isArray(execCounts)
-          ? execCounts.reduce((sum, e: any) => sum + (e.total_executions || 0), 0)
-          : 0;
-        setTotalExecutions(total);
+        if (Array.isArray(execCounts)) {
+          const countsMap: Record<string, number> = {};
+          let total = 0;
+          execCounts.forEach((e: any) => {
+            countsMap[e.workflow_id] = e.total_executions || 0;
+            total += e.total_executions || 0;
+          });
+          setExecutionCounts(countsMap);
+          setTotalExecutions(total);
+        } else {
+          setExecutionCounts({});
+          setTotalExecutions(0);
+        }
       } catch {
+        setExecutionCounts({});
         setTotalExecutions(0);
       }
     } catch (err: any) {
@@ -167,6 +178,7 @@ export default function Automations() {
         <AutomationsTable
           automations={workflows}
           totalExecutions={totalExecutions}
+          executionCounts={executionCounts}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onDuplicate={handleDuplicate}
