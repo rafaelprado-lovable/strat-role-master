@@ -160,6 +160,9 @@ export default function Runbooks() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button size="sm" variant="ghost" onClick={() => setViewRunbook(r)} title="Visualizar">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
