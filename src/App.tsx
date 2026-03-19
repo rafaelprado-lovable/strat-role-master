@@ -235,6 +235,14 @@ const App = () => (
                   </AppLayout>
               }
             />
+            <Route
+              path="/docs/nodes"
+              element={
+                <AppLayout>
+                  <NodeDocs />
+                </AppLayout>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route
               path="/automations"
