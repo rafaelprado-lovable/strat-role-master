@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
 import { RunbookDialog } from "@/components/runbooks/RunbookDialog";
 import { DeleteRunbookDialog } from "@/components/runbooks/DeleteRunbookDialog";
-import { BookOpen, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Runbook } from "@/types/runbooks";
 
