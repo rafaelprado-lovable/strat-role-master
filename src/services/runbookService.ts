@@ -10,6 +10,63 @@ function generateMessageId(): string {
   return id;
 }
 
+/**
+ * Lista todos os runbooks via POST /v1/read/runbook (sem id).
+ */
+export async function fetchRunbooks(): Promise<Runbook[]> {
+  const userId = apiClient.getUserId() || 'unknown';
+  const data = await apiClient.post<any[]>('/v1/read/runbook', {
+    authUserId: userId,
+  });
+  return data.map((item) => ({
+    id: item.id,
+    title: item.title || '',
+    description: item.description || '',
+    content: item.content || '',
+    tags: item.tags || [],
+    service: item.service || '',
+    incident: item.record || '',
+    sistemas: item.sistemas || '',
+    attachments: (item.attachments || []).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      url: a.url || '',
+      type: a.type || 'file',
+    })),
+    createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+    updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+  }));
+}
+
+/**
+ * Lê um runbook específico via POST /v1/read/runbook (com id).
+ */
+export async function fetchRunbookById(id: string): Promise<Runbook> {
+  const userId = apiClient.getUserId() || 'unknown';
+  const data = await apiClient.post<any>('/v1/read/runbook', {
+    authUserId: userId,
+    id,
+  });
+  return {
+    id: data.id,
+    title: data.title || '',
+    description: data.description || '',
+    content: data.content || '',
+    tags: data.tags || [],
+    service: data.service || '',
+    incident: data.record || '',
+    sistemas: data.sistemas || '',
+    attachments: (data.attachments || []).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      url: a.url || '',
+      type: a.type || 'file',
+    })),
+    createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+    updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+  };
+}
+
 interface CreateRunbookPayload {
   title: string;
   description: string;
