@@ -3,6 +3,7 @@ export interface RunbookAttachment {
   name: string;
   url: string;
   type: "image" | "file";
+  file?: File;
 }
 
 export interface Runbook {

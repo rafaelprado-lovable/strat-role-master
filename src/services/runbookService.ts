@@ -119,6 +119,35 @@ interface CreateRunbookPayload {
   attachments: RunbookAttachment[];
 }
 
+const ATTACHMENT_FILE_EXTENSION_REGEX = /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|txt|md)$/i;
+
+function normalizeAttachmentFileName(attachment: RunbookAttachment): string {
+  const trimmedName = attachment.name.trim();
+  if (ATTACHMENT_FILE_EXTENSION_REGEX.test(trimmedName)) {
+    return trimmedName;
+  }
+
+  return attachment.type === 'image' ? `${trimmedName}.png` : trimmedName;
+}
+
+async function buildAttachmentUpload(attachment: RunbookAttachment): Promise<{ blob: Blob; fileName: string }> {
+  const fileName = normalizeAttachmentFileName(attachment);
+
+  if (attachment.file) {
+    return { blob: attachment.file, fileName };
+  }
+
+  const response = await fetch(attachment.url);
+  if (!response.ok) {
+    throw new Error(`Não foi possível baixar o anexo "${attachment.name}"`);
+  }
+
+  return {
+    blob: await response.blob(),
+    fileName,
+  };
+}
+
 /**
  * Cria um runbook via POST /v1/create/runbook (multipart/form-data).
  * - `runbook_data`: JSON com metadados
@@ -126,6 +155,10 @@ interface CreateRunbookPayload {
  */
 export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
   const userId = apiClient.getUserId() || 'unknown';
+  const normalizedAttachments = data.attachments.map((attachment) => ({
+    ...attachment,
+    name: normalizeAttachmentFileName(attachment),
+  }));
 
   const runbookData = {
     id: crypto.randomUUID(),
@@ -135,39 +168,33 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
     content: data.content,
     tags: data.tags,
     service: data.service,
-    record: data.incident, // API usa "record" em vez de "incident"
+    record: data.incident,
     sistemas: data.sistemas,
-    attachments: data.attachments.map((a) => ({
-      id: a.id,
-      name: a.type === 'image' && !a.name.match(/\.(png|jpe?g|gif|webp|svg|bmp)$/i) ? `${a.name}.png` : a.name,
-      type: a.type,
+    attachments: normalizedAttachments.map((attachment) => ({
+      id: attachment.id,
+      name: attachment.name,
+      type: attachment.type,
     })),
   };
 
   const formData = new FormData();
   formData.append('runbook_data', JSON.stringify(runbookData));
 
-  // Convert all blob/external URLs to File objects in parallel before appending
   const fileResults = await Promise.all(
-    data.attachments.map(async (att) => {
+    normalizedAttachments.map(async (attachment) => {
       try {
-        const response = await fetch(att.url);
-        const blob = await response.blob();
-        const hasExtension = /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|txt|md)$/i.test(att.name);
-        const fileName = hasExtension ? att.name : (att.type === 'image' ? `${att.name}.png` : att.name);
-        return { blob, fileName };
-      } catch (err) {
-        console.warn(`Falha ao converter anexo "${att.name}" para upload:`, err);
-        return null;
+        return await buildAttachmentUpload(attachment);
+      } catch (error) {
+        throw new Error(
+          `Falha ao preparar o anexo "${attachment.name}" para upload: ${error instanceof Error ? error.message : 'erro desconhecido'}`
+        );
       }
     })
   );
 
-  for (const result of fileResults) {
-    if (result) {
-      formData.append('file', result.blob, result.fileName);
-    }
-  }
+  fileResults.forEach((result) => {
+    formData.append('file', result.blob, result.fileName);
+  });
 
   const userToken = localStorage.getItem('userToken');
 
