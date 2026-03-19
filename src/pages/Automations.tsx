@@ -23,7 +23,19 @@ export default function Automations() {
       setLoading(true);
       const data = await workflowService.list();
       const list = Array.isArray(data) ? data : [];
-      setWorkflows(list.map(parseWorkflowResponse));
+      const parsed = list.map(parseWorkflowResponse);
+      setWorkflows(parsed);
+
+      // Fetch execution counts for all workflows in parallel
+      try {
+        const execResults = await Promise.all(
+          parsed.map((w) => workflowService.listExecutions(w.id).catch(() => []))
+        );
+        const total = execResults.reduce((sum, execs) => sum + (Array.isArray(execs) ? execs.length : 0), 0);
+        setTotalExecutions(total);
+      } catch {
+        setTotalExecutions(0);
+      }
     } catch (err: any) {
       console.error('Erro ao buscar workflows:', err);
       toast.error(`Erro ao carregar workflows: ${err.message}`);
