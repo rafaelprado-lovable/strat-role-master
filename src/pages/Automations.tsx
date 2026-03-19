@@ -26,13 +26,10 @@ export default function Automations() {
       const parsed = list.map(parseWorkflowResponse);
       setWorkflows(parsed);
 
-      // Fetch execution counts for all workflows in parallel
+      // Fetch all executions in a single call
       try {
-        const execResults = await Promise.all(
-          parsed.map((w) => workflowService.listExecutions(w.id).catch(() => []))
-        );
-        const total = execResults.reduce((sum, execs) => sum + (Array.isArray(execs) ? execs.length : 0), 0);
-        setTotalExecutions(total);
+        const allExecs = await workflowService.listExecutions();
+        setTotalExecutions(Array.isArray(allExecs) ? allExecs.length : 0);
       } catch {
         setTotalExecutions(0);
       }
