@@ -276,7 +276,43 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
               <Textarea
                 value={form.content}
                 onChange={(e) => update({ content: e.target.value })}
-                placeholder="# Roteiro de análise / Troubleshooting&#10;&#10;# 1. Objetivo&#10;&#10;Descreva o objetivo..."
+                onPaste={(e) => {
+                  const items = e.clipboardData?.items;
+                  if (!items) return;
+                  for (const item of Array.from(items)) {
+                    // Handle pasted image files (converts to data URI)
+                    if (item.type.startsWith("image/")) {
+                      e.preventDefault();
+                      const file = item.getAsFile();
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (evt) => {
+                        const dataUri = evt.target?.result as string;
+                        const target = e.target as HTMLTextAreaElement;
+                        const pos = target.selectionStart || form.content.length;
+                        const imgMd = `![${file.name || "imagem"}](${dataUri})\n`;
+                        const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
+                        update({ content: newContent });
+                        toast({ title: "Imagem colada no conteúdo" });
+                      };
+                      reader.readAsDataURL(file);
+                      return;
+                    }
+                  }
+                  // Handle pasted URL text
+                  const text = e.clipboardData.getData("text/plain").trim();
+                  if (text && /^https?:\/\/.+/i.test(text)) {
+                    e.preventDefault();
+                    const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(text);
+                    const target = e.target as HTMLTextAreaElement;
+                    const pos = target.selectionStart || form.content.length;
+                    const md = isImage ? `![imagem](${text})\n` : `[${text.split("/").pop() || "arquivo"}](${text})\n`;
+                    const newContent = form.content.slice(0, pos) + md + form.content.slice(pos);
+                    update({ content: newContent });
+                    toast({ title: isImage ? "Imagem inserida" : "Link inserido" });
+                  }
+                }}
+                placeholder="# Roteiro de análise / Troubleshooting&#10;&#10;# 1. Objetivo&#10;&#10;Descreva o objetivo...&#10;&#10;💡 Cole imagens ou URLs com Ctrl+V"
                 className="min-h-[300px] font-mono text-sm"
               />
             )}
