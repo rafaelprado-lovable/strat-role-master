@@ -84,6 +84,11 @@ const EMPTY_FORM = {
   attachments: [] as RunbookAttachment[],
 };
 
+function createAttachmentName(title: string) {
+  const prefix = title.trim() || "runbook";
+  return `${prefix}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 interface RunbookDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
