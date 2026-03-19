@@ -13,12 +13,59 @@ function generateMessageId(): string {
 /**
  * Lista todos os runbooks via POST /v1/read/runbook (sem id).
  */
-export async function fetchRunbooks(): Promise<Runbook[]> {
-  const userId = apiClient.getUserId() || 'unknown';
-  const data = await apiClient.post<any[]>('/v1/read/runbook', {
-    authUserId: userId,
-  });
-  return data.map((item) => ({
+function mapRunbookItem(item: any): Runbook {
+  // Build attachments from attachment_public_urls and attachment_images
+  const attachments: RunbookAttachment[] = [];
+  const attachmentMap: Record<string, string> = {};
+
+  // Process attachment_images (images with signed URLs)
+  if (Array.isArray(item.attachment_images)) {
+    for (const img of item.attachment_images) {
+      const id = img.attachment || '';
+      const url = img.signed_url || img.file_url || '';
+      attachments.push({ id, name: img.attachment, url, type: 'image' });
+    }
+  }
+
+  // Process attachment_public_urls (non-image files)
+  if (Array.isArray(item.attachment_public_urls)) {
+    for (const pub of item.attachment_public_urls) {
+      const alreadyAdded = attachments.some((a) => a.name === pub.attachment);
+      if (!alreadyAdded) {
+        const isImage = (pub.content_type || '').startsWith('image/');
+        const url = pub.signed_url || pub.file_url || '';
+        attachments.push({
+          id: pub.attachment,
+          name: pub.attachment,
+          url,
+          type: isImage ? 'image' : 'file',
+        });
+        if (isImage) {
+          // also available for inline markdown images
+        }
+      }
+    }
+  }
+
+  // Build attachmentMap for resolving attachment:ID references in markdown
+  // The content uses ![name](attachment:UUID) but the API returns filenames, not UUIDs.
+  // Strategy: extract attachment:UUID from content, match by alt-text (name) to image URLs.
+  const content = item.content || '';
+  const attachRefRegex = /!\[([^\]]*)\]\(attachment:([a-f0-9-]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = attachRefRegex.exec(content)) !== null) {
+    const altName = match[1]; // e.g. "teste-1773909872444"
+    const uuid = match[2];    // e.g. "6d03c87b-..."
+    // Find matching image by name (with or without extension)
+    const img = (item.attachment_images || []).find((i: any) =>
+      i.attachment === altName || i.attachment.replace(/\.[^.]+$/, '') === altName
+    );
+    if (img) {
+      attachmentMap[uuid] = img.signed_url || img.file_url || '';
+    }
+  }
+
+  return {
     id: item.id,
     title: item.title || '',
     description: item.description || '',
@@ -27,15 +74,20 @@ export async function fetchRunbooks(): Promise<Runbook[]> {
     service: item.service || '',
     incident: item.record || '',
     sistemas: item.sistemas || '',
-    attachments: (item.attachments || []).map((a: any) => ({
-      id: a.id,
-      name: a.name,
-      url: a.url || '',
-      type: a.type || 'file',
-    })),
+    attachments,
+    attachmentMap,
     createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
     updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
-  }));
+  };
+}
+
+export async function fetchRunbooks(): Promise<Runbook[]> {
+  const userId = apiClient.getUserId() || 'unknown';
+  const data = await apiClient.post<any>('/v1/read/runbook', {
+    authUserId: userId,
+  });
+  const items = Array.isArray(data) ? data : (data.items || []);
+  return items.map(mapRunbookItem);
 }
 
 /**
@@ -47,24 +99,7 @@ export async function fetchRunbookById(id: string): Promise<Runbook> {
     authUserId: userId,
     id,
   });
-  return {
-    id: data.id,
-    title: data.title || '',
-    description: data.description || '',
-    content: data.content || '',
-    tags: data.tags || [],
-    service: data.service || '',
-    incident: data.record || '',
-    sistemas: data.sistemas || '',
-    attachments: (data.attachments || []).map((a: any) => ({
-      id: a.id,
-      name: a.name,
-      url: a.url || '',
-      type: a.type || 'file',
-    })),
-    createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-    updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-  };
+  return mapRunbookItem(data);
 }
 
 interface CreateRunbookPayload {
