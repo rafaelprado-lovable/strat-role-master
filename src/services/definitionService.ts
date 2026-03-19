@@ -19,6 +19,7 @@ export interface Definition {
   category: 'trigger' | 'action' | 'filter';
   inputs: DefinitionField[];
   outputs: DefinitionField[];
+  documentation?: string;
   createdAt?: string;
   updatedAt?: string;
 }
