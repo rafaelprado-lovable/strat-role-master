@@ -147,16 +147,25 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
   const formData = new FormData();
   formData.append('runbook_data', JSON.stringify(runbookData));
 
-  // Converte blob URLs ou URLs externas em File objects para envio
-  for (const att of data.attachments) {
-    try {
-      const response = await fetch(att.url);
-      const blob = await response.blob();
-      const hasExtension = /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|txt|md)$/i.test(att.name);
-      const fileName = hasExtension ? att.name : (att.type === 'image' ? `${att.name}.png` : att.name);
-      formData.append('file', blob, fileName);
-    } catch (err) {
-      console.warn(`Falha ao converter anexo "${att.name}" para upload:`, err);
+  // Convert all blob/external URLs to File objects in parallel before appending
+  const fileResults = await Promise.all(
+    data.attachments.map(async (att) => {
+      try {
+        const response = await fetch(att.url);
+        const blob = await response.blob();
+        const hasExtension = /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|txt|md)$/i.test(att.name);
+        const fileName = hasExtension ? att.name : (att.type === 'image' ? `${att.name}.png` : att.name);
+        return { blob, fileName };
+      } catch (err) {
+        console.warn(`Falha ao converter anexo "${att.name}" para upload:`, err);
+        return null;
+      }
+    })
+  );
+
+  for (const result of fileResults) {
+    if (result) {
+      formData.append('file', result.blob, result.fileName);
     }
   }
 
