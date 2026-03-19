@@ -147,7 +147,9 @@ function inlineFormat(text: string): string {
   // italic
   s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
   s = s.replace(/_(.+?)_/g, '<em>$1</em>');
-  // links
+  // images ![alt](url)
+  s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg border border-border my-2" />');
+  // links [text](url)
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   return s;
 }
