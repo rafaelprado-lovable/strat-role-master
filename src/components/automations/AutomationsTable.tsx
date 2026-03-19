@@ -91,7 +91,7 @@ export function AutomationsTable({
         {[
           { label: 'Total de Workflows', value: automations.length, icon: GitBranch, color: 'text-primary' },
           { label: 'Ativos', value: activeCount, icon: Zap, color: 'text-emerald-500' },
-          { label: 'Execuções Totais', value: totalRuns, icon: Activity, color: 'text-accent' },
+          { label: 'Execuções Totais', value: totalExecutions ?? 0, icon: Activity, color: 'text-accent' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
