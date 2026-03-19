@@ -8,8 +8,6 @@ import { definitionService, type Definition, type DefinitionField } from "@/serv
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Skeleton } from "@/components/ui/skeleton";
 
 function resolveIcon(iconName?: string): React.ElementType {
   if (!iconName) return Globe;
