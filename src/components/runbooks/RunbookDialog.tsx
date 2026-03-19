@@ -154,9 +154,10 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
         </DialogHeader>
 
         <Tabs defaultValue="info" className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="content">Conteúdo (MD)</TabsTrigger>
+            <TabsTrigger value="attachments">Anexos ({form.attachments.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="space-y-4 mt-4">
