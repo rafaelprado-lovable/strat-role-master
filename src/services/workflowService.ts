@@ -86,8 +86,11 @@ export const workflowService = {
     });
   },
 
-  async listExecutions(): Promise<WorkflowApiResponse[]> {
-    const data = await apiClient.get<WorkflowApiResponse[]>('/v1/execution');
+  async listExecutions(workflowId?: string): Promise<WorkflowApiResponse[]> {
+    const url = workflowId
+      ? `/v1/execution/workflow?workflow_id=${encodeURIComponent(workflowId)}`
+      : '/v1/execution/workflow';
+    const data = await apiClient.get<WorkflowApiResponse[]>(url);
     return Array.isArray(data) ? data : [];
   },
 

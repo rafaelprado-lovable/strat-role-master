@@ -280,7 +280,7 @@ export default function WorkflowExecution() {
       // Lock check: verify no active execution for this workflow or correlated workflows
       let lockBlocked = false;
       try {
-        const executions = await workflowService.listExecutions();
+        const executions = await workflowService.listExecutions(workflow.id);
         if (Array.isArray(executions) && executions.length > 0) {
           const idsToCheck = new Set([workflow.id]);
           if (workflow.correlated_workflow_ids && workflow.correlated_workflow_ids.length > 0) {
