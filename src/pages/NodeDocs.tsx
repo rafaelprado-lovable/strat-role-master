@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronDown, ChevronRight, ArrowRight, BookOpen } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, ArrowRight, BookOpen, FileText } from "lucide-react";
 import { icons, Globe } from "lucide-react";
 import { definitionService, type Definition, type DefinitionField } from "@/services/definitionService";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 
