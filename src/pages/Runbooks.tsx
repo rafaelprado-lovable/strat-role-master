@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,44 +12,33 @@ import { DeleteRunbookDialog } from "@/components/runbooks/DeleteRunbookDialog";
 import { BookOpen, Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Runbook } from "@/types/runbooks";
-import { createRunbook } from "@/services/runbookService";
-
-const initialRunbooks: Runbook[] = [
-  {
-    id: "1",
-    title: "Procedimento de Validação - PFE Front End",
-    description: "Passo a passo para validação da saúde do ambiente PFE e restart de nodes",
-    content: "# Roteiro de análise / Troubleshooting\n\n# Sistemas envolvidos: PFE\n\n# 1. Objetivo\n\nEste documento descreve o passo a passo para validação da saúde do ambiente PFE.\n\n# 2. Escopo\n\n- Validação preventiva do ambiente\n- Análise de incidentes\n- Pós-manutenção ou pós-deploy\n\n# 3. Validação do Estado do Ambiente\n\n## 3.1 Dashboard\n\nAcessar Grafana e verificar métricas de `httpStatus (-40000)` para problemas de timeout.\n\n# 4. Validações do Ambiente\n\n## 4.1 Validar Health dos Nodes\n\nCaso identificado problema em algum dos nodes, efetuar shutdown e restart.\n\n## 4.2 Console Weblogic fora do Ar\n\nCaso a console esteja inacessível:\n\n```bash\nps -ef | grep -i admin\nkill -9 [PID]\ncd /MIPPapp/mippfe/Oracle/Middleware/user_projects/domains/Mipp2Domain/\nnohup ./startWebLogic.sh &\n```\n\n# 5. Validação Pós-Procedimento\n\nAcesse o Grafana para conferir a normalização do ambiente.\n\n# 6. Considerações Finais\n\nEste procedimento garante uma visão clara da saúde do ambiente.\n\n# ✅ Conclusão Operacional\n\n- Tempo alto/timeout com provedor PFE\n- Identificação de erros -40000\n- Restart na aplicação Front-End do PFE\n- Validação realizada via Grafana após subida dos processos",
-    tags: ["critical", "kubernetes"],
-    service: "API Gateway",
-    incident: "INC-001",
-    sistemas: "PFE",
-    attachments: [],
-    createdAt: new Date("2025-12-01"),
-    updatedAt: new Date("2026-02-15"),
-  },
-  {
-    id: "2",
-    title: "Failover de Database",
-    description: "Runbook de failover do cluster de banco de dados primário para réplica",
-    content: "# Roteiro de análise / Troubleshooting\n\n# Sistemas envolvidos: Database Cluster\n\n# 1. Objetivo\n\nProcedimento de failover do cluster primário.\n\n# 2. Escopo\n\n- Falha do cluster primário\n- Manutenção programada\n\n# 3. Validação do Estado do Ambiente\n\n## 3.1 Console AWS RDS\n\nVerificar status das instâncias.\n\n# 4. Validações do Ambiente\n\n## 4.1 Promover Réplica\n\n1. Acessar console AWS RDS\n2. Promover réplica\n3. Atualizar DNS\n4. Validar conexões\n\n# 5. Validação Pós-Procedimento\n\nVerificar que todas as aplicações reconectaram.\n\n# 6. Considerações Finais\n\nManter documentação atualizada.\n\n# ✅ Conclusão Operacional\n\n- Failover executado com sucesso\n- Validação de conexões realizada",
-    tags: ["database", "critical"],
-    service: "Database Cluster",
-    incident: "CRISIS-042",
-    sistemas: "Database Cluster",
-    attachments: [],
-    createdAt: new Date("2026-01-10"),
-    updatedAt: new Date("2026-03-01"),
-  },
-];
+import { createRunbook, fetchRunbooks } from "@/services/runbookService";
 
 export default function Runbooks() {
-  const [runbooks, setRunbooks] = useState<Runbook[]>(initialRunbooks);
+  const [runbooks, setRunbooks] = useState<Runbook[]>([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRunbook, setEditingRunbook] = useState<Runbook | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Runbook | null>(null);
   const [search, setSearch] = useState("");
   const [viewRunbook, setViewRunbook] = useState<Runbook | null>(null);
+
+  useEffect(() => {
+    loadRunbooks();
+  }, []);
+
+  const loadRunbooks = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchRunbooks();
+      setRunbooks(data);
+    } catch (err) {
+      console.error("Erro ao carregar runbooks:", err);
+      toast({ title: "Erro ao carregar runbooks", description: err instanceof Error ? err.message : "Erro desconhecido", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
