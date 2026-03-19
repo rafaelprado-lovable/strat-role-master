@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 
 interface Props {
   content: string;
+  /** Map of attachment:ID → actual URL for resolving pasted images */
+  attachmentMap?: Record<string, string>;
 }
 
 /**
