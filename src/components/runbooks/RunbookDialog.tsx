@@ -8,9 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
-import { Plus, Upload, Eye, Code, X } from "lucide-react";
+import { Plus, Upload, Eye, Code, X, Image, FileText, Link, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import type { Runbook } from "@/types/runbooks";
+import type { Runbook, RunbookAttachment } from "@/types/runbooks";
 
 const MOCK_SERVICES = ["API Gateway", "Auth Service", "Payment Service", "Notification Service", "Database Cluster", "CDN"];
 const MOCK_TAGS = ["critical", "network", "database", "kubernetes", "rollback", "security", "monitoring"];
