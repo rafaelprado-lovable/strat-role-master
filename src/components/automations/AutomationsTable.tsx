@@ -275,7 +275,7 @@ export function AutomationsTable({
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Hash className="h-3 w-3" />
-                          {wf.runCount} execuções
+                          {executionCounts[wf.id] ?? 0} execuções
                         </div>
                       </div>
                     </div>
