@@ -287,7 +287,8 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                       const reader = new FileReader();
                       reader.onload = (evt) => {
                         const dataUri = evt.target?.result as string;
-                        const name = file.name || `imagem-${Date.now()}`;
+                        const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+                        const name = `${form.title.trim() || "runbook"}-${timestamp}`;
                         const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: dataUri, type: "image" };
                         const target = e.target as HTMLTextAreaElement;
                         const pos = target.selectionStart || form.content.length;
