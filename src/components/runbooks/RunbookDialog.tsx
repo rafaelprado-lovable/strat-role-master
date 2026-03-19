@@ -280,7 +280,6 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                   const items = e.clipboardData?.items;
                   if (!items) return;
                   for (const item of Array.from(items)) {
-                    // Handle pasted image files (converts to data URI)
                     if (item.type.startsWith("image/")) {
                       e.preventDefault();
                       const file = item.getAsFile();
@@ -288,28 +287,38 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                       const reader = new FileReader();
                       reader.onload = (evt) => {
                         const dataUri = evt.target?.result as string;
+                        const name = file.name || `imagem-${Date.now()}`;
+                        const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: dataUri, type: "image" };
                         const target = e.target as HTMLTextAreaElement;
                         const pos = target.selectionStart || form.content.length;
-                        const imgMd = `![${file.name || "imagem"}](${dataUri})\n`;
+                        const imgMd = `![${name}](attachment:${att.id})\n`;
                         const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
-                        update({ content: newContent });
-                        toast({ title: "Imagem colada no conteúdo" });
+                        update({ content: newContent, attachments: [...form.attachments, att] });
+                        toast({ title: "Imagem adicionada aos anexos" });
                       };
                       reader.readAsDataURL(file);
                       return;
                     }
                   }
-                  // Handle pasted URL text
                   const text = e.clipboardData.getData("text/plain").trim();
                   if (text && /^https?:\/\/.+/i.test(text)) {
                     e.preventDefault();
                     const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(text);
                     const target = e.target as HTMLTextAreaElement;
                     const pos = target.selectionStart || form.content.length;
-                    const md = isImage ? `![imagem](${text})\n` : `[${text.split("/").pop() || "arquivo"}](${text})\n`;
-                    const newContent = form.content.slice(0, pos) + md + form.content.slice(pos);
-                    update({ content: newContent });
-                    toast({ title: isImage ? "Imagem inserida" : "Link inserido" });
+                    if (isImage) {
+                      const name = text.split("/").pop()?.split("?")[0] || "imagem";
+                      const att: RunbookAttachment = { id: crypto.randomUUID(), name, url: text, type: "image" };
+                      const imgMd = `![${name}](${text})\n`;
+                      const newContent = form.content.slice(0, pos) + imgMd + form.content.slice(pos);
+                      update({ content: newContent, attachments: [...form.attachments, att] });
+                      toast({ title: "Imagem adicionada aos anexos" });
+                    } else {
+                      const md = `[${text.split("/").pop() || "arquivo"}](${text})\n`;
+                      const newContent = form.content.slice(0, pos) + md + form.content.slice(pos);
+                      update({ content: newContent });
+                      toast({ title: "Link inserido" });
+                    }
                   }
                 }}
                 placeholder="# Roteiro de análise / Troubleshooting&#10;&#10;# 1. Objetivo&#10;&#10;Descreva o objetivo...&#10;&#10;💡 Cole imagens ou URLs com Ctrl+V"
