@@ -70,77 +70,16 @@ function UserDetailDialog({
   onClose: () => void;
   logs: typeof mockLogs;
 }) {
-  const userLogs = useMemo(() => logs.filter((l) => l.user === user), [logs, user]);
+  const userLogs = useMemo(
+    () => [...logs.filter((l) => l.user === user)].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
+    [logs, user]
+  );
 
-  // Daily access timeline
-  const dailyAccess = useMemo(() => {
-    const map: Record<string, number> = {};
-    userLogs.forEach((l) => {
-      const day = l.timestamp.toLocaleDateString("pt-BR");
-      map[day] = (map[day] || 0) + 1;
-    });
-    return Object.entries(map)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => {
-        const [da, ma, ya] = a.date.split("/").map(Number);
-        const [db, mb, yb] = b.date.split("/").map(Number);
-        return new Date(ya, ma - 1, da).getTime() - new Date(yb, mb - 1, db).getTime();
-      });
-  }, [userLogs]);
-
-  // Pages visited
-  const pageVisits = useMemo(() => {
-    const map: Record<string, number> = {};
-    userLogs.filter((l) => l.action === "page_view").forEach((l) => {
-      map[l.page] = (map[l.page] || 0) + 1;
-    });
-    return Object.entries(map)
-      .map(([page, count]) => ({ page, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [userLogs]);
-
-  // Actions breakdown
-  const actionBreakdown = useMemo(() => {
-    const map: Record<string, number> = {};
-    userLogs.forEach((l) => {
-      map[l.action] = (map[l.action] || 0) + 1;
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [userLogs]);
-
-  // IPs used
-  const ipsUsed = useMemo(() => {
-    const set = new Set(userLogs.map((l) => l.ip));
-    return Array.from(set);
-  }, [userLogs]);
-
-  // Browsers used
-  const browsersUsed = useMemo(() => {
-    const map: Record<string, number> = {};
-    userLogs.forEach((l) => {
-      map[l.userAgent] = (map[l.userAgent] || 0) + 1;
-    });
-    return Object.entries(map).map(([browser, count]) => ({ browser, count })).sort((a, b) => b.count - a.count);
-  }, [userLogs]);
-
-  const totalEvents = userLogs.length;
-  const totalLogins = userLogs.filter((l) => l.action === "login").length;
-  const lastAccess = userLogs.length
-    ? new Date(Math.max(...userLogs.map((l) => l.timestamp.getTime())))
-    : null;
-
-  const lineConfig = { count: { label: "Acessos", color: CHART_COLORS[0] } };
-  const pieConfig = useMemo(() => {
-    const cfg: Record<string, { label: string; color: string }> = {};
-    actionBreakdown.forEach((item, i) => {
-      cfg[item.name] = { label: actionLabel(item.name), color: CHART_COLORS[i % CHART_COLORS.length] };
-    });
-    return cfg;
-  }, [actionBreakdown]);
+  const lastAccess = userLogs.length ? userLogs[0].timestamp : null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5 text-primary" />
@@ -148,166 +87,40 @@ function UserDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* KPIs */}
-        <div className="grid gap-3 sm:grid-cols-4 mt-2">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-xs text-muted-foreground">Total Eventos</p>
-              <p className="text-xl font-bold text-foreground">{totalEvents}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-xs text-muted-foreground">Logins</p>
-              <p className="text-xl font-bold text-foreground">{totalLogins}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-xs text-muted-foreground">IPs Distintos</p>
-              <p className="text-xl font-bold text-foreground">{ipsUsed.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-xs text-muted-foreground">Último Acesso</p>
-              <p className="text-sm font-bold text-foreground">
-                {lastAccess ? `${lastAccess.toLocaleDateString("pt-BR")} ${lastAccess.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "—"}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Último acesso */}
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-3">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Último acesso:</span>
+          <span className="text-sm font-medium text-foreground">
+            {lastAccess
+              ? `${lastAccess.toLocaleDateString("pt-BR")} às ${lastAccess.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+              : "—"}
+          </span>
         </div>
 
-        {/* Charts row */}
-        <div className="grid gap-4 lg:grid-cols-5 mt-2">
-          {/* Timeline */}
-          <Card className="lg:col-span-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Acessos por Dia</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={lineConfig} className="h-[200px] w-full">
-                <LineChart data={dailyAccess}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis allowDecimals={false} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line type="monotone" dataKey="count" stroke={CHART_COLORS[0]} strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Action breakdown pie */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Tipos de Ação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={pieConfig} className="h-[200px] w-full">
-                <PieChart>
-                  <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                  <Pie data={actionBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
-                    {actionBreakdown.map((entry, i) => (
-                      <Cell key={entry.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tables row */}
-        <div className="grid gap-4 lg:grid-cols-2 mt-2">
-          {/* Pages visited */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Páginas Visitadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Página</TableHead>
-                    <TableHead className="text-right">Acessos</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pageVisits.length === 0 && (
-                    <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground">Nenhuma visualização</TableCell></TableRow>
-                  )}
-                  {pageVisits.map((p) => (
-                    <TableRow key={p.page}>
-                      <TableCell className="font-mono text-sm">{p.page}</TableCell>
-                      <TableCell className="text-right">{p.count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* IPs & Browsers */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">IPs e Navegadores</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Endereços IP</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {ipsUsed.map((ip) => (
-                    <Badge key={ip} variant="outline" className="font-mono text-xs">{ip}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Navegadores</p>
-                <Table>
-                  <TableBody>
-                    {browsersUsed.map((b) => (
-                      <TableRow key={b.browser}>
-                        <TableCell className="text-sm py-1.5">{b.browser}</TableCell>
-                        <TableCell className="text-right py-1.5">{b.count}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent activity */}
-        <Card className="mt-2">
+        {/* Tabela: horário + ação */}
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Últimas Atividades</CardTitle>
+            <CardTitle className="text-sm">Histórico de Atividades</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Horário</TableHead>
                   <TableHead>Ação</TableHead>
-                  <TableHead>Página</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Navegador</TableHead>
-                  <TableHead>Data/Hora</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...userLogs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 15).map((log) => (
+                {userLogs.map((log) => (
                   <TableRow key={log.id}>
+                    <TableCell className="text-muted-foreground">
+                      {log.timestamp.toLocaleDateString("pt-BR")} {log.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={log.action === "login" ? "default" : "secondary"}>
                         {actionLabel(log.action)}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{log.page}</TableCell>
-                    <TableCell className="text-muted-foreground">{log.ip}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{log.userAgent}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {log.timestamp.toLocaleDateString("pt-BR")} {log.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </TableCell>
                   </TableRow>
                 ))}
