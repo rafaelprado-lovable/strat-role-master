@@ -213,6 +213,27 @@ export default function Runbooks() {
               )}
             </div>
 
+            {viewRunbook.attachments && viewRunbook.attachments.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground">Anexos</h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {viewRunbook.attachments.map((att) => (
+                    <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors">
+                      {att.type === "image" ? (
+                        <Image className="h-4 w-4 text-primary shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      )}
+                      <span className="text-sm truncate">{att.name}</span>
+                      {att.type === "image" && (
+                        <img src={att.url} alt={att.name} className="h-8 w-8 rounded object-cover border border-border ml-auto" />
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <DialogFooter>
               <Button variant="outline" onClick={() => { setViewRunbook(null); openEdit(viewRunbook); }}>
                 <Pencil className="mr-1.5 h-3.5 w-3.5" />
