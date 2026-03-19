@@ -133,7 +133,7 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
     sistemas: data.sistemas,
     attachments: data.attachments.map((a) => ({
       id: a.id,
-      name: a.name,
+      name: a.type === 'image' && !a.name.match(/\.(png|jpe?g|gif|webp|svg|bmp)$/i) ? `${a.name}.png` : a.name,
       type: a.type,
     })),
   };
@@ -146,8 +146,8 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
     try {
       const response = await fetch(att.url);
       const blob = await response.blob();
-      const extension = att.type === 'image' ? '.png' : '';
-      const fileName = `${att.name}${extension}`;
+      const hasExtension = /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|txt|md)$/i.test(att.name);
+      const fileName = hasExtension ? att.name : (att.type === 'image' ? `${att.name}.png` : att.name);
       formData.append('file', blob, fileName);
     } catch (err) {
       console.warn(`Falha ao converter anexo "${att.name}" para upload:`, err);
