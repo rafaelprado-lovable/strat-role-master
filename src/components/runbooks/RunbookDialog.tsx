@@ -102,8 +102,8 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
     if (v) {
       setForm(
         runbook
-          ? { title: runbook.title, description: runbook.description, content: runbook.content, tags: [...runbook.tags], service: runbook.service, incident: runbook.incident, sistemas: runbook.sistemas || "" }
-          : { ...EMPTY_FORM, tags: [] }
+          ? { title: runbook.title, description: runbook.description, content: runbook.content, tags: [...runbook.tags], service: runbook.service, incident: runbook.incident, sistemas: runbook.sistemas || "", attachments: [...(runbook.attachments || [])] }
+          : { ...EMPTY_FORM, tags: [], attachments: [] }
       );
       setPreviewMd(false);
     }
