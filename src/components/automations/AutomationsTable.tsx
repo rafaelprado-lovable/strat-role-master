@@ -26,6 +26,7 @@ interface AutomationsTableProps {
   automations: Workflow[];
   totalExecutions?: number;
   executionCounts?: Record<string, number>;
+  lastRunDates?: Record<string, string>;
   onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
   onDuplicate: (workflow: Workflow) => void;
@@ -40,7 +41,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export function AutomationsTable({
-  automations, totalExecutions, executionCounts = {}, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
+  automations, totalExecutions, executionCounts = {}, lastRunDates = {}, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -269,8 +270,8 @@ export function AutomationsTable({
                       <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-3 w-3" />
-                          {wf.lastRunAt
-                            ? format(new Date(wf.lastRunAt), "dd MMM 'às' HH:mm", { locale: ptBR })
+                          {(lastRunDates[wf.id] || wf.lastRunAt)
+                            ? format(new Date(lastRunDates[wf.id] || wf.lastRunAt!), "dd MMM 'às' HH:mm", { locale: ptBR })
                             : 'Nunca executado'}
                         </div>
                         <div className="flex items-center gap-1.5">
