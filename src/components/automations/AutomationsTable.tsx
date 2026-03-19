@@ -60,10 +60,18 @@ export function AutomationsTable({
     return Array.from(tagMap.values());
   }, [automations]);
 
+  // Resolve selected tag IDs to names for matching
+  const selectedTagNames = useMemo(() => {
+    return selectedTagIds.map(id => {
+      const tag = allTags.find(t => t.id === id);
+      return tag ? tag.name.toLowerCase() : '';
+    }).filter(Boolean);
+  }, [selectedTagIds, allTags]);
+
   const filtered = automations.filter((a) => {
     const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
-    const matchesTags = selectedTagIds.length === 0 || 
-      selectedTagIds.every(tagId => a.tags?.some(t => t.id === tagId));
+    const matchesTags = selectedTagNames.length === 0 || 
+      selectedTagNames.every(name => a.tags?.some(t => t.name.toLowerCase() === name));
     return matchesSearch && matchesTags;
   });
 
