@@ -48,12 +48,13 @@ export function AutomationsTable({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Collect all unique tags from workflows
+  // Collect all unique tags from workflows (deduplicate by name)
   const allTags = useMemo(() => {
     const tagMap = new Map<string, WorkflowTag>();
     automations.forEach(wf => {
       wf.tags?.forEach(tag => {
-        if (!tagMap.has(tag.id)) tagMap.set(tag.id, tag);
+        const key = tag.name.toLowerCase();
+        if (!tagMap.has(key)) tagMap.set(key, tag);
       });
     });
     return Array.from(tagMap.values());
