@@ -26,6 +26,7 @@ interface AutomationsTableProps {
   automations: Workflow[];
   totalExecutions?: number;
   executionCounts?: Record<string, number>;
+  lastRunDates?: Record<string, string>;
   onEdit: (workflow: Workflow) => void;
   onDelete: (id: string) => void;
   onDuplicate: (workflow: Workflow) => void;
