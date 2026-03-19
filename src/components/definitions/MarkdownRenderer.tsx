@@ -2,14 +2,22 @@ import { useMemo } from 'react';
 
 interface Props {
   content: string;
+  /** Map of attachment:ID → actual URL for resolving pasted images */
+  attachmentMap?: Record<string, string>;
 }
 
 /**
  * Simple markdown renderer — converts MD to HTML without external deps.
  * Supports: headings, code blocks, inline code, bold, italic, lists, links, hr, paragraphs.
  */
-export function MarkdownRenderer({ content }: Props) {
-  const html = useMemo(() => renderMarkdown(content), [content]);
+export function MarkdownRenderer({ content, attachmentMap }: Props) {
+  const html = useMemo(() => {
+    let processed = content;
+    if (attachmentMap) {
+      processed = processed.replace(/attachment:([a-f0-9-]+)/g, (match, id) => attachmentMap[id] || match);
+    }
+    return renderMarkdown(processed);
+  }, [content, attachmentMap]);
 
   return (
     <div
@@ -139,7 +147,9 @@ function inlineFormat(text: string): string {
   // italic
   s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
   s = s.replace(/_(.+?)_/g, '<em>$1</em>');
-  // links
+  // images ![alt](url)
+  s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg border border-border my-2" />');
+  // links [text](url)
   s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   return s;
 }

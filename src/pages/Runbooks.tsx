@@ -207,7 +207,7 @@ export default function Runbooks() {
 
             <div className="rounded-lg border border-border p-4">
               {viewRunbook.content ? (
-                <MarkdownRenderer content={viewRunbook.content} />
+                <MarkdownRenderer content={viewRunbook.content} attachmentMap={Object.fromEntries((viewRunbook.attachments || []).map(a => [a.id, a.url]))} />
               ) : (
                 <p className="text-muted-foreground text-sm">Sem conteúdo documentado.</p>
               )}
