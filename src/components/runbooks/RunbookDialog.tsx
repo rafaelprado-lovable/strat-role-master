@@ -81,6 +81,7 @@ const EMPTY_FORM = {
   service: "",
   incident: "",
   sistemas: "",
+  attachments: [] as RunbookAttachment[],
 };
 
 interface RunbookDialogProps {
