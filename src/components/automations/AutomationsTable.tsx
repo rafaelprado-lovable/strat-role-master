@@ -39,7 +39,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export function AutomationsTable({
-  automations, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
+  automations, totalExecutions, onEdit, onDelete, onDuplicate, onToggleStatus, onRun, onCreate,
 }: AutomationsTableProps) {
   const [search, setSearch] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
