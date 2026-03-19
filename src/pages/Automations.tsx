@@ -15,7 +15,7 @@ export default function Automations() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalExecutions, setTotalExecutions] = useState(0);
-  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+  const [executionCounts, setExecutionCounts] = useState<Record<string, number>>({});
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   const fetchWorkflows = useCallback(async () => {
