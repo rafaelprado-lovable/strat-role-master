@@ -134,6 +134,19 @@ function NodeDocCard({ definition }: { definition: Definition }) {
               <code className="font-mono bg-muted px-1.5 py-0.5 rounded">definition_id: {definition.definition_id}</code>
             </div>
 
+            {/* Markdown Documentation */}
+            {definition.documentation && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <FileText className="h-3 w-3 text-primary" />
+                  Documentação
+                </h4>
+                <div className="border rounded-lg p-4 bg-card">
+                  <MarkdownRenderer content={definition.documentation} />
+                </div>
+              </div>
+            )}
+
             {/* Inputs */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
