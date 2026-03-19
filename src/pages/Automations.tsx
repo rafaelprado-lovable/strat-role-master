@@ -28,8 +28,11 @@ export default function Automations() {
 
       // Fetch all executions in a single call
       try {
-        const allExecs = await workflowService.listExecutions();
-        setTotalExecutions(Array.isArray(allExecs) ? allExecs.length : 0);
+        const execCounts = await workflowService.listExecutions();
+        const total = Array.isArray(execCounts)
+          ? execCounts.reduce((sum, e: any) => sum + (e.total_executions || 0), 0)
+          : 0;
+        setTotalExecutions(total);
       } catch {
         setTotalExecutions(0);
       }
