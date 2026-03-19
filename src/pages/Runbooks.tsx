@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
 import { RunbookDialog } from "@/components/runbooks/RunbookDialog";
 import { DeleteRunbookDialog } from "@/components/runbooks/DeleteRunbookDialog";
-import { BookOpen, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { BookOpen, Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Runbook } from "@/types/runbooks";
 
@@ -160,6 +160,9 @@ export default function Runbooks() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button size="sm" variant="ghost" onClick={() => setViewRunbook(r)} title="Visualizar">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
