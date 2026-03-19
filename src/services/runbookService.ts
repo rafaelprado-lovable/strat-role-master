@@ -48,14 +48,20 @@ function mapRunbookItem(item: any): Runbook {
   }
 
   // Build attachmentMap for resolving attachment:ID references in markdown
-  // Match attachment ID (UUID) to signed_url from images
-  if (Array.isArray(item.attachment_images)) {
-    for (const img of item.attachment_images) {
-      const url = img.signed_url || img.file_url || '';
-      if (url) {
-        // Map by filename (without extension) for attachment:UUID pattern
-        attachmentMap[img.attachment] = url;
-      }
+  // The content uses ![name](attachment:UUID) but the API returns filenames, not UUIDs.
+  // Strategy: extract attachment:UUID from content, match by alt-text (name) to image URLs.
+  const content = item.content || '';
+  const attachRefRegex = /!\[([^\]]*)\]\(attachment:([a-f0-9-]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = attachRefRegex.exec(content)) !== null) {
+    const altName = match[1]; // e.g. "teste-1773909872444"
+    const uuid = match[2];    // e.g. "6d03c87b-..."
+    // Find matching image by name (with or without extension)
+    const img = (item.attachment_images || []).find((i: any) =>
+      i.attachment === altName || i.attachment.replace(/\.[^.]+$/, '') === altName
+    );
+    if (img) {
+      attachmentMap[uuid] = img.signed_url || img.file_url || '';
     }
   }
 
