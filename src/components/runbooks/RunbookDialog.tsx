@@ -8,9 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MarkdownRenderer } from "@/components/definitions/MarkdownRenderer";
-import { Plus, Upload, Eye, Code, X } from "lucide-react";
+import { Plus, Upload, Eye, Code, X, Image, FileText, Link, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import type { Runbook } from "@/types/runbooks";
+import type { Runbook, RunbookAttachment } from "@/types/runbooks";
 
 const MOCK_SERVICES = ["API Gateway", "Auth Service", "Payment Service", "Notification Service", "Database Cluster", "CDN"];
 const MOCK_TAGS = ["critical", "network", "database", "kubernetes", "rollback", "security", "monitoring"];
@@ -81,6 +81,7 @@ const EMPTY_FORM = {
   service: "",
   incident: "",
   sistemas: "",
+  attachments: [] as RunbookAttachment[],
 };
 
 interface RunbookDialogProps {
@@ -95,14 +96,16 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
   const [form, setForm] = useState(EMPTY_FORM);
   const [tagInput, setTagInput] = useState("");
   const [previewMd, setPreviewMd] = useState(false);
+  const [attachName, setAttachName] = useState("");
+  const [attachUrl, setAttachUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleOpenChange = (v: boolean) => {
     if (v) {
       setForm(
         runbook
-          ? { title: runbook.title, description: runbook.description, content: runbook.content, tags: [...runbook.tags], service: runbook.service, incident: runbook.incident, sistemas: runbook.sistemas || "" }
-          : { ...EMPTY_FORM, tags: [] }
+          ? { title: runbook.title, description: runbook.description, content: runbook.content, tags: [...runbook.tags], service: runbook.service, incident: runbook.incident, sistemas: runbook.sistemas || "", attachments: [...(runbook.attachments || [])] }
+          : { ...EMPTY_FORM, tags: [], attachments: [] }
       );
       setPreviewMd(false);
     }
@@ -151,9 +154,10 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
         </DialogHeader>
 
         <Tabs defaultValue="info" className="mt-2">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="content">Conteúdo (MD)</TabsTrigger>
+            <TabsTrigger value="attachments">Anexos ({form.attachments.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="space-y-4 mt-4">
@@ -275,6 +279,57 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
                 placeholder="# Roteiro de análise / Troubleshooting&#10;&#10;# 1. Objetivo&#10;&#10;Descreva o objetivo..."
                 className="min-h-[300px] font-mono text-sm"
               />
+            )}
+          </TabsContent>
+
+          <TabsContent value="attachments" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Adicionar anexo por URL</Label>
+              <div className="flex gap-2">
+                <Input value={attachName} onChange={(e) => setAttachName(e.target.value)} placeholder="Nome do arquivo" className="flex-1" />
+                <Input value={attachUrl} onChange={(e) => setAttachUrl(e.target.value)} placeholder="https://..." className="flex-[2]" />
+                <Button type="button" size="sm" variant="outline" onClick={() => {
+                  if (!attachUrl.trim()) { toast({ title: "URL obrigatória", variant: "destructive" }); return; }
+                  const url = attachUrl.trim();
+                  const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(url);
+                  const name = attachName.trim() || url.split("/").pop() || "anexo";
+                  const att: RunbookAttachment = { id: crypto.randomUUID(), name, url, type: isImage ? "image" : "file" };
+                  update({ attachments: [...form.attachments, att] });
+                  setAttachName(""); setAttachUrl("");
+                }}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {form.attachments.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                <Link className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhum anexo adicionado</p>
+                <p className="text-xs mt-1">Cole a URL de imagens ou arquivos externos</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {form.attachments.map((att) => (
+                  <div key={att.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                    {att.type === "image" ? (
+                      <Image className="h-4 w-4 text-primary shrink-0" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{att.name}</p>
+                      <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary truncate block">{att.url}</a>
+                    </div>
+                    {att.type === "image" && (
+                      <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover border border-border" />
+                    )}
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive shrink-0" onClick={() => update({ attachments: form.attachments.filter((a) => a.id !== att.id) })}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
