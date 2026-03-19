@@ -33,12 +33,15 @@ export default function Automations() {
         const execCounts = await workflowService.listExecutions();
         if (Array.isArray(execCounts)) {
           const countsMap: Record<string, number> = {};
+          const datesMap: Record<string, string> = {};
           let total = 0;
           execCounts.forEach((e: any) => {
             countsMap[e.workflow_id] = e.total_executions || 0;
             total += e.total_executions || 0;
+            if (e.lastRunAt) datesMap[e.workflow_id] = e.lastRunAt;
           });
           setExecutionCounts(countsMap);
+          setLastRunDates(datesMap);
           setTotalExecutions(total);
         } else {
           setExecutionCounts({});
