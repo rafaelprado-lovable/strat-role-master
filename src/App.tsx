@@ -32,6 +32,7 @@ import ChangeExecutionCep from "./pages/ChangeExecutionCep";
 import SanityCheck from "./pages/SanityCheck";
 import Definitions from "./pages/Definitions";
 import NodeDocs from "./pages/NodeDocs";
+import Audit from "./pages/Audit";
 
 const queryClient = new QueryClient();
 
@@ -258,6 +259,16 @@ const App = () => (
                 <AppLayout>
                   <WorkflowExecution />
                 </AppLayout>
+              }
+            />
+            <Route
+              path="/audit"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Audit />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
