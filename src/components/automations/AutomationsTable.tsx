@@ -83,7 +83,6 @@ export function AutomationsTable({
   };
 
   const activeCount = automations.filter(a => a.status === 'active').length;
-  const totalRuns = automations.reduce((sum, a) => sum + (a.runCount || 0), 0);
 
   return (
     <div className="space-y-6">
