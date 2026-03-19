@@ -93,24 +93,7 @@ export async function fetchRunbookById(id: string): Promise<Runbook> {
     authUserId: userId,
     id,
   });
-  return {
-    id: data.id,
-    title: data.title || '',
-    description: data.description || '',
-    content: data.content || '',
-    tags: data.tags || [],
-    service: data.service || '',
-    incident: data.record || '',
-    sistemas: data.sistemas || '',
-    attachments: (data.attachments || []).map((a: any) => ({
-      id: a.id,
-      name: a.name,
-      url: a.url || '',
-      type: a.type || 'file',
-    })),
-    createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-    updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-  };
+  return mapRunbookItem(data);
 }
 
 interface CreateRunbookPayload {
