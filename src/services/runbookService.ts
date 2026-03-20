@@ -192,8 +192,8 @@ export async function createRunbook(data: CreateRunbookPayload): Promise<void> {
     })
   );
 
-  fileResults.forEach((result) => {
-    formData.append('file', result.blob, result.fileName);
+  fileResults.forEach((result, index) => {
+    formData.append(`file_${index}`, result.blob, result.fileName);
   });
 
   const userToken = localStorage.getItem('userToken');
