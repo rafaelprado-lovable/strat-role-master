@@ -145,7 +145,23 @@ function renderMarkdown(md: string): string {
 }
 
 function inlineFormat(text: string): string {
-  let s = escapeHtml(text);
+  // Extract and protect image/link URLs before escaping HTML
+  const images: string[] = [];
+  let s = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+    const idx = images.length;
+    images.push(`<img src="${url}" alt="${escapeHtml(alt)}" class="max-w-full rounded-lg border border-border my-2" />`);
+    return `%%IMG_${idx}%%`;
+  });
+
+  const links: string[] = [];
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+    const idx = links.length;
+    links.push(`<a href="${url}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`);
+    return `%%LINK_${idx}%%`;
+  });
+
+  s = escapeHtml(s);
+
   // inline code
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   // bold
@@ -154,9 +170,10 @@ function inlineFormat(text: string): string {
   // italic
   s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
   s = s.replace(/_(.+?)_/g, '<em>$1</em>');
-  // images ![alt](url)
-  s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded-lg border border-border my-2" />');
-  // links [text](url)
-  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Restore images and links (unescaped)
+  images.forEach((html, idx) => { s = s.replace(`%%IMG_${idx}%%`, html); });
+  links.forEach((html, idx) => { s = s.replace(`%%LINK_${idx}%%`, html); });
+
   return s;
 }
