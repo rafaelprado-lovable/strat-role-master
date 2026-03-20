@@ -14,7 +14,14 @@ export function MarkdownRenderer({ content, attachmentMap }: Props) {
   const html = useMemo(() => {
     let processed = content;
     if (attachmentMap) {
-      processed = processed.replace(/attachment:([a-f0-9-]+)/g, (match, id) => attachmentMap[id] || match);
+      // Replace attachment:UUID references inside image markdown with actual URLs
+      processed = processed.replace(
+        /!\[([^\]]*)\]\(attachment:([a-f0-9-]+)\)/g,
+        (full, alt, id) => {
+          const url = attachmentMap[id];
+          return url ? `![${alt}](${url})` : full;
+        }
+      );
     }
     return renderMarkdown(processed);
   }, [content, attachmentMap]);
