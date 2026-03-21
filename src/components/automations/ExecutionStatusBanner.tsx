@@ -36,6 +36,10 @@ interface RunningContextValue {
 
 const RunningContext = createContext<RunningContextValue>({ runningMap: {}, ready: false });
 
+export function useRunningContext() {
+  return useContext(RunningContext);
+}
+
 export function RunningExecutionsProvider({ children }: { children: React.ReactNode }) {
   const [runningMap, setRunningMap] = useState<Record<string, RunningWorkflow>>({});
   const [ready, setReady] = useState(false);

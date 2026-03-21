@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TagBadge } from './TagBadge';
 import { TagFilter } from './TagFilter';
-import { ExecutionStatusBadge } from './ExecutionStatusBanner';
+import { ExecutionStatusBadge, useRunningContext } from './ExecutionStatusBanner';
 
 interface AutomationsTableProps {
   automations: Workflow[];
@@ -69,12 +69,27 @@ export function AutomationsTable({
     }).filter(Boolean);
   }, [selectedTagIds, allTags]);
 
+  const { runningMap, ready: runningReady } = useRunningContext();
+
   const filtered = automations.filter((a) => {
     const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
     const matchesTags = selectedTagNames.length === 0 || 
       selectedTagNames.every(name => a.tags?.some(t => t.name.toLowerCase() === name));
     return matchesSearch && matchesTags;
   });
+
+  // Sort: running first, then active, then rest
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const aRunning = runningMap[a.id] ? 1 : 0;
+      const bRunning = runningMap[b.id] ? 1 : 0;
+      if (bRunning !== aRunning) return bRunning - aRunning;
+      const aActive = a.status === 'active' ? 1 : 0;
+      const bActive = b.status === 'active' ? 1 : 0;
+      if (bActive !== aActive) return bActive - aActive;
+      return 0;
+    });
+  }, [filtered, runningMap]);
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
@@ -159,7 +174,7 @@ export function AutomationsTable({
 
       {/* Cards Grid */}
       <AnimatePresence mode="popLayout">
-        {filtered.length === 0 ? (
+        {sorted.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -178,7 +193,7 @@ export function AutomationsTable({
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map((wf, i) => {
+            {sorted.map((wf, i) => {
               const status = statusConfig[wf.status];
               return (
                 <motion.div
