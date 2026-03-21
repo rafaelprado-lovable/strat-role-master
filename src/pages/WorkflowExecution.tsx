@@ -525,6 +525,46 @@ export default function WorkflowExecution() {
     );
   }
 
+  // Elapsed time computation
+  const elapsedText = (() => {
+    if (!execution) return null;
+    const start = new Date(execution.started_at).getTime();
+    const end = execution.finished_at ? new Date(execution.finished_at).getTime() : Date.now();
+    const diff = Math.max(0, end - start);
+    const secs = Math.floor(diff / 1000);
+    if (secs < 60) return `${secs}s`;
+    const mins = Math.floor(secs / 60);
+    const remSecs = secs % 60;
+    return `${mins}m ${remSecs}s`;
+  })();
+
+  const execState = execution?.execution_controller.state;
+  const stateConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+    running: { label: 'Em execução', color: 'bg-primary/15 text-primary border-primary/30', icon: <RefreshCw className="h-3.5 w-3.5 animate-spin" /> },
+    finished: { label: 'Concluído', color: 'bg-chart-2/15 text-chart-2 border-chart-2/30', icon: <Zap className="h-3.5 w-3.5" /> },
+    success: { label: 'Sucesso', color: 'bg-chart-2/15 text-chart-2 border-chart-2/30', icon: <Zap className="h-3.5 w-3.5" /> },
+    error: { label: 'Erro', color: 'bg-destructive/15 text-destructive border-destructive/30', icon: <AlertTriangle className="h-3.5 w-3.5" /> },
+    stopped: { label: 'Parado', color: 'bg-muted text-muted-foreground border-border', icon: <Square className="h-3.5 w-3.5" /> },
+  };
+
+  // Progress: count finished/error/skipped nodes vs total
+  const nodeProgress = (() => {
+    if (!execution) return null;
+    const totalNodes = execution.execution_data.nodes?.length || 0;
+    if (totalNodes === 0) return null;
+    const states = execution.execution_controller.task_states;
+    let done = 0;
+    for (const st of Object.values(states)) {
+      if (st === 'finished' || st === 'error') done++;
+    }
+    // Count skipped from outputs
+    const outputs = execution.execution_controller.task_outputs;
+    for (const [nid, out] of Object.entries(outputs)) {
+      if ((out as any)?.output?.skipped && states[nid] !== 'finished' && states[nid] !== 'error') done++;
+    }
+    return { done: Math.min(done, totalNodes), total: totalNodes };
+  })();
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] gap-4">
       {/* Header */}
@@ -551,11 +591,6 @@ export default function WorkflowExecution() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isRunning && pollingRef.current && (
-            <Badge variant="outline" className="text-[10px] gap-1 animate-pulse">
-              <RefreshCw className="h-2.5 w-2.5" /> Atualizando...
-            </Badge>
-          )}
           {!isRunning ? (
             <Button size="sm" onClick={handleExecute} className="gap-1.5">
               <Play className="h-3.5 w-3.5" /> Executar agora
@@ -580,6 +615,46 @@ export default function WorkflowExecution() {
           )}
         </div>
       </motion.div>
+
+      {/* Execution status bar */}
+      {execution && execState && (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex items-center gap-4 px-4 py-2.5 rounded-lg border ${stateConfig[execState]?.color || 'bg-muted text-muted-foreground border-border'}`}
+        >
+          <div className="flex items-center gap-2 font-semibold text-sm">
+            {stateConfig[execState]?.icon}
+            <span>{stateConfig[execState]?.label || execState}</span>
+          </div>
+          <div className="h-4 w-px bg-current opacity-20" />
+          {elapsedText && (
+            <span className="text-xs font-mono opacity-80">⏱ {elapsedText}</span>
+          )}
+          {nodeProgress && (
+            <>
+              <div className="h-4 w-px bg-current opacity-20" />
+              <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+                <div className="h-1.5 flex-1 bg-current/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-current rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(nodeProgress.done / nodeProgress.total) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+                <span className="text-xs font-mono opacity-80">{nodeProgress.done}/{nodeProgress.total}</span>
+              </div>
+            </>
+          )}
+          {execution.execution_controller.execution_id && (
+            <>
+              <div className="h-4 w-px bg-current opacity-20" />
+              <span className="text-[10px] font-mono opacity-60 ml-auto">{execution.execution_controller.execution_id}</span>
+            </>
+          )}
+        </motion.div>
+      )}
 
       {/* Payload input */}
       {!execution && !loading && (
