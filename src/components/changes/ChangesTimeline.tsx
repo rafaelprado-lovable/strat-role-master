@@ -12,7 +12,6 @@ interface ChangesTimelineProps {
   onSelectDate: (date: string) => void;
 }
 
-/** Extrai datas únicas e conta changes por dia */
 function getDateCounts(changes: Changes[]): { date: string; count: number }[] {
   const map: Record<string, number> = {};
   for (const c of changes) {
@@ -40,32 +39,29 @@ export function ChangesTimeline({ changes, selectedDate, onSelectDate }: Changes
           Clique em uma data para visualizar as changes daquele dia
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         <ScrollArea className="w-full">
-          <div className="flex items-end gap-1 pb-2 min-w-max">
+          <div className="flex items-end gap-0.5 sm:gap-1 pb-2 min-w-max px-1">
             {dateCounts.map(({ date, count }, idx) => {
               const isSelected = selectedDate === date;
               return (
-                <div key={date} className="flex flex-col items-center gap-1">
-                  {/* Count badge */}
+                <div key={date} className="flex flex-col items-center gap-0.5 sm:gap-1">
                   <Badge
                     variant={isSelected ? "default" : "secondary"}
-                    className="text-[10px] px-1.5 py-0"
+                    className="text-[10px] px-1 sm:px-1.5 py-0"
                   >
                     {count}
                   </Badge>
 
-                  {/* Timeline node */}
                   <div className="flex items-center">
-                    {/* Connector line left */}
                     {idx > 0 && (
-                      <div className="w-6 h-0.5 bg-border" />
+                      <div className="w-3 sm:w-6 h-0.5 bg-border" />
                     )}
 
                     <button
                       onClick={() => onSelectDate(date)}
                       className={cn(
-                        "flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border-2 transition-all cursor-pointer",
+                        "flex flex-col items-center gap-0.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 transition-all cursor-pointer",
                         "hover:border-primary/50 hover:shadow-md",
                         isSelected
                           ? "border-primary bg-primary/10 shadow-md"
@@ -74,21 +70,20 @@ export function ChangesTimeline({ changes, selectedDate, onSelectDate }: Changes
                     >
                       <div
                         className={cn(
-                          "w-3 h-3 rounded-full transition-colors",
+                          "w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full transition-colors",
                           isSelected ? "bg-primary" : "bg-muted-foreground/40"
                         )}
                       />
                       <span className={cn(
-                        "text-xs font-mono whitespace-nowrap",
+                        "text-[10px] sm:text-xs font-mono whitespace-nowrap",
                         isSelected ? "font-semibold text-primary" : "text-muted-foreground"
                       )}>
                         {date}
                       </span>
                     </button>
 
-                    {/* Connector line right */}
                     {idx < dateCounts.length - 1 && (
-                      <div className="w-6 h-0.5 bg-border" />
+                      <div className="w-3 sm:w-6 h-0.5 bg-border" />
                     )}
                   </div>
                 </div>
