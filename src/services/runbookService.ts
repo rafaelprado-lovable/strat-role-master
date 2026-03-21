@@ -79,6 +79,7 @@ function mapRunbookItem(item: any): Runbook {
     tags: item.tags || [],
     service: item.service || '',
     incident: item.record || '',
+    record: item.record || '',
     sistemas: item.sistemas || '',
     attachments,
     attachmentMap,

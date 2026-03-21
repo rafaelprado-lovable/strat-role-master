@@ -140,7 +140,7 @@ const mockClusters: Cluster[] = [
       {
         id: "sync_3",
         name: "Sync Servers",
-        type: "sync_servers",
+        type: "sync_services",
         items: [
           { id: "sy5", name: "kong_pmid2_preprod", status: "não executado" }
         ]
