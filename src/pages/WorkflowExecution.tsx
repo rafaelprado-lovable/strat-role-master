@@ -603,7 +603,7 @@ export default function WorkflowExecution() {
       )}
 
       {/* Loading state */}
-      {loading && (
+      {(loading || loadingActiveExec) && (
         <div className="flex-1 grid grid-cols-[1fr_380px] gap-4">
           <Skeleton className="rounded-xl" />
           <div className="space-y-3">
