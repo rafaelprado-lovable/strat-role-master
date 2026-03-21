@@ -282,10 +282,83 @@ export function ExecutionPanel({ execution, selectedNodeId, selectedEdge, onReru
         <TabsContent value="node" className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
-              {!selectedNodeId ? (
+              {/* Edge detail when an edge is selected */}
+              {selectedEdge ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-chart-2/10">
+                      <Filter className="h-3.5 w-3.5 text-chart-2" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-foreground">Condição da Aresta</h3>
+                      <p className="text-[11px] text-muted-foreground font-mono">{selectedEdge.edgeId}</p>
+                    </div>
+                  </div>
+
+                  {/* Condition expression */}
+                  <div className="p-3 rounded-lg bg-chart-2/5 border border-chart-2/20">
+                    <span className="text-[10px] font-semibold text-chart-2 uppercase tracking-wider block mb-1">Expressão IF</span>
+                    <pre className="text-[12px] font-mono text-foreground whitespace-pre-wrap">{selectedEdge.condition}</pre>
+                  </div>
+
+                  {/* Source → Target */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">Origem</span>
+                      <span className="text-xs font-mono text-foreground block mt-0.5">{selectedEdge.sourceNodeId}</span>
+                      <span className="text-[10px] capitalize text-muted-foreground">{selectedEdge.sourceState}</span>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">Destino</span>
+                      <span className="text-xs font-mono text-foreground block mt-0.5">{selectedEdge.targetNodeId}</span>
+                      <span className="text-[10px] capitalize text-muted-foreground">{selectedEdge.targetState}</span>
+                    </div>
+                  </div>
+
+                  {/* Condition evaluation result */}
+                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Resultado da Avaliação</span>
+                    {selectedEdge.targetState === 'waiting_start' && selectedEdge.sourceState === 'finished' ? (
+                      <div className="flex items-center gap-2">
+                        <Ban className="h-3.5 w-3.5 text-destructive" />
+                        <span className="text-xs text-destructive font-semibold">Condição NÃO atendida</span>
+                      </div>
+                    ) : selectedEdge.targetState !== 'waiting_start' ? (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
+                        <span className="text-xs text-chart-2 font-semibold">Condição atendida — nó destino executado</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Aguardando avaliação</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Loop info */}
+                  {selectedEdge.isLoop && (
+                    <div className="p-3 rounded-lg bg-chart-4/5 border border-chart-4/10">
+                      <span className="text-[10px] font-semibold text-chart-4 uppercase tracking-wider flex items-center gap-1">
+                        <Repeat className="h-3 w-3" /> Loop
+                      </span>
+                      <div className="mt-1 text-xs text-foreground font-mono">
+                        Iteração: {selectedEdge.loopCounter ?? 0} / {selectedEdge.maxIterations ?? '∞'}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Source output used for evaluation */}
+                  <JsonSection
+                    title={`Output de "${selectedEdge.sourceNodeId}" (input da condição)`}
+                    data={selectedEdge.sourceOutput}
+                    onCopy={() => copyJson(selectedEdge.sourceOutput)}
+                  />
+                </div>
+              ) : !selectedNodeId ? (
                 <div className="text-center py-12 text-muted-foreground text-sm">
                   <Layers className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                  <p>Selecione um nó no canvas para inspecionar</p>
+                  <p>Selecione um nó ou aresta no canvas</p>
                 </div>
               ) : (
                 <>
