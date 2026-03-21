@@ -115,6 +115,7 @@ interface CreateRunbookPayload {
   content: string;
   tags: string[];
   service: string;
+  record: string;
   incident: string;
   sistemas: string;
   attachments: RunbookAttachment[];
