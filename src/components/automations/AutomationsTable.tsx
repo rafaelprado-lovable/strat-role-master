@@ -78,18 +78,23 @@ export function AutomationsTable({
     return matchesSearch && matchesTags;
   });
 
-  // Sort: running first, then active, then rest
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const aRunning = runningMap[a.id] ? 1 : 0;
-      const bRunning = runningMap[b.id] ? 1 : 0;
-      if (bRunning !== aRunning) return bRunning - aRunning;
-      const aActive = a.status === 'active' ? 1 : 0;
-      const bActive = b.status === 'active' ? 1 : 0;
-      if (bActive !== aActive) return bActive - aActive;
-      return 0;
-    });
+  // Split into active and draft groups, stable sort by name within each
+  const activeWorkflows = useMemo(() => {
+    return [...filtered]
+      .filter(w => w.status === 'active')
+      .sort((a, b) => {
+        const aRunning = runningMap[a.id] ? 1 : 0;
+        const bRunning = runningMap[b.id] ? 1 : 0;
+        if (bRunning !== aRunning) return bRunning - aRunning;
+        return a.name.localeCompare(b.name);
+      });
   }, [filtered, runningMap]);
+
+  const draftWorkflows = useMemo(() => {
+    return [...filtered]
+      .filter(w => w.status !== 'active')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
