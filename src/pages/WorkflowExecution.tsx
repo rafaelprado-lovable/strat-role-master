@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  ArrowLeft, Play, Square, RotateCcw, Download, Zap,
-  AlertTriangle, RefreshCw,
+  ArrowLeft, Play, Square, RotateCcw, Download,
+  RefreshCw,
 } from 'lucide-react';
 import { ExecutionCanvas, type SelectedEdgeInfo } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
