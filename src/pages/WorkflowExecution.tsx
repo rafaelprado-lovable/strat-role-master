@@ -9,7 +9,7 @@ import {
   ArrowLeft, Play, Square, RotateCcw, Download, Zap,
   AlertTriangle, RefreshCw,
 } from 'lucide-react';
-import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
+import { ExecutionCanvas, type SelectedEdgeInfo } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
 import { type ExecutionDTO, type ExecutionState, type TaskState } from '@/types/execution';
 import { workflowService } from '@/services/workflowService';
