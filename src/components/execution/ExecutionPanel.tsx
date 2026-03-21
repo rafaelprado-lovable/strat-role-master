@@ -94,6 +94,7 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
       <Tabs defaultValue="summary" className="flex flex-col h-full">
         <TabsList className="shrink-0 mx-3 mt-3 bg-muted/50">
           <TabsTrigger value="summary" className="gap-1.5 text-xs"><Activity className="h-3 w-3" /> Resumo</TabsTrigger>
+          <TabsTrigger value="returns" className="gap-1.5 text-xs"><FileJson className="h-3 w-3" /> Retornos</TabsTrigger>
           <TabsTrigger value="node" className="gap-1.5 text-xs"><Layers className="h-3 w-3" /> Nó</TabsTrigger>
           <TabsTrigger value="logs" className="gap-1.5 text-xs"><Terminal className="h-3 w-3" /> Logs</TabsTrigger>
         </TabsList>
