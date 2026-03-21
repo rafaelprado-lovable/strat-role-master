@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import {
   Activity, Clock, Copy, Layers, Terminal, Filter,
   Radio, Repeat, AlertTriangle, CheckCircle2, Loader2, Circle, FileJson,
+  SkipForward, Ban,
 } from 'lucide-react';
 import type { ExecutionDTO, ExecutionLogEntry, TaskState, ForEachItemStatus } from '@/types/execution';
 import { toast } from 'sonner';
