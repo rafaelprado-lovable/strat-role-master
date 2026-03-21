@@ -176,8 +176,7 @@ export default function WorkflowExecution() {
   const [loading, setLoading] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<SelectedEdgeInfo | null>(null);
-  const [payloadJson, setPayloadJson] = useState('{}');
-  const [payloadError, setPayloadError] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [workflow, setWorkflow] = useState<any>(null);
   const [loadingWorkflow, setLoadingWorkflow] = useState(true);
