@@ -42,6 +42,7 @@ export default function ChangesPage() {
   const [searchNumber, setSearchNumber] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedChange, setSelectedChange] = useState<Changes | null>(null);
+  const [selectedTimelineDate, setSelectedTimelineDate] = useState<string | null>(null);
 
   const itemsPerPage = 10;
 
@@ -122,9 +123,17 @@ export default function ChangesPage() {
   ]);
 
 
-  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
+  const displayedChanges = useMemo(() => {
+    if (!selectedTimelineDate) return filteredChanges;
+    return filteredChanges.filter((c) => {
+      const dateKey = c.changeSystemData.start_date?.split(" ")[0] || "Sem data";
+      return dateKey === selectedTimelineDate;
+    });
+  }, [filteredChanges, selectedTimelineDate]);
+
+  const totalPages = Math.ceil(displayedChanges.length / itemsPerPage);
   const start = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredChanges.slice(start, start + itemsPerPage);
+  const currentItems = displayedChanges.slice(start, start + itemsPerPage);
 
   const handlePreAnalise = (numero: string) => toast.success(`Pré-análise realizada para ${numero}`);
   const handleEnviarRelatorio = (numero: string) => toast.success(`Relatório enviado para ${numero}`);
@@ -261,7 +270,14 @@ export default function ChangesPage() {
       </Card>
 
       {/* Timeline de Changes */}
-      <ChangesTimeline changes={filteredChanges} onSelectChange={handleVisualizar} />
+      <ChangesTimeline
+        changes={filteredChanges}
+        selectedDate={selectedTimelineDate}
+        onSelectDate={(date) => {
+          setSelectedTimelineDate(prev => prev === date ? null : date);
+          setCurrentPage(1);
+        }}
+      />
 
       {/* TABELA */}
       <Card>
