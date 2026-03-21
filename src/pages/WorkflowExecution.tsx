@@ -305,16 +305,6 @@ export default function WorkflowExecution() {
     return () => { cancelled = true; };
   }, [workflow, id]); // intentionally limited deps
 
-  const validatePayload = useCallback((json: string) => {
-    try {
-      JSON.parse(json);
-      setPayloadError(null);
-      return true;
-    } catch (e: any) {
-      setPayloadError(e.message);
-      return false;
-    }
-  }, []);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const executionIdRef = useRef<string | null>(null);
