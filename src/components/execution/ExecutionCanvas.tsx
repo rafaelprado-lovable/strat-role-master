@@ -7,7 +7,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio } from 'lucide-react';
+import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio, SkipForward, Ban } from 'lucide-react';
 import type { TaskState, ExecutionController } from '@/types/execution';
 
 // ─── Execution Node ───
@@ -32,6 +32,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const d = data as any;
   const Icon = iconMap[d.definition_id] || Globe;
   const state: TaskState = d.taskState || 'waiting_start';
+  const isSkipped = !!d.isSkipped;
   const s = stateStyles[state];
   const hasForEach = d.hasForEach;
   const hasStream = d.hasStream;
@@ -44,32 +45,40 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
     <div className={`
       rounded-xl px-4 py-3 min-w-[200px] max-w-[260px] border-2 relative backdrop-blur-sm shadow-sm
       ring-2 transition-all duration-300
-      ${s.ring} ${s.bg} border-border/50
-      ${s.pulse ? 'animate-pulse' : ''}
+      ${isSkipped ? 'ring-muted-foreground/20 bg-muted/30 border-muted-foreground/20 opacity-60' : `${s.ring} ${s.bg} border-border/50`}
+      ${!isSkipped && s.pulse ? 'animate-pulse' : ''}
       ${selected ? 'ring-offset-2 ring-offset-background shadow-lg scale-[1.02]' : ''}
     `}>
       <Handle type="target" position={Position.Left} id="left" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-left-1.5" />
       <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
       <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
 
-      {/* State dot */}
-      <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot} ${s.pulse ? 'animate-ping' : ''}`} />
-      <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot}`} />
+      {/* State dot / Skipped indicator */}
+      {isSkipped ? (
+        <div className="absolute top-2 right-2">
+          <Ban className="h-3 w-3 text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot} ${s.pulse ? 'animate-ping' : ''}`} />
+          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot}`} />
+        </>
+      )}
 
       <div className="flex items-center gap-2.5">
         <div className="p-1.5 rounded-lg bg-card/80 shrink-0">
           <Icon className="h-3.5 w-3.5 text-foreground" />
         </div>
         <div className="min-w-0">
-          <span className="font-semibold text-sm text-foreground truncate block">{d.label}</span>
+          <span className={`font-semibold text-sm truncate block ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{d.label}</span>
           <span className="text-[10px] text-muted-foreground font-mono block">{d.nodeId}</span>
         </div>
       </div>
 
       {/* Badges */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${s.bg} text-foreground border border-border/30`}>
-          {s.label}
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isSkipped ? 'bg-muted/60 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30`}>
+          {isSkipped ? '⏭ Skipado' : s.label}
         </span>
         {hasForEach && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-chart-4/10 text-chart-4 border border-chart-4/20 flex items-center gap-1">
@@ -209,6 +218,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
     (workflow.nodes || []).map((n: any, i: number) => {
       const taskState = controller.task_states[n.id] || 'waiting_start';
       const output = controller.task_outputs[n.id];
+      const isSkipped = output?.output?.skipped === true;
       const feTracker = controller.for_each_tracker[n.id] || controller.for_each_stream_tracker[n.id];
       const isStream = !!controller.for_each_stream_tracker[n.id];
       const loopEdge = workflow.edges?.find((e: any) => e.from === n.id && e.to === n.id && e.loop);
@@ -224,6 +234,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
           definition_id: n.definition_id,
           nodeId: n.id,
           taskState,
+          isSkipped,
           hasForEach: !!n.for_each,
           hasStream: isStream,
           hasLoop: selfLoopNodeIds.has(n.id),
