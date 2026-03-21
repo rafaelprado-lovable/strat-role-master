@@ -262,7 +262,14 @@ export default function ChangesPage() {
       </Card>
 
       {/* Timeline de Changes */}
-      <ChangesTimeline changes={filteredChanges} onSelectChange={handleVisualizar} />
+      <ChangesTimeline
+        changes={filteredChanges}
+        selectedDate={selectedTimelineDate}
+        onSelectDate={(date) => {
+          setSelectedTimelineDate(prev => prev === date ? null : date);
+          setCurrentPage(1);
+        }}
+      />
 
       {/* TABELA */}
       <Card>
