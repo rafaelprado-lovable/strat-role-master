@@ -30,6 +30,7 @@ interface ActiveExecInfo {
 /** Small inline badge for workflow cards */
 export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
   const [exec, setExec] = useState<ActiveExecInfo | null>(null);
+  const [checked, setChecked] = useState(false);
   const navigate = useNavigate();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -39,7 +40,12 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
     const check = async () => {
       try {
         const executions = await workflowService.listExecutions(workflowId);
-        if (cancelled || !Array.isArray(executions) || executions.length === 0) return;
+        if (cancelled) return;
+        if (!Array.isArray(executions) || executions.length === 0) {
+          setExec(null);
+          setChecked(true);
+          return;
+        }
 
         const active = executions.find((ex: any) => {
           const ctrl = ex.execution_controller ?? ex;
@@ -49,6 +55,7 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
 
         if (!active) {
           setExec(null);
+          setChecked(true);
           return;
         }
 
@@ -63,8 +70,9 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
           totalNodes: Object.keys(taskStates).length,
           startedAt: (active as any).started_at,
         });
+        setChecked(true);
       } catch {
-        // silent
+        setChecked(true);
       }
     };
 
@@ -77,7 +85,16 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
     };
   }, [workflowId]);
 
-  if (!exec) return null;
+  if (!checked) return null;
+
+  if (!exec) {
+    return (
+      <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50">
+        <Square className="h-3 w-3" />
+        <span>Parado</span>
+      </Badge>
+    );
+  }
 
   const cfg = stateConfig[exec.state] || stateConfig.running;
   const doneCount = Object.values(exec.taskStates).filter(
