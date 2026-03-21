@@ -13,7 +13,7 @@ export interface Runbook {
   content: string; // markdown
   tags: string[];
   service: string;
-  incident: string; // incidente ou sala de crise
+  record: string; // incidente ou sala de crise
   sistemas: string; // sistemas envolvidos
   attachments: RunbookAttachment[];
   /** Map of attachment:ID → signed URL for resolving inline markdown images */

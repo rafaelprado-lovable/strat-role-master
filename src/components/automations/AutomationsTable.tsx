@@ -279,7 +279,7 @@ export function AutomationsTable({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Edit2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">Rascunhos</span>
+                  <span className="text-sm font-medium text-foreground">Em desenvolvimento</span>
                   <Badge variant="outline" className="text-[11px] px-1.5 py-0 text-muted-foreground border-border/50">
                     {draftWorkflows.length}
                   </Badge>

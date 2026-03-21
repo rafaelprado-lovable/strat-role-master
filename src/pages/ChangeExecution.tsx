@@ -30,12 +30,13 @@ interface PackageItem {
   name: string;
   description: string;
   status: StepStatus;
+  command: string;
 }
 
 interface ClusterStep {
   id: string;
   name: string;
-  type: "stop_services" | "install_packages" | "sync_servers" | "start_services";
+  type: "stop_services" | "install_packages" | "sync_services" | "start_services";
   items: (ServiceItem | PackageItem)[];
 }
 
@@ -47,31 +48,23 @@ interface Cluster {
 
 const mockClusters: Cluster[] = [
   {
-    id: "cluster_qa",
-    name: "kong_pmid2_eng_qa",
+    id: "default",
+    name: "Default",
     steps: [
       {
-        id: "stop_1",
-        name: "Stop Services",
-        type: "stop_services",
-        items: [
-          { id: "s1", name: "kong_pmid2_eng_qa", status: "executado com sucesso" }
-        ]
-      },
-      {
-        id: "install_1",
-        name: "Install Packages",
+        id: "installPackage",
+        name: "Instalação do pacote",
         type: "install_packages",
         items: [
-          { id: "p1", name: "package_v1.2.3", description: "Main application package", status: "executado com sucesso" }
+          { id: "install_package_1", name: "installPackage NMWS.P02972.list", status: "não executado", command: 'printf \'%s\ny\nn\n\' "olbpkiwowiyr3ufxqzuqrcfdr2fjit2iak3pyfafntdhndocufza" | /nmws_app/cmd/installPackage.sh NMWS.P02972.list' }
         ]
       },
       {
-        id: "sync_1",
-        name: "Sync Servers",
-        type: "sync_servers",
+        id: "syncService",
+        name: "Sync Service",
+        type: "sync_services",
         items: [
-          { id: "sy1", name: "kong_pmid2_eng_qa", status: "executando" }
+          { id: "sy1", name: "Orch_Update_ProductEligibility", status: "não executado", command: '/nmws_app/cmd/restartService.sh Orch_Update_ProductEligibility' }
         ]
       },
       {

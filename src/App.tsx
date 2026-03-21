@@ -60,11 +60,9 @@ const App = () => (
             <Route
               path="/"
               element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <Index />
-                  </AppLayout>
-                </ProtectedRoute>
+                <AppLayout>
+                  <Index />
+                </AppLayout>
               }
             />
             <Route
@@ -265,21 +263,17 @@ const App = () => (
             <Route
               path="/audit"
               element={
-                <ProtectedRoute>
                   <AppLayout>
                     <Audit />
                   </AppLayout>
-                </ProtectedRoute>
               }
             />
             <Route
               path="/runbooks"
               element={
-                <ProtectedRoute>
                   <AppLayout>
                     <Runbooks />
                   </AppLayout>
-                </ProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

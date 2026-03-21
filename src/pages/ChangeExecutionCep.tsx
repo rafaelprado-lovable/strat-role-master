@@ -294,8 +294,15 @@ interface ChangeExecutionCepProps {
 }
 
 export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) {
-  const [insertionCepsState, setInsertionCepsState] = useState<CepChange[]>(change.cepsInclude);
-  const [exclusionCepsState, setExclusionCepsState] = useState<CepChange[]>(change.cepsExclude);
+
+
+  const [insertionCepsState, setInsertionCepsState] = useState<CepChange[]>(
+    Array.isArray(change?.cepsInclude) ? change.cepsInclude : []
+  );
+
+  const [exclusionCepsState, setExclusionCepsState] = useState<CepChange[]>(
+    Array.isArray(change?.cepsExclude) ? change.cepsExclude : []
+  );
   const [selectedCep, setSelectedCep] = useState<string | null>(null);
   const [insertionLogs, setInsertionLogs] = useState<ValidationLog[]>([]);
   const [exclusionLogs, setExclusionLogs] = useState<ValidationLog[]>([]);
@@ -316,8 +323,8 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
   const validationInsTerminalRef = useRef<HTMLDivElement>(null);
   const validationExcTerminalRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const insertionCeps = change.cepsInclude;
-  const exclusionCeps = change.cepsExclude;
+  const insertionCeps = Array.isArray(change?.cepsInclude) ? change.cepsInclude : [];
+  const exclusionCeps = Array.isArray(change?.cepsExclude) ? change.cepsExclude : [];
   const allCeps = [...insertionCepsState, ...exclusionCepsState];
 
   const validatedCount = allCeps.filter(c => c.status === "validado").length;
@@ -683,7 +690,7 @@ export default function ChangeExecutionCep({ change }: ChangeExecutionCepProps) 
             </Badge>
           </div>
             <CardDescription className="text-xs">
-              {change.changeSystemData.number} - Alterações de CEP
+              {change?.changeSystemData?.number} - Alterações de CEP
             </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
