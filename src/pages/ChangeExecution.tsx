@@ -101,7 +101,7 @@ const mockClusters: Cluster[] = [
       {
         id: "sync_2",
         name: "Sync Servers",
-        type: "sync_servers",
+        type: "sync_services",
         items: [
           { id: "sy2", name: "kong_pmid2_uats", status: "não executado" }
         ]
