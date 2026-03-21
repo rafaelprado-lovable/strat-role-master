@@ -19,7 +19,15 @@ function getDateCounts(changes: Changes[]): { date: string; count: number }[] {
     map[dateKey] = (map[dateKey] || 0) + 1;
   }
   return Object.entries(map)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => {
+      // Parse DD/MM/YYYY to comparable format
+      const parseDate = (d: string) => {
+        const parts = d.split("/");
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return d;
+      };
+      return parseDate(a).localeCompare(parseDate(b));
+    })
     .map(([date, count]) => ({ date, count }));
 }
 
