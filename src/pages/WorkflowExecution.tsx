@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, Play, Square, RotateCcw, Download,
