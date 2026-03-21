@@ -127,6 +127,15 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
         </div>
       )}
 
+      {/* Skip reason tooltip */}
+      {isSkipped && skipReason && (
+        <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
+          <div className="px-2 py-1 rounded-md bg-popover border border-border shadow-md text-[10px] text-muted-foreground whitespace-nowrap">
+            {String(skipReason).replace(/_/g, ' ')}
+          </div>
+        </div>
+      )}
+
       <Handle type="source" position={Position.Right} id="right" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-right-1.5" />
     </div>
   );
