@@ -657,6 +657,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         </div>
       </div>
 
+      {/* Execution status banner */}
+      {workflow?.id && <ExecutionStatusBar workflowId={workflow.id} />}
+
       {/* Editor */}
       <div className="flex flex-1 mt-4 gap-4 overflow-hidden relative">
         {/* Sidebar – Blocos (desktop) */}
