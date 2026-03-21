@@ -123,9 +123,17 @@ export default function ChangesPage() {
   ]);
 
 
-  const totalPages = Math.ceil(filteredChanges.length / itemsPerPage);
+  const displayedChanges = useMemo(() => {
+    if (!selectedTimelineDate) return filteredChanges;
+    return filteredChanges.filter((c) => {
+      const dateKey = c.changeSystemData.start_date?.split(" ")[0] || "Sem data";
+      return dateKey === selectedTimelineDate;
+    });
+  }, [filteredChanges, selectedTimelineDate]);
+
+  const totalPages = Math.ceil(displayedChanges.length / itemsPerPage);
   const start = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredChanges.slice(start, start + itemsPerPage);
+  const currentItems = displayedChanges.slice(start, start + itemsPerPage);
 
   const handlePreAnalise = (numero: string) => toast.success(`Pré-análise realizada para ${numero}`);
   const handleEnviarRelatorio = (numero: string) => toast.success(`Relatório enviado para ${numero}`);
