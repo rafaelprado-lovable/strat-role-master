@@ -219,7 +219,9 @@ function ExecutionEdgeComponent({
 
   return (
     <>
-      <path d={path} fill="none" style={edgeStyle} strokeDasharray={isLoop ? '6 3' : undefined} markerEnd={markerEnd} className="react-flow__edge-path" />
+      {/* Invisible wider path for hover hit area */}
+      <path d={path} fill="none" stroke="transparent" strokeWidth={20} className="react-flow__edge-interaction" />
+      <path d={path} fill="none" style={edgeStyle} strokeDasharray={isLoop ? '6 3' : undefined} markerEnd={markerEnd} className="react-flow__edge-path peer" />
       <EdgeLabelRenderer>
         <div
           style={{ position: 'absolute', transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`, pointerEvents: 'none' }}
@@ -230,18 +232,36 @@ function ExecutionEdgeComponent({
               LOOP {loopCount !== undefined ? `(${loopCount}/${edgeData.max_iterations || '?'})` : ''}
             </span>
           )}
-          {hasCondition && !isLoop && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-chart-2/20 text-chart-2 border border-chart-2/30">
-              IF
-            </span>
-          )}
           {hasCondition && (
-            <span className="text-[9px] font-mono text-muted-foreground max-w-[180px] truncate">
-              {edgeData.condition}
+            <span className="text-[9px] font-mono text-muted-foreground max-w-[220px] truncate opacity-0 transition-opacity duration-200"
+              style={{ transitionProperty: 'opacity' }}
+              id={`edge-label-${id}`}
+            >
+              {isLoop ? '' : 'IF '}{edgeData.condition}
             </span>
           )}
         </div>
       </EdgeLabelRenderer>
+      {/* Hover zone to trigger label visibility */}
+      {hasCondition && (
+        <foreignObject
+          x={labelX - 110}
+          y={labelY - 20}
+          width={220}
+          height={40}
+          style={{ overflow: 'visible', pointerEvents: 'all' }}
+          onMouseEnter={() => {
+            const el = document.getElementById(`edge-label-${id}`);
+            if (el) el.style.opacity = '1';
+          }}
+          onMouseLeave={() => {
+            const el = document.getElementById(`edge-label-${id}`);
+            if (el) el.style.opacity = '0';
+          }}
+        >
+          <div style={{ width: '100%', height: '100%' }} />
+        </foreignObject>
+      )}
     </>
   );
 }
