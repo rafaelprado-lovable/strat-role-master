@@ -29,7 +29,7 @@ export function ChangesTimeline({ changes, selectedDate, onSelectDate }: Changes
   if (changes.length === 0) return null;
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <CalendarIcon className="h-5 w-5 text-primary" />
