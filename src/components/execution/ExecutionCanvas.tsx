@@ -262,7 +262,7 @@ const ExecutionEdge = memo(ExecutionEdgeComponent);
 const nodeTypes = { execution: ExecutionNode };
 const edgeTypes = { execution: ExecutionEdge };
 
-interface SelectedEdgeInfo {
+export interface SelectedEdgeInfo {
   edgeId: string;
   condition: string;
   sourceNodeId: string;
