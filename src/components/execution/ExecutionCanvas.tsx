@@ -53,9 +53,17 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
       <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
       <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
 
-      {/* State dot */}
-      <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot} ${s.pulse ? 'animate-ping' : ''}`} />
-      <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot}`} />
+      {/* State dot / Skipped indicator */}
+      {isSkipped ? (
+        <div className="absolute top-2 right-2">
+          <Ban className="h-3 w-3 text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot} ${s.pulse ? 'animate-ping' : ''}`} />
+          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot}`} />
+        </>
+      )}
 
       <div className="flex items-center gap-2.5">
         <div className="p-1.5 rounded-lg bg-card/80 shrink-0">
