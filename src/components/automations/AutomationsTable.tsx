@@ -219,22 +219,7 @@ export function AutomationsTable({
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}>
                               <Edit2 className="h-4 w-4 mr-2" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}>
-                              <Play className="h-4 w-4 mr-2" /> Executar agora
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/automations/execute/${wf.id}`); }}>
-                              <MonitorPlay className="h-4 w-4 mr-2" /> Executar & Monitorar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleStatus(wf.id); }}>
-                              {wf.status === 'active' ? (
-                                <><Pause className="h-4 w-4 mr-2" /> Desativar</>
-                              ) : (
-                                <><Play className="h-4 w-4 mr-2" /> Ativar</>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(wf); }}>
-                              <Copy className="h-4 w-4 mr-2" /> Duplicar
-                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
