@@ -70,7 +70,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
           <Icon className="h-3.5 w-3.5 text-foreground" />
         </div>
         <div className="min-w-0">
-          <span className="font-semibold text-sm text-foreground truncate block">{d.label}</span>
+          <span className={`font-semibold text-sm truncate block ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{d.label}</span>
           <span className="text-[10px] text-muted-foreground font-mono block">{d.nodeId}</span>
         </div>
       </div>
