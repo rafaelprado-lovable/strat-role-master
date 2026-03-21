@@ -39,10 +39,11 @@ const logTypeColors: Record<string, string> = {
 interface ExecutionPanelProps {
   execution: ExecutionDTO;
   selectedNodeId: string | null;
+  selectedEdge?: SelectedEdgeInfo | null;
   onRerunNode?: (nodeId: string) => void;
 }
 
-export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: ExecutionPanelProps) {
+export function ExecutionPanel({ execution, selectedNodeId, selectedEdge, onRerunNode }: ExecutionPanelProps) {
   const [logFilter, setLogFilter] = useState('');
   const ctrl = execution.execution_controller;
   const wf = execution.execution_data;
