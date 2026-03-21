@@ -45,8 +45,8 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
     <div className={`
       rounded-xl px-4 py-3 min-w-[200px] max-w-[260px] border-2 relative backdrop-blur-sm shadow-sm
       ring-2 transition-all duration-300
-      ${s.ring} ${s.bg} border-border/50
-      ${s.pulse ? 'animate-pulse' : ''}
+      ${isSkipped ? 'ring-muted-foreground/20 bg-muted/30 border-muted-foreground/20 opacity-60' : `${s.ring} ${s.bg} border-border/50`}
+      ${!isSkipped && s.pulse ? 'animate-pulse' : ''}
       ${selected ? 'ring-offset-2 ring-offset-background shadow-lg scale-[1.02]' : ''}
     `}>
       <Handle type="target" position={Position.Left} id="left" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-left-1.5" />
