@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Card } from '@/components/ui/card';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
@@ -78,18 +79,23 @@ export function AutomationsTable({
     return matchesSearch && matchesTags;
   });
 
-  // Sort: running first, then active, then rest
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const aRunning = runningMap[a.id] ? 1 : 0;
-      const bRunning = runningMap[b.id] ? 1 : 0;
-      if (bRunning !== aRunning) return bRunning - aRunning;
-      const aActive = a.status === 'active' ? 1 : 0;
-      const bActive = b.status === 'active' ? 1 : 0;
-      if (bActive !== aActive) return bActive - aActive;
-      return 0;
-    });
+  // Split into active and draft groups, stable sort by name within each
+  const activeWorkflows = useMemo(() => {
+    return [...filtered]
+      .filter(w => w.status === 'active')
+      .sort((a, b) => {
+        const aRunning = runningMap[a.id] ? 1 : 0;
+        const bRunning = runningMap[b.id] ? 1 : 0;
+        if (bRunning !== aRunning) return bRunning - aRunning;
+        return a.name.localeCompare(b.name);
+      });
   }, [filtered, runningMap]);
+
+  const draftWorkflows = useMemo(() => {
+    return [...filtered]
+      .filter(w => w.status !== 'active')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
@@ -174,7 +180,7 @@ export function AutomationsTable({
 
       {/* Cards Grid */}
       <AnimatePresence mode="popLayout">
-        {sorted.length === 0 ? (
+        {activeWorkflows.length === 0 && draftWorkflows.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -192,111 +198,154 @@ export function AutomationsTable({
             </p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {sorted.map((wf, i) => {
-              const status = statusConfig[wf.status];
-              return (
-                <motion.div
-                  key={wf.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: i * 0.05, duration: 0.3 }}
-                >
-                  <Card
-                    className="group relative overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer"
-                    onClick={() => onEdit(wf)}
-                  >
-                    {/* Subtle gradient accent on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="space-y-6">
+            {activeWorkflows.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-emerald-500" />
+                  <span className="text-sm font-medium text-foreground">Ativos</span>
+                  <Badge variant="outline" className="text-[11px] px-1.5 py-0 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                    {activeWorkflows.length}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {activeWorkflows.map((wf, i) => {
+                    const status = statusConfig[wf.status];
+                    return (
+                      <motion.div
+                        key={wf.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: i * 0.05, duration: 0.3 }}
+                      >
+                        <Card
+                          className="group relative overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer"
+                          onClick={() => onEdit(wf)}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="relative p-5 space-y-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors duration-200">{wf.name}</h3>
+                                {wf.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{wf.description}</p>}
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}><Edit2 className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}><Play className="h-4 w-4 mr-2" /> Executar agora</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(wf.id); }}><Trash2 className="h-4 w-4 mr-2" /> Excluir</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <div className="flex items-center flex-wrap gap-2">
+                              <Badge variant="outline" className={`text-[11px] px-2 py-0.5 gap-1.5 ${status.className}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass} ${wf.status === 'active' ? 'animate-pulse' : ''}`} />
+                                {status.label}
+                              </Badge>
+                              <ExecutionStatusBadge workflowId={wf.id} />
+                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50"><Clock className="h-3 w-3" />{formatSchedule(wf.schedule)}</Badge>
+                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50"><GitBranch className="h-3 w-3" />{wf.nodes?.length || 0} nós</Badge>
+                            </div>
+                            {wf.tags && wf.tags.length > 0 && (
+                              <div className="flex items-center flex-wrap gap-1.5">
+                                {wf.tags.slice(0, 3).map(tag => (<TagBadge key={tag.id} tag={tag} size="sm" />))}
+                                {wf.tags.length > 3 && (<Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border/50">+{wf.tags.length - 3}</Badge>)}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5"><Calendar className="h-3 w-3" />{(lastRunDates[wf.id] || wf.lastRunAt) ? format(new Date(lastRunDates[wf.id] || wf.lastRunAt!), "dd MMM 'às' HH:mm", { locale: ptBR }) : 'Nunca executado'}</div>
+                              <div className="flex items-center gap-1.5"><Hash className="h-3 w-3" />{executionCounts[wf.id] ?? 0} execuções</div>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                    <div className="relative p-5 space-y-4">
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors duration-200">
-                            {wf.name}
-                          </h3>
-                          {wf.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {wf.description}
-                            </p>
-                          )}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}>
-                              <Edit2 className="h-4 w-4 mr-2" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}>
-                              <Play className="h-4 w-4 mr-2" /> Executar agora
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={(e) => { e.stopPropagation(); setDeleteId(wf.id); }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+            {activeWorkflows.length > 0 && draftWorkflows.length > 0 && (
+              <Separator className="my-2" />
+            )}
 
-                      {/* Meta info */}
-                      <div className="flex items-center flex-wrap gap-2">
-                        <Badge variant="outline" className={`text-[11px] px-2 py-0.5 gap-1.5 ${status.className}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass} ${wf.status === 'active' ? 'animate-pulse' : ''}`} />
-                          {status.label}
-                        </Badge>
-                        <ExecutionStatusBadge workflowId={wf.id} />
-                        <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50">
-                          <Clock className="h-3 w-3" />
-                          {formatSchedule(wf.schedule)}
-                        </Badge>
-                        <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50">
-                          <GitBranch className="h-3 w-3" />
-                          {wf.nodes?.length || 0} nós
-                        </Badge>
-                      </div>
-
-                      {/* Tags */}
-                      {wf.tags && wf.tags.length > 0 && (
-                        <div className="flex items-center flex-wrap gap-1.5">
-                          {wf.tags.slice(0, 3).map(tag => (
-                            <TagBadge key={tag.id} tag={tag} size="sm" />
-                          ))}
-                          {wf.tags.length > 3 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border/50">
-                              +{wf.tags.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Footer stats */}
-                      <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3" />
-                          {(lastRunDates[wf.id] || wf.lastRunAt)
-                            ? format(new Date(lastRunDates[wf.id] || wf.lastRunAt!), "dd MMM 'às' HH:mm", { locale: ptBR })
-                            : 'Nunca executado'}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Hash className="h-3 w-3" />
-                          {executionCounts[wf.id] ?? 0} execuções
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
+            {draftWorkflows.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Edit2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Rascunhos</span>
+                  <Badge variant="outline" className="text-[11px] px-1.5 py-0 text-muted-foreground border-border/50">
+                    {draftWorkflows.length}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {draftWorkflows.map((wf, i) => {
+                    const status = statusConfig[wf.status];
+                    return (
+                      <motion.div
+                        key={wf.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: i * 0.05, duration: 0.3 }}
+                      >
+                        <Card
+                          className="group relative overflow-hidden border-border/50 bg-card/90 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer"
+                          onClick={() => onEdit(wf)}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="relative p-5 space-y-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors duration-200">{wf.name}</h3>
+                                {wf.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{wf.description}</p>}
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}><Edit2 className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}><Play className="h-4 w-4 mr-2" /> Executar agora</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(wf.id); }}><Trash2 className="h-4 w-4 mr-2" /> Excluir</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <div className="flex items-center flex-wrap gap-2">
+                              <Badge variant="outline" className={`text-[11px] px-2 py-0.5 gap-1.5 ${status.className}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass} ${wf.status === 'active' ? 'animate-pulse' : ''}`} />
+                                {status.label}
+                              </Badge>
+                              <ExecutionStatusBadge workflowId={wf.id} />
+                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50"><Clock className="h-3 w-3" />{formatSchedule(wf.schedule)}</Badge>
+                              <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50"><GitBranch className="h-3 w-3" />{wf.nodes?.length || 0} nós</Badge>
+                            </div>
+                            {wf.tags && wf.tags.length > 0 && (
+                              <div className="flex items-center flex-wrap gap-1.5">
+                                {wf.tags.slice(0, 3).map(tag => (<TagBadge key={tag.id} tag={tag} size="sm" />))}
+                                {wf.tags.length > 3 && (<Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground border-border/50">+{wf.tags.length - 3}</Badge>)}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-3 border-t border-border/30 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5"><Calendar className="h-3 w-3" />{(lastRunDates[wf.id] || wf.lastRunAt) ? format(new Date(lastRunDates[wf.id] || wf.lastRunAt!), "dd MMM 'às' HH:mm", { locale: ptBR }) : 'Nunca executado'}</div>
+                              <div className="flex items-center gap-1.5"><Hash className="h-3 w-3" />{executionCounts[wf.id] ?? 0} execuções</div>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </AnimatePresence>
