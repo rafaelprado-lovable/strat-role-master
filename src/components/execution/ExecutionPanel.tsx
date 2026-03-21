@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { getSkipDetail } from '@/components/execution/ExecutionCanvas';
+import type { SelectedEdgeInfo } from '@/components/execution/ExecutionCanvas';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
