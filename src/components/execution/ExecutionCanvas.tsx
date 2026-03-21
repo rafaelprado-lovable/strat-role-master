@@ -345,6 +345,24 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
     [workflow.edges, controller]
   );
 
+  const handleEdgeClick = useCallback((_: any, edge: Edge) => {
+    const edgeData = (edge.data || {}) as Record<string, any>;
+    if (!edgeData.condition) return;
+    const sourceOutput = controller.task_outputs[edge.source]?.output;
+    onEdgeSelect({
+      edgeId: edge.id,
+      condition: edgeData.condition,
+      sourceNodeId: edge.source,
+      targetNodeId: edge.target,
+      sourceOutput,
+      sourceState: controller.task_states[edge.source] || 'waiting_start',
+      targetState: controller.task_states[edge.target] || 'waiting_start',
+      isLoop: !!edgeData.loop,
+      maxIterations: edgeData.max_iterations,
+      loopCounter: edgeData.loopCounter,
+    });
+  }, [controller, onEdgeSelect]);
+
   return (
     <div className="h-full w-full rounded-xl border border-border overflow-hidden bg-muted/20">
       <ReactFlow
@@ -352,8 +370,9 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodeClick={(_, node) => onNodeSelect(node.id)}
-        onPaneClick={() => onNodeSelect(null)}
+        onNodeClick={(_, node) => { onEdgeSelect(null); onNodeSelect(node.id); }}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={() => { onNodeSelect(null); onEdgeSelect(null); }}
         fitView
         nodesDraggable={false}
         nodesConnectable={false}
