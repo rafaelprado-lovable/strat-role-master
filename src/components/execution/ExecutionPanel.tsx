@@ -176,7 +176,7 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
                   <div key={n.id} className="rounded-lg border border-border/30 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
                       {stateIcons[taskState]}
-                      <span className="text-xs font-semibold text-foreground flex-1 truncate">{n.config?.label || n.id}</span>
+                      <span className="text-xs font-semibold text-foreground flex-1 truncate">{String((n.config as any)?.label || n.id)}</span>
                       <span className="text-[10px] font-mono text-muted-foreground">{n.definition_id}</span>
                       {hasOutput && (
                         <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => copyJson(output.output)}>
