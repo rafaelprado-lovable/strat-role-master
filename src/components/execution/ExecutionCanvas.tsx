@@ -284,7 +284,7 @@ interface ExecutionCanvasProps {
   onEdgeSelect: (edge: SelectedEdgeInfo | null) => void;
 }
 
-export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSelect }: ExecutionCanvasProps) {
+export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSelect, selectedEdge, onEdgeSelect }: ExecutionCanvasProps) {
   const selfLoopNodeIds = new Set(
     workflow.edges?.filter((e: any) => e.from === e.to && e.loop).map((e: any) => e.from) || []
   );
