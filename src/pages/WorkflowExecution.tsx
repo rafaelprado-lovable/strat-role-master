@@ -591,15 +591,15 @@ export default function WorkflowExecution() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isRunning ? (
-            <Button size="sm" onClick={handleExecute} className="gap-1.5">
+          {!isRunning && !loadingActiveExec ? (
+            <Button size="sm" onClick={handleExecute} className="gap-1.5" disabled={loadingActiveExec}>
               <Play className="h-3.5 w-3.5" /> Executar agora
             </Button>
-          ) : (
+          ) : isRunning ? (
             <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5">
               <Square className="h-3.5 w-3.5" /> Parar execução
             </Button>
-          )}
+          ) : null}
           {execution && (
             <>
               <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
@@ -657,7 +657,7 @@ export default function WorkflowExecution() {
       )}
 
       {/* Payload input */}
-      {!execution && !loading && (
+      {!execution && !loading && !loadingActiveExec && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
           <div className="flex items-center gap-2">
             <Zap className="h-3.5 w-3.5 text-primary" />
@@ -690,7 +690,7 @@ export default function WorkflowExecution() {
       )}
 
       {/* Empty state */}
-      {!execution && !loading && (
+      {!execution && !loading && !loadingActiveExec && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
