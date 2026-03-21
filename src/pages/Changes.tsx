@@ -22,7 +22,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search, CalendarIcon, X, Users, FileText} from "lucide-react";
+import { Eye, Send, Search, CalendarIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from '@/components/ui/calendar';
