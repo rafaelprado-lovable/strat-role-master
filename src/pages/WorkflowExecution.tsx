@@ -652,26 +652,6 @@ export default function WorkflowExecution() {
         </motion.div>
       )}
 
-      {/* Payload input */}
-      {!execution && !loading && !loadingActiveExec && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-semibold text-muted-foreground">Payload Inicial (opcional)</span>
-          </div>
-          <Textarea
-            value={payloadJson}
-            onChange={e => { setPayloadJson(e.target.value); validatePayload(e.target.value); }}
-            placeholder='{"key": "value"}'
-            className="font-mono text-xs h-20 resize-none"
-          />
-          {payloadError && (
-            <p className="text-[11px] text-destructive flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" /> {payloadError}
-            </p>
-          )}
-        </motion.div>
-      )}
 
       {/* Loading state */}
       {(loading || loadingActiveExec) && (
