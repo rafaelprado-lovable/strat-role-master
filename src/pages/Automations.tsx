@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
+import { RunningExecutionsProvider } from '@/components/automations/ExecutionStatusBanner';
 import { Workflow } from '@/types/automations';
 import { workflowService } from '@/services/workflowService';
 import { parseWorkflowResponse } from '@/services/workflowParser';
