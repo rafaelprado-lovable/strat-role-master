@@ -247,6 +247,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
           nodeId: n.id,
           taskState,
           isSkipped,
+          skipReason: isSkipped ? output?.output?.reason : undefined,
           hasForEach: !!n.for_each,
           hasStream: isStream,
           hasLoop: selfLoopNodeIds.has(n.id),
