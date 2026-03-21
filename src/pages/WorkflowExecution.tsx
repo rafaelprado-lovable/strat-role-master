@@ -433,7 +433,7 @@ export default function WorkflowExecution() {
       setLoading(false);
       setIsRunning(false);
     }
-  }, [workflow, payloadJson, validatePayload, stopPolling, fetchExecutionStatus]);
+  }, [workflow, stopPolling, fetchExecutionStatus]);
 
   const handleStop = useCallback(() => {
     stopPolling();
