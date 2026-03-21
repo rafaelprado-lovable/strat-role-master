@@ -241,29 +241,41 @@ export default function WorkflowExecution() {
 
     (async () => {
       try {
-        const executions = await workflowService.listExecutions(workflow.id);
-        if (cancelled || !Array.isArray(executions) || executions.length === 0) {
-          setLoadingActiveExec(false);
-          return;
+        // First, check the /v1/execution/running endpoint for active executions
+        let execId: string | null = null;
+        try {
+          const runningData = await workflowService.listRunning();
+          const runningWf = runningData?.workflows?.find(w => w.workflow_id === workflow.id);
+          if (runningWf) {
+            execId = runningWf.execution_id;
+          }
+        } catch {
+          console.warn('listRunning failed, falling back to listExecutions');
         }
 
-        // Find most recent active (non-terminal) execution, or the latest one
-        const activeExec = executions.find((ex: any) => {
-          const ctrl = ex.execution_controller ?? ex;
-          const state = ctrl.state ?? ex.state;
-          return state && !TERMINAL_STATES.includes(state as ExecutionState);
-        });
-
-        // If no active, pick the latest one (first in list, assuming sorted desc)
-        const targetExec = activeExec || executions[0];
-        if (!targetExec) {
-          setLoadingActiveExec(false);
-          return;
-        }
-
-        const ctrl = (targetExec as any).execution_controller ?? targetExec;
-        const execId = ctrl.execution_id ?? (targetExec as any)._id ?? '';
+        // Fallback: check listExecutions if no running found
         if (!execId) {
+          try {
+            const executions = await workflowService.listExecutions(workflow.id);
+            if (cancelled) return;
+            if (Array.isArray(executions) && executions.length > 0) {
+              const activeExec = executions.find((ex: any) => {
+                const ctrl = ex.execution_controller ?? ex;
+                const state = ctrl.state ?? ex.state;
+                return state && !TERMINAL_STATES.includes(state as ExecutionState);
+              });
+              const targetExec = activeExec || executions[0];
+              if (targetExec) {
+                const ctrl = (targetExec as any).execution_controller ?? targetExec;
+                execId = ctrl.execution_id ?? (targetExec as any)._id ?? '';
+              }
+            }
+          } catch {
+            console.warn('listExecutions also failed');
+          }
+        }
+
+        if (cancelled || !execId) {
           setLoadingActiveExec(false);
           return;
         }
