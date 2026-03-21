@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import {
   Activity, Clock, Copy, Layers, Terminal, Filter,
   Radio, Repeat, AlertTriangle, CheckCircle2, Loader2, Circle, FileJson,
+  SkipForward, Ban,
 } from 'lucide-react';
 import type { ExecutionDTO, ExecutionLogEntry, TaskState, ForEachItemStatus } from '@/types/execution';
 import { toast } from 'sonner';
@@ -171,39 +172,82 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
                 const output = ctrl.task_outputs[n.id];
                 const hasOutput = output?.output && Object.keys(output.output).length > 0;
                 const hasError = !!output?.error;
+                const isSkipped = hasOutput && output.output.skipped === true;
+                const isFinished = taskState === 'finished';
+                const isWaiting = taskState === 'waiting_start';
+                const isRunning = taskState === 'running';
+
+                // Determine header style based on status
+                const headerBg = isSkipped
+                  ? 'bg-muted/50 border-b border-muted-foreground/10'
+                  : isFinished
+                    ? 'bg-chart-2/5 border-b border-chart-2/10'
+                    : hasError
+                      ? 'bg-destructive/5 border-b border-destructive/10'
+                      : 'bg-muted/30';
 
                 return (
-                  <div key={n.id} className="rounded-lg border border-border/30 overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
-                      {stateIcons[taskState]}
-                      <span className="text-xs font-semibold text-foreground flex-1 truncate">{String((n.config as any)?.label || n.id)}</span>
+                  <div key={n.id} className={`rounded-lg border overflow-hidden ${isSkipped ? 'border-muted-foreground/20 opacity-70' : isFinished ? 'border-chart-2/20' : hasError ? 'border-destructive/20' : 'border-border/30'}`}>
+                    <div className={`flex items-center gap-2 px-3 py-2 ${headerBg}`}>
+                      {isSkipped ? (
+                        <SkipForward className="h-3 w-3 text-muted-foreground" />
+                      ) : (
+                        stateIcons[taskState]
+                      )}
+                      <span className={`text-xs font-semibold flex-1 truncate ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                        {String((n.config as any)?.label || n.id)}
+                      </span>
                       <span className="text-[10px] font-mono text-muted-foreground">{n.definition_id}</span>
+                      {/* Status badge */}
+                      {isSkipped && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-muted-foreground/20 gap-1">
+                          <Ban className="h-2 w-2" /> SKIP
+                        </Badge>
+                      )}
+                      {isFinished && !isSkipped && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-chart-2/10 text-chart-2 border-chart-2/20">
+                          OK
+                        </Badge>
+                      )}
+                      {isRunning && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 animate-pulse">
+                          RUN
+                        </Badge>
+                      )}
                       {hasOutput && (
                         <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => copyJson(output.output)}>
                           <Copy className="h-2.5 w-2.5" />
                         </Button>
                       )}
                     </div>
+                    {/* Skipped reason */}
+                    {isSkipped && output.output.reason && (
+                      <div className="px-3 py-2 bg-muted/20 border-t border-border/10 flex items-center gap-2">
+                        <Ban className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-[11px] text-muted-foreground">
+                          Motivo: <span className="font-mono font-medium">{String(output.output.reason).replace(/_/g, ' ')}</span>
+                        </span>
+                      </div>
+                    )}
                     {hasError && (
                       <div className="px-3 py-2 bg-destructive/5 border-t border-destructive/10">
                         <pre className="text-[11px] text-destructive font-mono whitespace-pre-wrap">{output.error}</pre>
                       </div>
                     )}
-                    {hasOutput ? (
+                    {hasOutput && !isSkipped ? (
                       <pre className="text-[11px] font-mono p-3 bg-card/50 overflow-x-auto max-h-60 text-foreground whitespace-pre-wrap border-t border-border/20">
                         {JSON.stringify(output.output, null, 2)}
                       </pre>
-                    ) : (
+                    ) : !isSkipped ? (
                       <div className="px-3 py-2 text-[11px] text-muted-foreground italic border-t border-border/20">
-                        {taskState === 'waiting_start' ? 'Aguardando execução...' : taskState === 'running' ? 'Em execução...' : 'Sem output'}
+                        {isWaiting ? '⏸ Aguardando execução...' : isRunning ? '⚡ Em execução...' : 'Sem output'}
                       </div>
-                    )}
+                    ) : null}
                     {output?.duration_ms !== undefined && (
                       <div className="px-3 py-1 text-[10px] text-muted-foreground font-mono border-t border-border/10 bg-muted/10">
                         ⏱ {output.duration_ms >= 1000 ? `${(output.duration_ms / 1000).toFixed(1)}s` : `${output.duration_ms}ms`}
                       </div>
                     )}
-                    {/* for_each consolidated items */}
                     {output?.items && output.items.length > 0 && (
                       <div className="px-3 py-2 border-t border-border/10 bg-chart-4/5">
                         <span className="text-[10px] font-semibold text-chart-4 flex items-center gap-1 mb-1">
