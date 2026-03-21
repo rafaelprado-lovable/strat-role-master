@@ -576,12 +576,15 @@ export default function WorkflowExecution() {
               workflow={execution.execution_data}
               controller={execution.execution_controller}
               selectedNodeId={selectedNodeId}
-              onNodeSelect={setSelectedNodeId}
+              onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
+              selectedEdge={selectedEdge}
+              onEdgeSelect={setSelectedEdge}
             />
           </ReactFlowProvider>
           <ExecutionPanel
             execution={execution}
             selectedNodeId={selectedNodeId}
+            selectedEdge={selectedEdge}
             onRerunNode={handleRerunNode}
           />
         </motion.div>
