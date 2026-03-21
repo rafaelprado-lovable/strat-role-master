@@ -218,6 +218,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
     (workflow.nodes || []).map((n: any, i: number) => {
       const taskState = controller.task_states[n.id] || 'waiting_start';
       const output = controller.task_outputs[n.id];
+      const isSkipped = output?.output?.skipped === true;
       const feTracker = controller.for_each_tracker[n.id] || controller.for_each_stream_tracker[n.id];
       const isStream = !!controller.for_each_stream_tracker[n.id];
       const loopEdge = workflow.edges?.find((e: any) => e.from === n.id && e.to === n.id && e.loop);
@@ -233,6 +234,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
           definition_id: n.definition_id,
           nodeId: n.id,
           taskState,
+          isSkipped,
           hasForEach: !!n.for_each,
           hasStream: isStream,
           hasLoop: selfLoopNodeIds.has(n.id),
