@@ -286,8 +286,8 @@ export default function ChangesPage() {
           <CardDescription>Visualize e gerencie todas as changes para avaliação</CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <Table>
+        <CardContent className="overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Número</TableHead>
