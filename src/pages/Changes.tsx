@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangeDetailsDialog } from "@/components/changes/ChangeDetailsDialog";
+import { ChangesTimeline } from "@/components/changes/ChangesTimeline";
 import { changesApi, departmentApi } from '@/services/mockApi';
 import { useQuery } from '@tanstack/react-query';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
