@@ -21,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TagBadge } from './TagBadge';
 import { TagFilter } from './TagFilter';
-import { ExecutionStatusBadge } from './ExecutionStatusBanner';
+import { ExecutionStatusBadge, useRunningContext } from './ExecutionStatusBanner';
 
 interface AutomationsTableProps {
   automations: Workflow[];
