@@ -9,7 +9,7 @@ import {
   ArrowLeft, Play, Square, RotateCcw, Download, Zap,
   AlertTriangle, RefreshCw,
 } from 'lucide-react';
-import { ExecutionCanvas } from '@/components/execution/ExecutionCanvas';
+import { ExecutionCanvas, type SelectedEdgeInfo } from '@/components/execution/ExecutionCanvas';
 import { ExecutionPanel } from '@/components/execution/ExecutionPanel';
 import { type ExecutionDTO, type ExecutionState, type TaskState } from '@/types/execution';
 import { workflowService } from '@/services/workflowService';
@@ -175,6 +175,7 @@ export default function WorkflowExecution() {
   const [execution, setExecution] = useState<ExecutionDTO | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<SelectedEdgeInfo | null>(null);
   const [payloadJson, setPayloadJson] = useState('{}');
   const [payloadError, setPayloadError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -575,12 +576,15 @@ export default function WorkflowExecution() {
               workflow={execution.execution_data}
               controller={execution.execution_controller}
               selectedNodeId={selectedNodeId}
-              onNodeSelect={setSelectedNodeId}
+              onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
+              selectedEdge={selectedEdge}
+              onEdgeSelect={setSelectedEdge}
             />
           </ReactFlowProvider>
           <ExecutionPanel
             execution={execution}
             selectedNodeId={selectedNodeId}
+            selectedEdge={selectedEdge}
             onRerunNode={handleRerunNode}
           />
         </motion.div>

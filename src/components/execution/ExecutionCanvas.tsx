@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   ReactFlow, Background, Controls, MiniMap,
   type Node, type Edge, BackgroundVariant, Panel,
@@ -217,11 +217,19 @@ function ExecutionEdgeComponent({
     labelY = (sourceY + targetY) / 2 - 16;
   }
 
+  const [hovered, setHovered] = useState(false);
+
   return (
     <>
       {/* Invisible wider path for hover hit area */}
-      <path d={path} fill="none" stroke="transparent" strokeWidth={20} className="react-flow__edge-interaction" />
-      <path d={path} fill="none" style={edgeStyle} strokeDasharray={isLoop ? '6 3' : undefined} markerEnd={markerEnd} className="react-flow__edge-path peer" />
+      <path
+        d={path} fill="none" stroke="transparent" strokeWidth={24}
+        className="react-flow__edge-interaction"
+        style={{ pointerEvents: 'all', cursor: hasCondition ? 'pointer' : 'default' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      />
+      <path d={path} fill="none" style={edgeStyle} strokeDasharray={isLoop ? '6 3' : undefined} markerEnd={markerEnd} className="react-flow__edge-path" />
       <EdgeLabelRenderer>
         <div
           style={{ position: 'absolute', transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`, pointerEvents: 'none' }}
@@ -232,36 +240,18 @@ function ExecutionEdgeComponent({
               LOOP {loopCount !== undefined ? `(${loopCount}/${edgeData.max_iterations || '?'})` : ''}
             </span>
           )}
-          {hasCondition && (
-            <span className="text-[9px] font-mono text-muted-foreground max-w-[220px] truncate opacity-0 transition-opacity duration-200"
-              style={{ transitionProperty: 'opacity' }}
-              id={`edge-label-${id}`}
-            >
-              {isLoop ? '' : 'IF '}{edgeData.condition}
+          {hasCondition && !isLoop && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-chart-2/20 text-chart-2 border border-chart-2/30">
+              IF
+            </span>
+          )}
+          {hasCondition && hovered && (
+            <span className="text-[9px] font-mono text-muted-foreground max-w-[280px] px-2 py-1 rounded bg-popover border border-border shadow-md whitespace-pre-wrap text-center">
+              {edgeData.condition}
             </span>
           )}
         </div>
       </EdgeLabelRenderer>
-      {/* Hover zone to trigger label visibility */}
-      {hasCondition && (
-        <foreignObject
-          x={labelX - 110}
-          y={labelY - 20}
-          width={220}
-          height={40}
-          style={{ overflow: 'visible', pointerEvents: 'all' }}
-          onMouseEnter={() => {
-            const el = document.getElementById(`edge-label-${id}`);
-            if (el) el.style.opacity = '1';
-          }}
-          onMouseLeave={() => {
-            const el = document.getElementById(`edge-label-${id}`);
-            if (el) el.style.opacity = '0';
-          }}
-        >
-          <div style={{ width: '100%', height: '100%' }} />
-        </foreignObject>
-      )}
     </>
   );
 }
@@ -272,14 +262,29 @@ const ExecutionEdge = memo(ExecutionEdgeComponent);
 const nodeTypes = { execution: ExecutionNode };
 const edgeTypes = { execution: ExecutionEdge };
 
+export interface SelectedEdgeInfo {
+  edgeId: string;
+  condition: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  sourceOutput: Record<string, unknown> | undefined;
+  sourceState: string;
+  targetState: string;
+  isLoop: boolean;
+  maxIterations?: number;
+  loopCounter?: number;
+}
+
 interface ExecutionCanvasProps {
   workflow: any;
   controller: ExecutionController;
   selectedNodeId: string | null;
   onNodeSelect: (nodeId: string | null) => void;
+  selectedEdge: SelectedEdgeInfo | null;
+  onEdgeSelect: (edge: SelectedEdgeInfo | null) => void;
 }
 
-export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSelect }: ExecutionCanvasProps) {
+export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSelect, selectedEdge, onEdgeSelect }: ExecutionCanvasProps) {
   const selfLoopNodeIds = new Set(
     workflow.edges?.filter((e: any) => e.from === e.to && e.loop).map((e: any) => e.from) || []
   );
@@ -340,6 +345,24 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
     [workflow.edges, controller]
   );
 
+  const handleEdgeClick = useCallback((_: any, edge: Edge) => {
+    const edgeData = (edge.data || {}) as Record<string, any>;
+    if (!edgeData.condition) return;
+    const sourceOutput = controller.task_outputs[edge.source]?.output;
+    onEdgeSelect({
+      edgeId: edge.id,
+      condition: edgeData.condition,
+      sourceNodeId: edge.source,
+      targetNodeId: edge.target,
+      sourceOutput,
+      sourceState: controller.task_states[edge.source] || 'waiting_start',
+      targetState: controller.task_states[edge.target] || 'waiting_start',
+      isLoop: !!edgeData.loop,
+      maxIterations: edgeData.max_iterations,
+      loopCounter: edgeData.loopCounter,
+    });
+  }, [controller, onEdgeSelect]);
+
   return (
     <div className="h-full w-full rounded-xl border border-border overflow-hidden bg-muted/20">
       <ReactFlow
@@ -347,8 +370,9 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodeClick={(_, node) => onNodeSelect(node.id)}
-        onPaneClick={() => onNodeSelect(null)}
+        onNodeClick={(_, node) => { onEdgeSelect(null); onNodeSelect(node.id); }}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={() => { onNodeSelect(null); onEdgeSelect(null); }}
         fitView
         nodesDraggable={false}
         nodesConnectable={false}
