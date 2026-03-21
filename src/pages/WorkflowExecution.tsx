@@ -229,6 +229,71 @@ export default function WorkflowExecution() {
     }).finally(() => setLoadingWorkflow(false));
   }, [id]);
 
+  // On workflow load, check for active execution
+  const [loadingActiveExec, setLoadingActiveExec] = useState(false);
+  useEffect(() => {
+    if (!workflow || !id) return;
+    // Don't fetch if we already have an execution loaded
+    if (execution || isRunning) return;
+
+    let cancelled = false;
+    setLoadingActiveExec(true);
+
+    (async () => {
+      try {
+        const executions = await workflowService.listExecutions(workflow.id);
+        if (cancelled || !Array.isArray(executions) || executions.length === 0) {
+          setLoadingActiveExec(false);
+          return;
+        }
+
+        // Find most recent active (non-terminal) execution, or the latest one
+        const activeExec = executions.find((ex: any) => {
+          const ctrl = ex.execution_controller ?? ex;
+          const state = ctrl.state ?? ex.state;
+          return state && !TERMINAL_STATES.includes(state as ExecutionState);
+        });
+
+        // If no active, pick the latest one (first in list, assuming sorted desc)
+        const targetExec = activeExec || executions[0];
+        if (!targetExec) {
+          setLoadingActiveExec(false);
+          return;
+        }
+
+        const ctrl = (targetExec as any).execution_controller ?? targetExec;
+        const execId = ctrl.execution_id ?? (targetExec as any)._id ?? '';
+        if (!execId) {
+          setLoadingActiveExec(false);
+          return;
+        }
+
+        // Fetch full execution details
+        const raw = await workflowService.getExecution(execId);
+        if (cancelled || !raw) {
+          setLoadingActiveExec(false);
+          return;
+        }
+
+        const dto = mapApiResponseToDTO(raw, workflow);
+        executionIdRef.current = execId;
+        setExecution(dto);
+
+        // If still running, start polling
+        if (!TERMINAL_STATES.includes(dto.execution_controller.state)) {
+          setIsRunning(true);
+          pollingRef.current = setInterval(fetchExecutionStatus, POLL_INTERVAL_MS);
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar execução ativa:', err);
+      } finally {
+        if (!cancelled) setLoadingActiveExec(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [workflow, id]); // intentionally limited deps
+
   const validatePayload = useCallback((json: string) => {
     try {
       JSON.parse(json);
