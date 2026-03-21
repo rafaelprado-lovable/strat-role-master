@@ -149,7 +149,7 @@ export default function ChangesPage() {
     <div className="space-y-6">
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
 
             {/* Data Início */}
             <div className="space-y-2">
@@ -286,8 +286,8 @@ export default function ChangesPage() {
           <CardDescription>Visualize e gerencie todas as changes para avaliação</CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <Table>
+        <CardContent className="overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Número</TableHead>
