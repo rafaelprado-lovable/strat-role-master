@@ -7,7 +7,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio } from 'lucide-react';
+import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio, SkipForward, Ban } from 'lucide-react';
 import type { TaskState, ExecutionController } from '@/types/execution';
 
 // ─── Execution Node ───

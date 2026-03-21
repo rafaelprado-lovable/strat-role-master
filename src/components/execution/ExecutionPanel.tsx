@@ -188,37 +188,40 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
 
                 return (
                   <div key={n.id} className={`rounded-lg border overflow-hidden ${isSkipped ? 'border-muted-foreground/20 opacity-70' : isFinished ? 'border-chart-2/20' : hasError ? 'border-destructive/20' : 'border-border/30'}`}>
+                    {/* Header row 1: icon + name + badge */}
                     <div className={`flex items-center gap-2 px-3 py-2 ${headerBg}`}>
                       {isSkipped ? (
-                        <SkipForward className="h-3 w-3 text-muted-foreground" />
+                        <SkipForward className="h-3 w-3 text-muted-foreground shrink-0" />
                       ) : (
-                        stateIcons[taskState]
+                        <span className="shrink-0">{stateIcons[taskState]}</span>
                       )}
-                      <span className={`text-xs font-semibold flex-1 truncate ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                      <span className={`text-xs font-semibold flex-1 min-w-0 truncate ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                         {String((n.config as any)?.label || n.id)}
                       </span>
-                      <span className="text-[10px] font-mono text-muted-foreground">{n.definition_id}</span>
-                      {/* Status badge */}
                       {isSkipped && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-muted-foreground/20 gap-1">
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-muted-foreground/20 gap-1 shrink-0">
                           <Ban className="h-2 w-2" /> SKIP
                         </Badge>
                       )}
                       {isFinished && !isSkipped && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-chart-2/10 text-chart-2 border-chart-2/20">
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-chart-2/10 text-chart-2 border-chart-2/20 shrink-0">
                           OK
                         </Badge>
                       )}
                       {isRunning && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 animate-pulse">
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 animate-pulse shrink-0">
                           RUN
                         </Badge>
                       )}
                       {hasOutput && (
-                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => copyJson(output.output)}>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 shrink-0" onClick={() => copyJson(output.output)}>
                           <Copy className="h-2.5 w-2.5" />
                         </Button>
                       )}
+                    </div>
+                    {/* Header row 2: definition_id */}
+                    <div className="px-3 py-1 border-t border-border/10 bg-muted/10">
+                      <span className="text-[10px] font-mono text-muted-foreground truncate block">{n.definition_id}</span>
                     </div>
                     {/* Skipped reason */}
                     {isSkipped && output.output.reason && (
