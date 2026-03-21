@@ -262,11 +262,26 @@ const ExecutionEdge = memo(ExecutionEdgeComponent);
 const nodeTypes = { execution: ExecutionNode };
 const edgeTypes = { execution: ExecutionEdge };
 
+interface SelectedEdgeInfo {
+  edgeId: string;
+  condition: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  sourceOutput: Record<string, unknown> | undefined;
+  sourceState: string;
+  targetState: string;
+  isLoop: boolean;
+  maxIterations?: number;
+  loopCounter?: number;
+}
+
 interface ExecutionCanvasProps {
   workflow: any;
   controller: ExecutionController;
   selectedNodeId: string | null;
   onNodeSelect: (nodeId: string | null) => void;
+  selectedEdge: SelectedEdgeInfo | null;
+  onEdgeSelect: (edge: SelectedEdgeInfo | null) => void;
 }
 
 export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSelect }: ExecutionCanvasProps) {
