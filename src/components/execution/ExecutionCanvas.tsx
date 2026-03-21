@@ -33,6 +33,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const Icon = iconMap[d.definition_id] || Globe;
   const state: TaskState = d.taskState || 'waiting_start';
   const isSkipped = !!d.isSkipped;
+  const skipReason = d.skipReason;
   const s = stateStyles[state];
   const hasForEach = d.hasForEach;
   const hasStream = d.hasStream;
@@ -42,13 +43,15 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const duration = d.duration_ms;
 
   return (
-    <div className={`
-      rounded-xl px-4 py-3 min-w-[200px] max-w-[260px] border-2 relative backdrop-blur-sm shadow-sm
-      ring-2 transition-all duration-300
-      ${isSkipped ? 'ring-muted-foreground/20 bg-muted/30 border-muted-foreground/20 opacity-60' : `${s.ring} ${s.bg} border-border/50`}
-      ${!isSkipped && s.pulse ? 'animate-pulse' : ''}
-      ${selected ? 'ring-offset-2 ring-offset-background shadow-lg scale-[1.02]' : ''}
-    `}>
+    <div
+      className={`
+        rounded-xl px-4 py-3 min-w-[200px] max-w-[260px] border-2 relative backdrop-blur-sm shadow-sm
+        ring-2 transition-all duration-300 group/node
+        ${isSkipped ? 'ring-muted-foreground/20 bg-muted/30 border-muted-foreground/20 opacity-60' : `${s.ring} ${s.bg} border-border/50`}
+        ${!isSkipped && s.pulse ? 'animate-pulse' : ''}
+        ${selected ? 'ring-offset-2 ring-offset-background shadow-lg scale-[1.02]' : ''}
+      `}
+    >
       <Handle type="target" position={Position.Left} id="left" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-left-1.5" />
       <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
       <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
@@ -121,6 +124,15 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
       {duration !== undefined && state === 'finished' && (
         <div className="mt-1 text-[10px] text-muted-foreground font-mono">
           ⏱ {duration >= 1000 ? `${(duration / 1000).toFixed(1)}s` : `${duration}ms`}
+        </div>
+      )}
+
+      {/* Skip reason tooltip */}
+      {isSkipped && skipReason && (
+        <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
+          <div className="px-2 py-1 rounded-md bg-popover border border-border shadow-md text-[10px] text-muted-foreground whitespace-nowrap">
+            {String(skipReason).replace(/_/g, ' ')}
+          </div>
         </div>
       )}
 
@@ -235,6 +247,7 @@ export function ExecutionCanvas({ workflow, controller, selectedNodeId, onNodeSe
           nodeId: n.id,
           taskState,
           isSkipped,
+          skipReason: isSkipped ? output?.output?.reason : undefined,
           hasForEach: !!n.for_each,
           hasStream: isStream,
           hasLoop: selfLoopNodeIds.has(n.id),
