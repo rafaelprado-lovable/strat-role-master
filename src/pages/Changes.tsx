@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangeDetailsDialog } from "@/components/changes/ChangeDetailsDialog";
+import { ChangesTimeline } from "@/components/changes/ChangesTimeline";
 import { changesApi, departmentApi } from '@/services/mockApi';
 import { useQuery } from '@tanstack/react-query';
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { CheckSquare, Eye, Send, Search, CalendarIcon, X, Users, FileText} from "lucide-react";
+import { Eye, Send, Search, CalendarIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from '@/components/ui/calendar';
@@ -261,81 +261,7 @@ export default function ChangesPage() {
       </Card>
 
       {/* Timeline de Changes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Timeline de Changes</CardTitle>
-          <CardDescription>
-            Visualização cronológica das changes para o período selecionado
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="w-screen max-w-screen max-h-[70vh] max-w-[162vh] overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-4 pb-4">
-              {filteredChanges.length === 0 ? (
-                <div className="w-full text-center py-8 text-muted-foreground">
-                  Nenhuma change encontrada para o período
-                </div>
-              ) : (
-                filteredChanges.map((change, index) => {
-                 
-                  return (
-                    <div key={change.changeSystemData.number} className="relative flex flex-col items-center">
-                      {/* Timeline connector */}
-                      {index < filteredChanges.length - 1 && (
-                        <div className="absolute top-4 left-[calc(50%+80px)] w-8 h-0.5 bg-border" />
-                      )}
-                      
-                      {/* Timeline dot */}
-                      <div className="w-3 h-3 rounded-full bg-primary mb-3 z-10" />
-                      
-                      {/* Change Card */}
-                      <Card 
-                        className="w-[280px] cursor-pointer hover:border-primary/50 transition-colors flex-shrink-0"
-                        onClick={() => handleVisualizar(change)}
-                      >
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <Badge variant="outline" className="text-xs">
-                              {change.changeSystemData.number}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {change.changeSystemData.state}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {change.changeSystemData.start_date} - {change.changeSystemData.week_day}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <FileText className="h-3 w-3" />
-                              <span>Descrição</span>
-                            </div>
-                            <p className="text-sm line-clamp-2">{change.changeSystemData.description}</p>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Users className="h-3 w-3" />
-                              <span>Equipe na Implementação</span>
-                            </div>
-                            <p className="text-xs line-clamp-2 text-muted-foreground">
-                              {change.changeSystemData.teams_involved_in_execution || "Não informado"}
-                            </p>
-                          </div>
-                        
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </CardContent>
-      </Card>
+      <ChangesTimeline changes={filteredChanges} onSelectChange={handleVisualizar} />
 
       {/* TABELA */}
       <Card>
