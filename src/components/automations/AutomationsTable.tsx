@@ -219,7 +219,9 @@ export function AutomationsTable({
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}>
                               <Edit2 className="h-4 w-4 mr-2" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}>
+                              <Play className="h-4 w-4 mr-2" /> Executar agora
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
