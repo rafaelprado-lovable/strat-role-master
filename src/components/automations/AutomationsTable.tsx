@@ -69,12 +69,27 @@ export function AutomationsTable({
     }).filter(Boolean);
   }, [selectedTagIds, allTags]);
 
+  const { runningMap, ready: runningReady } = useRunningContext();
+
   const filtered = automations.filter((a) => {
     const matchesSearch = a.name.toLowerCase().includes(search.toLowerCase());
     const matchesTags = selectedTagNames.length === 0 || 
       selectedTagNames.every(name => a.tags?.some(t => t.name.toLowerCase() === name));
     return matchesSearch && matchesTags;
   });
+
+  // Sort: running first, then active, then rest
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const aRunning = runningMap[a.id] ? 1 : 0;
+      const bRunning = runningMap[b.id] ? 1 : 0;
+      if (bRunning !== aRunning) return bRunning - aRunning;
+      const aActive = a.status === 'active' ? 1 : 0;
+      const bActive = b.status === 'active' ? 1 : 0;
+      if (bActive !== aActive) return bActive - aActive;
+      return 0;
+    });
+  }, [filtered, runningMap]);
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
