@@ -94,6 +94,10 @@ export const workflowService = {
     return Array.isArray(data) ? data : [];
   },
 
+  async listRunning(): Promise<{ total_running_workflows: number; workflows: Array<{ execution_id: string; workflow_id: string; state: string; created_at: string; executed_nodes: number; total_nodes: number }> }> {
+    return apiClient.get('/v1/execution/running');
+  },
+
   async getExecution(executionId: string): Promise<WorkflowApiResponse> {
     return apiClient.get<WorkflowApiResponse>(`/v1/execution?execution_id=${encodeURIComponent(executionId)}`);
   },

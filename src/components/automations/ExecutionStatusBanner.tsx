@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Zap, AlertTriangle, Square, Eye } from 'lucide-react';
@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 
 type ExecState = 'running' | 'finished' | 'success' | 'error' | 'stopped';
 
-const TERMINAL_STATES: ExecState[] = ['finished', 'success', 'error', 'stopped'];
 const POLL_MS = 5000;
 
 const stateConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -19,75 +18,72 @@ const stateConfig: Record<string, { label: string; color: string; icon: React.Re
   stopped: { label: 'Parado', color: 'bg-muted text-muted-foreground border-border', icon: <Square className="h-3 w-3" /> },
 };
 
-interface ActiveExecInfo {
-  executionId: string;
-  state: ExecState;
-  taskStates: Record<string, string>;
-  totalNodes: number;
-  startedAt?: string;
+interface RunningWorkflow {
+  execution_id: string;
+  workflow_id: string;
+  state: string;
+  created_at: string;
+  executed_nodes: number;
+  total_nodes: number;
 }
 
-/** Small inline badge for workflow cards */
-export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
-  const [exec, setExec] = useState<ActiveExecInfo | null>(null);
-  const [checked, setChecked] = useState(false);
-  const navigate = useNavigate();
+// ── Shared context to avoid N+1 polling ──
+
+interface RunningContextValue {
+  runningMap: Record<string, RunningWorkflow>;
+  ready: boolean;
+}
+
+const RunningContext = createContext<RunningContextValue>({ runningMap: {}, ready: false });
+
+export function RunningExecutionsProvider({ children }: { children: React.ReactNode }) {
+  const [runningMap, setRunningMap] = useState<Record<string, RunningWorkflow>>({});
+  const [ready, setReady] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const check = async () => {
-      try {
-        const executions = await workflowService.listExecutions(workflowId);
-        if (cancelled) return;
-        if (!Array.isArray(executions) || executions.length === 0) {
-          setExec(null);
-          setChecked(true);
-          return;
-        }
-
-        const active = executions.find((ex: any) => {
-          const ctrl = ex.execution_controller ?? ex;
-          const state = ctrl.state ?? ex.state;
-          return state && !TERMINAL_STATES.includes(state as ExecState);
+  const fetchRunning = useCallback(async () => {
+    try {
+      const data = await workflowService.listRunning();
+      const map: Record<string, RunningWorkflow> = {};
+      if (data?.workflows) {
+        data.workflows.forEach((w) => {
+          map[w.workflow_id] = w;
         });
-
-        if (!active) {
-          setExec(null);
-          setChecked(true);
-          return;
-        }
-
-        const ctrl = (active as any).execution_controller ?? active;
-        const taskStates = ctrl.task_states ?? {};
-        const execId = ctrl.execution_id ?? (active as any)._id ?? '';
-
-        setExec({
-          executionId: execId,
-          state: (ctrl.state ?? 'running') as ExecState,
-          taskStates,
-          totalNodes: Object.keys(taskStates).length,
-          startedAt: (active as any).started_at,
-        });
-        setChecked(true);
-      } catch {
-        setChecked(true);
       }
-    };
+      setRunningMap(map);
+    } catch {
+      setRunningMap({});
+    } finally {
+      setReady(true);
+    }
+  }, []);
 
-    check();
-    pollRef.current = setInterval(check, POLL_MS);
-
+  useEffect(() => {
+    fetchRunning();
+    pollRef.current = setInterval(fetchRunning, POLL_MS);
     return () => {
-      cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [workflowId]);
+  }, [fetchRunning]);
 
-  if (!checked) return null;
+  return (
+    <RunningContext.Provider value={{ runningMap, ready }}>
+      {children}
+    </RunningContext.Provider>
+  );
+}
 
-  if (!exec) {
+// ── Badge for workflow cards ──
+
+export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
+  const { runningMap, ready } = useContext(RunningContext);
+  const navigate = useNavigate();
+
+  if (!ready) return null;
+
+  const running = runningMap[workflowId];
+
+  if (!running) {
     return (
       <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50">
         <Square className="h-3 w-3" />
@@ -96,10 +92,7 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
     );
   }
 
-  const cfg = stateConfig[exec.state] || stateConfig.running;
-  const doneCount = Object.values(exec.taskStates).filter(
-    (s) => s === 'finished' || s === 'error'
-  ).length;
+  const cfg = stateConfig[running.state] || stateConfig.running;
 
   return (
     <motion.div
@@ -114,77 +107,28 @@ export function ExecutionStatusBadge({ workflowId }: { workflowId: string }) {
       <Badge variant="outline" className={`text-[10px] px-2 py-0.5 gap-1 cursor-pointer hover:opacity-80 transition-opacity ${cfg.color}`}>
         {cfg.icon}
         <span>{cfg.label}</span>
-        {exec.totalNodes > 0 && exec.state === 'running' && (
-          <span className="font-mono ml-0.5">{doneCount}/{exec.totalNodes}</span>
+        {running.total_nodes > 0 && running.state === 'running' && (
+          <span className="font-mono ml-0.5">{running.executed_nodes}/{running.total_nodes}</span>
         )}
       </Badge>
     </motion.div>
   );
 }
 
-/** Full banner for the FlowEditor toolbar area */
+// ── Full banner for FlowEditor ──
+
 export function ExecutionStatusBar({ workflowId }: { workflowId: string }) {
-  const [exec, setExec] = useState<ActiveExecInfo | null>(null);
+  const { runningMap } = useContext(RunningContext);
   const navigate = useNavigate();
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const running = runningMap[workflowId];
+  if (!running) return null;
 
-    const check = async () => {
-      try {
-        const executions = await workflowService.listExecutions(workflowId);
-        if (cancelled || !Array.isArray(executions) || executions.length === 0) {
-          setExec(null);
-          return;
-        }
-
-        const active = executions.find((ex: any) => {
-          const ctrl = ex.execution_controller ?? ex;
-          const state = ctrl.state ?? ex.state;
-          return state && !TERMINAL_STATES.includes(state as ExecState);
-        });
-
-        if (!active) {
-          setExec(null);
-          return;
-        }
-
-        const ctrl = (active as any).execution_controller ?? active;
-        const taskStates = ctrl.task_states ?? {};
-        const execId = ctrl.execution_id ?? (active as any)._id ?? '';
-
-        setExec({
-          executionId: execId,
-          state: (ctrl.state ?? 'running') as ExecState,
-          taskStates,
-          totalNodes: Object.keys(taskStates).length,
-          startedAt: (active as any).started_at,
-        });
-      } catch {
-        setExec(null);
-      }
-    };
-
-    check();
-    pollRef.current = setInterval(check, POLL_MS);
-
-    return () => {
-      cancelled = true;
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [workflowId]);
-
-  if (!exec) return null;
-
-  const cfg = stateConfig[exec.state] || stateConfig.running;
-  const doneCount = Object.values(exec.taskStates).filter(
-    (s) => s === 'finished' || s === 'error'
-  ).length;
+  const cfg = stateConfig[running.state] || stateConfig.running;
 
   const elapsedText = (() => {
-    if (!exec.startedAt) return null;
-    const diff = Math.max(0, Date.now() - new Date(exec.startedAt).getTime());
+    if (!running.created_at) return null;
+    const diff = Math.max(0, Date.now() - new Date(running.created_at).getTime());
     const secs = Math.floor(diff / 1000);
     if (secs < 60) return `${secs}s`;
     const mins = Math.floor(secs / 60);
@@ -205,7 +149,7 @@ export function ExecutionStatusBar({ workflowId }: { workflowId: string }) {
       {elapsedText && (
         <span className="text-[11px] font-mono opacity-80">⏱ {elapsedText}</span>
       )}
-      {exec.totalNodes > 0 && (
+      {running.total_nodes > 0 && (
         <>
           <div className="h-3 w-px bg-current opacity-20" />
           <div className="flex items-center gap-1.5 flex-1 max-w-[160px]">
@@ -213,15 +157,15 @@ export function ExecutionStatusBar({ workflowId }: { workflowId: string }) {
               <motion.div
                 className="h-full bg-current rounded-full"
                 initial={{ width: 0 }}
-                animate={{ width: `${(doneCount / exec.totalNodes) * 100}%` }}
+                animate={{ width: `${(running.executed_nodes / running.total_nodes) * 100}%` }}
                 transition={{ duration: 0.5 }}
               />
             </div>
-            <span className="text-[11px] font-mono opacity-80">{doneCount}/{exec.totalNodes}</span>
+            <span className="text-[11px] font-mono opacity-80">{running.executed_nodes}/{running.total_nodes}</span>
           </div>
         </>
       )}
-      <span className="text-[10px] font-mono opacity-50 ml-auto">{exec.executionId}</span>
+      <span className="text-[10px] font-mono opacity-50 ml-auto">{running.execution_id}</span>
       <Button
         variant="ghost"
         size="sm"
