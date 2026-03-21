@@ -33,6 +33,7 @@ import {
   type WorkflowTag,
 } from '@/types/automations';
 import { TagInput } from './TagInput';
+import { ExecutionStatusBar } from './ExecutionStatusBanner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
