@@ -77,8 +77,8 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
 
       {/* Badges */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${s.bg} text-foreground border border-border/30`}>
-          {s.label}
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isSkipped ? 'bg-muted/60 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30`}>
+          {isSkipped ? '⏭ Skipado' : s.label}
         </span>
         {hasForEach && (
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-chart-4/10 text-chart-4 border border-chart-4/20 flex items-center gap-1">
