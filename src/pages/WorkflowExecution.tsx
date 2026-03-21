@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -176,8 +175,6 @@ export default function WorkflowExecution() {
   const [loading, setLoading] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<SelectedEdgeInfo | null>(null);
-  const [payloadJson, setPayloadJson] = useState('{}');
-  const [payloadError, setPayloadError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [workflow, setWorkflow] = useState<any>(null);
   const [loadingWorkflow, setLoadingWorkflow] = useState(true);
@@ -306,16 +303,6 @@ export default function WorkflowExecution() {
     return () => { cancelled = true; };
   }, [workflow, id]); // intentionally limited deps
 
-  const validatePayload = useCallback((json: string) => {
-    try {
-      JSON.parse(json);
-      setPayloadError(null);
-      return true;
-    } catch (e: any) {
-      setPayloadError(e.message);
-      return false;
-    }
-  }, []);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const executionIdRef = useRef<string | null>(null);
@@ -357,10 +344,6 @@ export default function WorkflowExecution() {
 
   const handleExecute = useCallback(async () => {
     if (!workflow) return;
-    if (!validatePayload(payloadJson)) {
-      toast.error('JSON do payload é inválido');
-      return;
-    }
 
     setLoading(true);
     stopPolling();
@@ -406,8 +389,7 @@ export default function WorkflowExecution() {
       }
 
       setIsRunning(true);
-      const parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : undefined;
-      const result = await workflowService.createExecution(workflow.id, parsedPayload);
+      const result = await workflowService.createExecution(workflow.id);
       toast.success('Execução iniciada');
       console.log('Execution create response:', result);
       const r = result as any;
@@ -451,7 +433,7 @@ export default function WorkflowExecution() {
       setLoading(false);
       setIsRunning(false);
     }
-  }, [workflow, payloadJson, validatePayload, stopPolling, fetchExecutionStatus]);
+  }, [workflow, stopPolling, fetchExecutionStatus]);
 
   const handleStop = useCallback(() => {
     stopPolling();
@@ -668,26 +650,6 @@ export default function WorkflowExecution() {
         </motion.div>
       )}
 
-      {/* Payload input */}
-      {!execution && !loading && !loadingActiveExec && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-semibold text-muted-foreground">Payload Inicial (opcional)</span>
-          </div>
-          <Textarea
-            value={payloadJson}
-            onChange={e => { setPayloadJson(e.target.value); validatePayload(e.target.value); }}
-            placeholder='{"key": "value"}'
-            className="font-mono text-xs h-20 resize-none"
-          />
-          {payloadError && (
-            <p className="text-[11px] text-destructive flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" /> {payloadError}
-            </p>
-          )}
-        </motion.div>
-      )}
 
       {/* Loading state */}
       {(loading || loadingActiveExec) && (
