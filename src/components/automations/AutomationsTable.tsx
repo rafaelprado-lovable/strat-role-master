@@ -174,7 +174,7 @@ export function AutomationsTable({
 
       {/* Cards Grid */}
       <AnimatePresence mode="popLayout">
-        {filtered.length === 0 ? (
+        {sorted.length === 0 ? (
           <motion.div
             key="empty"
             initial={{ opacity: 0, scale: 0.95 }}
