@@ -42,6 +42,7 @@ export default function ChangesPage() {
   const [searchNumber, setSearchNumber] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedChange, setSelectedChange] = useState<Changes | null>(null);
+  const [selectedTimelineDate, setSelectedTimelineDate] = useState<string | null>(null);
 
   const itemsPerPage = 10;
 
