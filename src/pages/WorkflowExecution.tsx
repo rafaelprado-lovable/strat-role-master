@@ -690,7 +690,7 @@ export default function WorkflowExecution() {
       )}
 
       {/* Empty state */}
-      {!execution && !loading && (
+      {!execution && !loading && !loadingActiveExec && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
