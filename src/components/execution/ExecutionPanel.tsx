@@ -225,14 +225,18 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
                       <span className="text-[10px] font-mono text-muted-foreground truncate block">{n.definition_id}</span>
                     </div>
                     {/* Skipped reason */}
-                    {isSkipped && output.output.reason && (
-                      <div className="px-3 py-2 bg-muted/20 border-t border-border/10 flex items-center gap-2">
-                        <Ban className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="text-[11px] text-muted-foreground">
-                          Motivo: <span className="font-mono font-medium">{String(output.output.reason).replace(/_/g, ' ')}</span>
-                        </span>
-                      </div>
-                    )}
+                    {isSkipped && output.output.reason && (() => {
+                      const detail = getSkipDetail(output.output.reason);
+                      return (
+                        <div className="px-3 py-2.5 bg-muted/20 border-t border-border/10 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Ban className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span className="text-[11px] font-semibold text-foreground">{detail.label}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed pl-5">{detail.detail}</p>
+                        </div>
+                      );
+                    })()}
                     {hasError && (
                       <div className="px-3 py-2 bg-destructive/5 border-t border-destructive/10">
                         <pre className="text-[11px] text-destructive font-mono whitespace-pre-wrap">{output.error}</pre>
