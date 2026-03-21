@@ -33,6 +33,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const Icon = iconMap[d.definition_id] || Globe;
   const state: TaskState = d.taskState || 'waiting_start';
   const isSkipped = !!d.isSkipped;
+  const skipReason = d.skipReason;
   const s = stateStyles[state];
   const hasForEach = d.hasForEach;
   const hasStream = d.hasStream;
