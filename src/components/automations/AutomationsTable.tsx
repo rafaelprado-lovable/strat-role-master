@@ -193,7 +193,7 @@ export function AutomationsTable({
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map((wf, i) => {
+            {sorted.map((wf, i) => {
               const status = statusConfig[wf.status];
               return (
                 <motion.div
