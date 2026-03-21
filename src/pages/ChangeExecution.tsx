@@ -56,7 +56,6 @@ const mockClusters: Cluster[] = [
         name: "Instalação do pacote",
         type: "install_packages",
         items: [
-          { id: "install_package_1", name: "installPackage NMWS.P02972.list", status: "não executado", command: 'printf \'%s\ny\nn\n\' "olbpkiwowiyr3ufxqzuqrcfdr2fjit2iak3pyfafntdhndocufza" | /nmws_app/cmd/installPackage.sh NMWS.P02972.list' }
         ]
       },
       {
