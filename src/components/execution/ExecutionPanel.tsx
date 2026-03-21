@@ -226,7 +226,7 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
                     </div>
                     {/* Skipped reason */}
                     {isSkipped && output.output.reason && (() => {
-                      const detail = getSkipDetail(output.output.reason);
+                      const detail = getSkipDetail(String(output.output.reason));
                       return (
                         <div className="px-3 py-2.5 bg-muted/20 border-t border-border/10 space-y-1">
                           <div className="flex items-center gap-2">
