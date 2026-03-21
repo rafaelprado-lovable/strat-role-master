@@ -316,18 +316,24 @@ export function ExecutionPanel({ execution, selectedNodeId, selectedEdge, onReru
                   </div>
 
                   {/* Condition evaluation result */}
-                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Resultado da Avaliação</span>
+                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20 space-y-2">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Resultado da Avaliação</span>
                     {selectedEdge.targetState === 'waiting_start' && selectedEdge.sourceState === 'finished' ? (
-                      <div className="flex items-center gap-2">
-                        <Ban className="h-3.5 w-3.5 text-destructive" />
-                        <span className="text-xs text-destructive font-semibold">Condição NÃO atendida</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Ban className="h-3.5 w-3.5 text-destructive" />
+                          <span className="text-xs text-destructive font-semibold">Condição NÃO atendida</span>
+                        </div>
+                        <ConditionExplanation condition={selectedEdge.condition} sourceOutput={selectedEdge.sourceOutput} />
+                      </>
                     ) : selectedEdge.targetState !== 'waiting_start' ? (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
-                        <span className="text-xs text-chart-2 font-semibold">Condição atendida — nó destino executado</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
+                          <span className="text-xs text-chart-2 font-semibold">Condição atendida — nó destino executado</span>
+                        </div>
+                        <ConditionExplanation condition={selectedEdge.condition} sourceOutput={selectedEdge.sourceOutput} met />
+                      </>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Circle className="h-3.5 w-3.5 text-muted-foreground" />
@@ -470,6 +476,77 @@ function JsonSection({ title, data, onCopy }: { title: string; data: unknown; on
       <pre className="text-[11px] font-mono p-3 rounded-lg bg-muted/50 border border-border/30 overflow-x-auto max-h-48 text-foreground whitespace-pre-wrap">
         {JSON.stringify(data, null, 2)}
       </pre>
+    </div>
+  );
+}
+
+/** Resolves a template like {{nodeId.output.field}} against sourceOutput */
+function resolveTemplateValue(template: string, sourceOutput: any): string {
+  if (!template || !sourceOutput) return String(template);
+  const match = template.match(/^\{\{(.+?)\}\}$/);
+  if (!match) return String(template);
+  const parts = match[1].split('.');
+  const outputIdx = parts.indexOf('output');
+  if (outputIdx === -1) return String(template);
+  const fieldParts = parts.slice(outputIdx + 1);
+  let val: any = sourceOutput?.output ?? sourceOutput;
+  for (const p of fieldParts) {
+    if (val == null) return 'undefined';
+    val = val[p];
+  }
+  if (val === undefined) return 'undefined';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
+function ConditionExplanation({ condition, sourceOutput, met }: { condition: string; sourceOutput?: any; met?: boolean }) {
+  const ops = ['!=', '==', '>=', '<=', '>', '<'];
+  let operator = '';
+  let leftRaw = '';
+  let rightRaw = '';
+  for (const op of ops) {
+    const idx = condition.indexOf(op);
+    if (idx !== -1) {
+      operator = op;
+      leftRaw = condition.substring(0, idx).trim();
+      rightRaw = condition.substring(idx + op.length).trim();
+      break;
+    }
+  }
+  if (!operator) {
+    return (
+      <p className="text-[11px] text-muted-foreground italic pl-5">
+        Não foi possível interpretar a expressão.
+      </p>
+    );
+  }
+
+  const leftResolved = resolveTemplateValue(leftRaw, sourceOutput);
+  const rightResolved = resolveTemplateValue(rightRaw, sourceOutput);
+  const borderColor = met ? 'border-chart-2/20 bg-chart-2/5' : 'border-destructive/20 bg-destructive/5';
+  const textColor = met ? 'text-chart-2' : 'text-destructive';
+
+  return (
+    <div className={`rounded-lg border p-2.5 space-y-1.5 ${borderColor}`}>
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center text-[11px]">
+        <div className="space-y-0.5">
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Lado esquerdo</span>
+          <code className="text-[11px] font-mono text-foreground block truncate">{leftRaw}</code>
+          <span className={`text-[11px] font-bold font-mono block truncate ${textColor}`}>{leftResolved}</span>
+        </div>
+        <span className="text-xs font-bold text-muted-foreground px-1">{operator}</span>
+        <div className="space-y-0.5">
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Lado direito</span>
+          <code className="text-[11px] font-mono text-foreground block truncate">{rightRaw}</code>
+          <span className={`text-[11px] font-bold font-mono block truncate ${textColor}`}>{rightResolved}</span>
+        </div>
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        {met
+          ? `✅ "${leftResolved}" ${operator === '==' ? 'é igual a' : operator === '!=' ? 'é diferente de' : operator} "${rightResolved}" — condição satisfeita.`
+          : `❌ "${leftResolved}" ${operator === '==' ? 'não é igual a' : operator === '!=' ? 'é igual a' : `não satisfaz ${operator}`} "${rightResolved}" — nó destino ignorado.`
+        }
+      </p>
     </div>
   );
 }
