@@ -33,6 +33,7 @@ import {
   type WorkflowTag,
 } from '@/types/automations';
 import { TagInput } from './TagInput';
+import { ExecutionStatusBar } from './ExecutionStatusBanner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -655,6 +656,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           </Button>
         </div>
       </div>
+
+      {/* Execution status banner */}
+      {workflow?.id && <ExecutionStatusBar workflowId={workflow.id} />}
 
       {/* Editor */}
       <div className="flex flex-1 mt-4 gap-4 overflow-hidden relative">

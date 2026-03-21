@@ -21,6 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TagBadge } from './TagBadge';
 import { TagFilter } from './TagFilter';
+import { ExecutionStatusBadge } from './ExecutionStatusBanner';
 
 interface AutomationsTableProps {
   automations: Workflow[];
@@ -251,6 +252,7 @@ export function AutomationsTable({
                           <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass} ${wf.status === 'active' ? 'animate-pulse' : ''}`} />
                           {status.label}
                         </Badge>
+                        <ExecutionStatusBadge workflowId={wf.id} />
                         <Badge variant="outline" className="text-[11px] px-2 py-0.5 gap-1 text-muted-foreground border-border/50">
                           <Clock className="h-3 w-3" />
                           {formatSchedule(wf.schedule)}
