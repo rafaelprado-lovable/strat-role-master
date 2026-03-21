@@ -391,8 +391,7 @@ export default function WorkflowExecution() {
       }
 
       setIsRunning(true);
-      const parsedPayload = payloadJson.trim() ? JSON.parse(payloadJson) : undefined;
-      const result = await workflowService.createExecution(workflow.id, parsedPayload);
+      const result = await workflowService.createExecution(workflow.id);
       toast.success('Execução iniciada');
       console.log('Execution create response:', result);
       const r = result as any;
