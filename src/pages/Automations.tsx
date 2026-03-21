@@ -159,40 +159,42 @@ export default function Automations() {
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex items-center gap-3"
-      >
-        <div className="p-2.5 rounded-xl bg-primary/10">
-          <WorkflowIcon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Automações</h2>
-          <p className="text-muted-foreground text-sm">Gerencie seus workflows e automações</p>
-        </div>
-      </motion.div>
+    <RunningExecutionsProvider>
+      <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-2.5 rounded-xl bg-primary/10">
+            <WorkflowIcon className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Automações</h2>
+            <p className="text-muted-foreground text-sm">Gerencie seus workflows e automações</p>
+          </div>
+        </motion.div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <AutomationsTable
-          automations={workflows}
-          totalExecutions={totalExecutions}
-          executionCounts={executionCounts}
-          lastRunDates={lastRunDates}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          onToggleStatus={handleToggleStatus}
-          onRun={handleRun}
-          onCreate={handleCreate}
-        />
-      )}
-    </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <AutomationsTable
+            automations={workflows}
+            totalExecutions={totalExecutions}
+            executionCounts={executionCounts}
+            lastRunDates={lastRunDates}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            onToggleStatus={handleToggleStatus}
+            onRun={handleRun}
+            onCreate={handleCreate}
+          />
+        )}
+      </div>
+    </RunningExecutionsProvider>
   );
 }
