@@ -591,15 +591,15 @@ export default function WorkflowExecution() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isRunning ? (
-            <Button size="sm" onClick={handleExecute} className="gap-1.5">
+          {!isRunning && !loadingActiveExec ? (
+            <Button size="sm" onClick={handleExecute} className="gap-1.5" disabled={loadingActiveExec}>
               <Play className="h-3.5 w-3.5" /> Executar agora
             </Button>
-          ) : (
+          ) : isRunning ? (
             <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5">
               <Square className="h-3.5 w-3.5" /> Parar execução
             </Button>
-          )}
+          ) : null}
           {execution && (
             <>
               <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
