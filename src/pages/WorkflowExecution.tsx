@@ -657,7 +657,7 @@ export default function WorkflowExecution() {
       )}
 
       {/* Payload input */}
-      {!execution && !loading && (
+      {!execution && !loading && !loadingActiveExec && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
           <div className="flex items-center gap-2">
             <Zap className="h-3.5 w-3.5 text-primary" />
