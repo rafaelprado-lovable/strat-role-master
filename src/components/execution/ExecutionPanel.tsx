@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
   Activity, Clock, Copy, Layers, Terminal, Filter,
-  Radio, Repeat, AlertTriangle, CheckCircle2, Loader2, Circle,
+  Radio, Repeat, AlertTriangle, CheckCircle2, Loader2, Circle, FileJson,
 } from 'lucide-react';
 import type { ExecutionDTO, ExecutionLogEntry, TaskState, ForEachItemStatus } from '@/types/execution';
 import { toast } from 'sonner';
@@ -94,6 +94,7 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
       <Tabs defaultValue="summary" className="flex flex-col h-full">
         <TabsList className="shrink-0 mx-3 mt-3 bg-muted/50">
           <TabsTrigger value="summary" className="gap-1.5 text-xs"><Activity className="h-3 w-3" /> Resumo</TabsTrigger>
+          <TabsTrigger value="returns" className="gap-1.5 text-xs"><FileJson className="h-3 w-3" /> Retornos</TabsTrigger>
           <TabsTrigger value="node" className="gap-1.5 text-xs"><Layers className="h-3 w-3" /> Nó</TabsTrigger>
           <TabsTrigger value="logs" className="gap-1.5 text-xs"><Terminal className="h-3 w-3" /> Logs</TabsTrigger>
         </TabsList>
@@ -150,6 +151,74 @@ export function ExecutionPanel({ execution, selectedNodeId, onRerunNode }: Execu
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* ─── Returns ─── */}
+        <TabsContent value="returns" className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Retorno dos Nós</span>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => copyJson(ctrl.task_outputs)}>
+                  <Copy className="h-3 w-3 mr-1" /> Copiar Tudo
+                </Button>
+              </div>
+              {wf.nodes.map(n => {
+                const taskState = ctrl.task_states[n.id] || 'waiting_start';
+                const output = ctrl.task_outputs[n.id];
+                const hasOutput = output?.output && Object.keys(output.output).length > 0;
+                const hasError = !!output?.error;
+
+                return (
+                  <div key={n.id} className="rounded-lg border border-border/30 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30">
+                      {stateIcons[taskState]}
+                      <span className="text-xs font-semibold text-foreground flex-1 truncate">{String((n.config as any)?.label || n.id)}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground">{n.definition_id}</span>
+                      {hasOutput && (
+                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => copyJson(output.output)}>
+                          <Copy className="h-2.5 w-2.5" />
+                        </Button>
+                      )}
+                    </div>
+                    {hasError && (
+                      <div className="px-3 py-2 bg-destructive/5 border-t border-destructive/10">
+                        <pre className="text-[11px] text-destructive font-mono whitespace-pre-wrap">{output.error}</pre>
+                      </div>
+                    )}
+                    {hasOutput ? (
+                      <pre className="text-[11px] font-mono p-3 bg-card/50 overflow-x-auto max-h-60 text-foreground whitespace-pre-wrap border-t border-border/20">
+                        {JSON.stringify(output.output, null, 2)}
+                      </pre>
+                    ) : (
+                      <div className="px-3 py-2 text-[11px] text-muted-foreground italic border-t border-border/20">
+                        {taskState === 'waiting_start' ? 'Aguardando execução...' : taskState === 'running' ? 'Em execução...' : 'Sem output'}
+                      </div>
+                    )}
+                    {output?.duration_ms !== undefined && (
+                      <div className="px-3 py-1 text-[10px] text-muted-foreground font-mono border-t border-border/10 bg-muted/10">
+                        ⏱ {output.duration_ms >= 1000 ? `${(output.duration_ms / 1000).toFixed(1)}s` : `${output.duration_ms}ms`}
+                      </div>
+                    )}
+                    {/* for_each consolidated items */}
+                    {output?.items && output.items.length > 0 && (
+                      <div className="px-3 py-2 border-t border-border/10 bg-chart-4/5">
+                        <span className="text-[10px] font-semibold text-chart-4 flex items-center gap-1 mb-1">
+                          <Repeat className="h-2.5 w-2.5" /> for_each ({output.count} itens)
+                        </span>
+                        <pre className="text-[11px] font-mono overflow-x-auto max-h-40 text-foreground whitespace-pre-wrap">
+                          {JSON.stringify(output.items, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {wf.nodes.length === 0 && (
+                <p className="text-center text-xs text-muted-foreground py-8">Nenhum nó no workflow</p>
               )}
             </div>
           </ScrollArea>
