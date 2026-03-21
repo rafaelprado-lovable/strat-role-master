@@ -10,6 +10,40 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio, SkipForward, Ban } from 'lucide-react';
 import type { TaskState, ExecutionController } from '@/types/execution';
 
+export const skipReasonDetails: Record<string, { label: string; detail: string }> = {
+  edge_condition_not_met: {
+    label: 'Condição não atendida',
+    detail: 'A condição da aresta de entrada não foi satisfeita com os dados do nó anterior.',
+  },
+  upstream_skipped: {
+    label: 'Nó anterior skipado',
+    detail: 'Um ou mais nós predecessores foram skipados, impedindo a execução deste nó.',
+  },
+  upstream_error: {
+    label: 'Erro no nó anterior',
+    detail: 'Um nó predecessor finalizou com erro, cancelando a cadeia de execução.',
+  },
+  no_data: {
+    label: 'Sem dados de entrada',
+    detail: 'Os dados necessários para executar este nó estavam vazios ou indisponíveis.',
+  },
+  for_each_empty: {
+    label: 'Lista vazia no for_each',
+    detail: 'A lista de itens do for_each estava vazia, não havendo itens para iterar.',
+  },
+  timeout: {
+    label: 'Timeout excedido',
+    detail: 'O tempo máximo de espera foi atingido antes de receber uma resposta.',
+  },
+};
+
+export function getSkipDetail(reason: string): { label: string; detail: string } {
+  return skipReasonDetails[reason] || {
+    label: reason.replace(/_/g, ' '),
+    detail: `Motivo reportado pelo motor de execução: "${reason.replace(/_/g, ' ')}"`,
+  };
+}
+
 // ─── Execution Node ───
 const iconMap: Record<string, React.ElementType> = {
   ssh_execution: Terminal,
@@ -128,13 +162,17 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
       )}
 
       {/* Skip reason tooltip */}
-      {isSkipped && skipReason && (
-        <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
-          <div className="px-2 py-1 rounded-md bg-popover border border-border shadow-md text-[10px] text-muted-foreground whitespace-nowrap">
-            {String(skipReason).replace(/_/g, ' ')}
+      {isSkipped && skipReason && (() => {
+        const detail = getSkipDetail(skipReason);
+        return (
+          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
+            <div className="px-3 py-2 rounded-lg bg-popover border border-border shadow-lg max-w-[260px] text-center">
+              <div className="text-[11px] font-semibold text-foreground">{detail.label}</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{detail.detail}</div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <Handle type="source" position={Position.Right} id="right" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-right-1.5" />
     </div>
