@@ -346,10 +346,6 @@ export default function WorkflowExecution() {
 
   const handleExecute = useCallback(async () => {
     if (!workflow) return;
-    if (!validatePayload(payloadJson)) {
-      toast.error('JSON do payload é inválido');
-      return;
-    }
 
     setLoading(true);
     stopPolling();
