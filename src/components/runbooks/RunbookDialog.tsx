@@ -147,7 +147,7 @@ export function RunbookDialog({ open, onOpenChange, runbook, onSave }: RunbookDi
       toast({ title: "Título obrigatório", variant: "destructive" });
       return;
     }
-    onSave(form);
+    onSave({ ...form, record: form.incident });
     onOpenChange(false);
   };
 

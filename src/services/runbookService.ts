@@ -79,6 +79,7 @@ function mapRunbookItem(item: any): Runbook {
     tags: item.tags || [],
     service: item.service || '',
     incident: item.record || '',
+    record: item.record || '',
     sistemas: item.sistemas || '',
     attachments,
     attachmentMap,
@@ -114,6 +115,7 @@ interface CreateRunbookPayload {
   content: string;
   tags: string[];
   service: string;
+  record: string;
   incident: string;
   sistemas: string;
   attachments: RunbookAttachment[];
