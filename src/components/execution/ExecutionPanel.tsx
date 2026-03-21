@@ -316,18 +316,24 @@ export function ExecutionPanel({ execution, selectedNodeId, selectedEdge, onReru
                   </div>
 
                   {/* Condition evaluation result */}
-                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Resultado da Avaliação</span>
+                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20 space-y-2">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Resultado da Avaliação</span>
                     {selectedEdge.targetState === 'waiting_start' && selectedEdge.sourceState === 'finished' ? (
-                      <div className="flex items-center gap-2">
-                        <Ban className="h-3.5 w-3.5 text-destructive" />
-                        <span className="text-xs text-destructive font-semibold">Condição NÃO atendida</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Ban className="h-3.5 w-3.5 text-destructive" />
+                          <span className="text-xs text-destructive font-semibold">Condição NÃO atendida</span>
+                        </div>
+                        <ConditionExplanation condition={selectedEdge.condition} sourceOutput={selectedEdge.sourceOutput} />
+                      </>
                     ) : selectedEdge.targetState !== 'waiting_start' ? (
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
-                        <span className="text-xs text-chart-2 font-semibold">Condição atendida — nó destino executado</span>
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
+                          <span className="text-xs text-chart-2 font-semibold">Condição atendida — nó destino executado</span>
+                        </div>
+                        <ConditionExplanation condition={selectedEdge.condition} sourceOutput={selectedEdge.sourceOutput} met />
+                      </>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Circle className="h-3.5 w-3.5 text-muted-foreground" />
