@@ -93,6 +93,14 @@ const App = () => (
               }
             />
             <Route
+              path="/change-execution-pmid/:id"
+              element={
+                <AppLayout>
+                  <ChangeExecutionPmid />
+                </AppLayout>
+              }
+            />
+            <Route
               path="/permissions"
               element={
                 <ProtectedRoute>
