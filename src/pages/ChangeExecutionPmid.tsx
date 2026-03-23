@@ -54,6 +54,17 @@ interface LogEntry {
   message: string;
 }
 
+interface DeployHistoryEntry {
+  id: string;
+  version: string;
+  previousVersion: string;
+  status: "success" | "failed" | "rolled_back";
+  startedAt: string;
+  finishedAt: string;
+  duration: string;
+  triggeredBy: string;
+}
+
 interface PmidService {
   id: string;
   name: string;
