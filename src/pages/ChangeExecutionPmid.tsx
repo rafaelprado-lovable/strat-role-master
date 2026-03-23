@@ -27,8 +27,10 @@ import {
   Terminal,
   Undo2,
   History,
+  GitMerge,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ResourceTree, { type TreeNode } from "@/components/pmid/ResourceTree";
 
 type DeployStatus = "Pending" | "Deploying" | "Deployed" | "Failed" | "RollingBack" | "RolledBack";
 type HealthStatus = "Healthy" | "Degraded" | "Progressing" | "Suspended" | "Missing" | "Unknown";
@@ -208,6 +210,60 @@ const mockDeployHistory: Record<string, DeployHistoryEntry[]> = {
     { id: "h5-2", version: "v1.8.1", previousVersion: "v1.8.0", status: "success", startedAt: "2026-03-19 11:00:00", finishedAt: "2026-03-19 11:04:10", duration: "4m 10s", triggeredBy: "marcos.lima" },
   ],
 };
+
+// --- Build resource tree from service resources ---
+function buildResourceTree(svc: PmidService): TreeNode[] {
+  return svc.resources.map((res) => {
+    const node: TreeNode = {
+      kind: res.kind,
+      name: res.name,
+      namespace: res.namespace,
+      health: res.health,
+      syncStatus: res.version === res.targetVersion ? "Synced" : "OutOfSync",
+      version: res.version,
+      info: res.message,
+      children: [],
+    };
+
+    if (res.kind === "Deployment" && res.replicas) {
+      const rsName = `${res.name}-${(res.version || "").replace(/\./g, "")}`;
+      const pods: TreeNode[] = [];
+      for (let i = 0; i < res.replicas.desired; i++) {
+        const isReady = i < res.replicas.ready;
+        pods.push({
+          kind: "Pod",
+          name: `${res.name}-${rsName.slice(-5)}-${String.fromCharCode(97 + i)}x${Math.floor(Math.random() * 900 + 100)}`,
+          namespace: res.namespace,
+          health: isReady ? "Healthy" : (res.health === "Degraded" ? "Degraded" : "Progressing"),
+          syncStatus: "Synced",
+          info: !isReady ? (res.health === "Degraded" ? "CrashLoopBackOff" : "ContainerCreating") : undefined,
+        });
+      }
+      node.children = [{
+        kind: "ReplicaSet",
+        name: rsName,
+        namespace: res.namespace,
+        health: res.health,
+        syncStatus: res.version === res.targetVersion ? "Synced" : "OutOfSync",
+        version: res.version,
+        info: `${res.replicas.ready}/${res.replicas.desired} replicas ready`,
+        children: pods,
+      }];
+    }
+
+    if (res.kind === "Service") {
+      node.children = [{
+        kind: "EndpointSlice",
+        name: `${res.name}-endpoint`,
+        namespace: res.namespace,
+        health: res.health,
+        syncStatus: "Synced",
+      }];
+    }
+
+    return node;
+  });
+}
 
 // --- Badge helpers ---
 const getDeployBadge = (status: DeployStatus) => {
@@ -638,6 +694,10 @@ export default function ChangeExecutionPmid() {
                       Logs
                     </TabsTrigger>
                     <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
+                    <TabsTrigger value="tree" className="flex-1">
+                      <GitMerge className="h-3 w-3 mr-1" />
+                      Tree
+                    </TabsTrigger>
                     <TabsTrigger value="history" className="flex-1">
                       <History className="h-3 w-3 mr-1" />
                       Histórico
@@ -731,7 +791,20 @@ export default function ChangeExecutionPmid() {
                     </ScrollArea>
                   </TabsContent>
 
-                  {/* History Tab */}
+                  {/* Tree Tab */}
+                  <TabsContent value="tree">
+                    <ScrollArea className="h-[500px] pr-2">
+                      <ResourceTree
+                        appName={selectedService.name}
+                        appHealth={selectedService.healthStatus}
+                        appVersion={selectedService.currentVersion}
+                        targetVersion={selectedService.targetVersion}
+                        nodes={buildResourceTree(selectedService)}
+                      />
+                    </ScrollArea>
+                  </TabsContent>
+
+
                   <TabsContent value="history">
                     <ScrollArea className="h-[500px] pr-2">
                       <div className="space-y-3 mt-3">
