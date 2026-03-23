@@ -132,11 +132,14 @@ export default function ChangesInExecution() {
   };
 
   const handleExecutar = (change: ChangeInExecution) => {
-    console.log(change);
+    const tech = change?.changeAproovalData?.tecnology?.toLowerCase();
 
-    if (change?.changeAproovalData?.tecnology?.toLowerCase() === "nmws") {
-      setExecutingChange(change);
+    if (tech === "nmws") {
+      navigate(`/change-execution/${change.changeSystemData.number}`);
+    } else if (tech === "pmid") {
+      navigate(`/change-execution-pmid/${change.changeSystemData.number}`);
     } else {
+      // DIGIBEE / CEP
       setExecutingChange(change);
     }
   };
