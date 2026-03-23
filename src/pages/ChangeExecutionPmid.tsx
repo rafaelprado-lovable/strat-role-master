@@ -26,6 +26,7 @@ import {
   Package,
   Terminal,
   Undo2,
+  History,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
