@@ -34,6 +34,7 @@ import Definitions from "./pages/Definitions";
 import NodeDocs from "./pages/NodeDocs";
 import Audit from "./pages/Audit";
 import Runbooks from "./pages/Runbooks";
+import ChangeExecutionPmid from "./pages/ChangeExecutionPmid";
 
 const queryClient = new QueryClient();
 
