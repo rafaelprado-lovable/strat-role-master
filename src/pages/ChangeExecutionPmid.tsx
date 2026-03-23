@@ -731,6 +731,53 @@ export default function ChangeExecutionPmid() {
                     </ScrollArea>
                   </TabsContent>
 
+                  {/* History Tab */}
+                  <TabsContent value="history">
+                    <ScrollArea className="h-[500px] pr-2">
+                      <div className="space-y-3 mt-3">
+                        {(mockDeployHistory[selectedService.id] || []).length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">Nenhum histórico disponível</p>
+                        ) : (
+                          (mockDeployHistory[selectedService.id] || []).map((entry) => (
+                            <Card key={entry.id} className="border-border/50">
+                              <CardContent className="p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-mono font-semibold">{entry.version}</span>
+                                    <Badge
+                                      variant={entry.status === "success" ? "default" : entry.status === "failed" ? "destructive" : "outline"}
+                                      className={`text-xs ${
+                                        entry.status === "success" ? "bg-green-600 hover:bg-green-600/80" :
+                                        entry.status === "rolled_back" ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : ""
+                                      }`}
+                                    >
+                                      {entry.status === "success" && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                      {entry.status === "failed" && <XCircle className="h-3 w-3 mr-1" />}
+                                      {entry.status === "rolled_back" && <Undo2 className="h-3 w-3 mr-1" />}
+                                      {entry.status === "success" ? "Sucesso" : entry.status === "failed" ? "Falhou" : "Rollback"}
+                                    </Badge>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">{entry.duration}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <GitBranch className="h-3 w-3" />
+                                  <span className="font-mono">{entry.previousVersion} → {entry.version}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {entry.startedAt}
+                                  </span>
+                                  <span>por {entry.triggeredBy}</span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
                   {/* Info Tab */}
                   <TabsContent value="info">
                     <div className="space-y-4 mt-3">
