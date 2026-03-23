@@ -791,7 +791,20 @@ export default function ChangeExecutionPmid() {
                     </ScrollArea>
                   </TabsContent>
 
-                  {/* History Tab */}
+                  {/* Tree Tab */}
+                  <TabsContent value="tree">
+                    <ScrollArea className="h-[500px] pr-2">
+                      <ResourceTree
+                        appName={selectedService.name}
+                        appHealth={selectedService.healthStatus}
+                        appVersion={selectedService.currentVersion}
+                        targetVersion={selectedService.targetVersion}
+                        nodes={buildResourceTree(selectedService)}
+                      />
+                    </ScrollArea>
+                  </TabsContent>
+
+
                   <TabsContent value="history">
                     <ScrollArea className="h-[500px] pr-2">
                       <div className="space-y-3 mt-3">
