@@ -211,6 +211,60 @@ const mockDeployHistory: Record<string, DeployHistoryEntry[]> = {
   ],
 };
 
+// --- Build resource tree from service resources ---
+function buildResourceTree(svc: PmidService): TreeNode[] {
+  return svc.resources.map((res) => {
+    const node: TreeNode = {
+      kind: res.kind,
+      name: res.name,
+      namespace: res.namespace,
+      health: res.health,
+      syncStatus: res.version === res.targetVersion ? "Synced" : "OutOfSync",
+      version: res.version,
+      info: res.message,
+      children: [],
+    };
+
+    if (res.kind === "Deployment" && res.replicas) {
+      const rsName = `${res.name}-${(res.version || "").replace(/\./g, "")}`;
+      const pods: TreeNode[] = [];
+      for (let i = 0; i < res.replicas.desired; i++) {
+        const isReady = i < res.replicas.ready;
+        pods.push({
+          kind: "Pod",
+          name: `${res.name}-${rsName.slice(-5)}-${String.fromCharCode(97 + i)}x${Math.floor(Math.random() * 900 + 100)}`,
+          namespace: res.namespace,
+          health: isReady ? "Healthy" : (res.health === "Degraded" ? "Degraded" : "Progressing"),
+          syncStatus: "Synced",
+          info: !isReady ? (res.health === "Degraded" ? "CrashLoopBackOff" : "ContainerCreating") : undefined,
+        });
+      }
+      node.children = [{
+        kind: "ReplicaSet",
+        name: rsName,
+        namespace: res.namespace,
+        health: res.health,
+        syncStatus: res.version === res.targetVersion ? "Synced" : "OutOfSync",
+        version: res.version,
+        info: `${res.replicas.ready}/${res.replicas.desired} replicas ready`,
+        children: pods,
+      }];
+    }
+
+    if (res.kind === "Service") {
+      node.children = [{
+        kind: "EndpointSlice",
+        name: `${res.name}-endpoint`,
+        namespace: res.namespace,
+        health: res.health,
+        syncStatus: "Synced",
+      }];
+    }
+
+    return node;
+  });
+}
+
 // --- Badge helpers ---
 const getDeployBadge = (status: DeployStatus) => {
   const config: Record<DeployStatus, { variant: "default" | "destructive" | "secondary" | "outline"; icon: React.ReactNode; className?: string }> = {
