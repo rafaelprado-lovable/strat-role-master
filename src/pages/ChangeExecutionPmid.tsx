@@ -638,6 +638,10 @@ export default function ChangeExecutionPmid() {
                       Logs
                     </TabsTrigger>
                     <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
+                    <TabsTrigger value="history" className="flex-1">
+                      <History className="h-3 w-3 mr-1" />
+                      Histórico
+                    </TabsTrigger>
                     <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
                   </TabsList>
 
