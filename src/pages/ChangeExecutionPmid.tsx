@@ -26,6 +26,7 @@ import {
   Package,
   Terminal,
   Undo2,
+  History,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,6 +52,17 @@ interface LogEntry {
   timestamp: string;
   level: "info" | "warn" | "error" | "success";
   message: string;
+}
+
+interface DeployHistoryEntry {
+  id: string;
+  version: string;
+  previousVersion: string;
+  status: "success" | "failed" | "rolled_back";
+  startedAt: string;
+  finishedAt: string;
+  duration: string;
+  triggeredBy: string;
 }
 
 interface PmidService {
@@ -167,6 +179,35 @@ const mockServices: PmidService[] = [
     ],
   },
 ];
+
+const mockDeployHistory: Record<string, DeployHistoryEntry[]> = {
+  "svc-1": [
+    { id: "h1-1", version: "v2.3.8", previousVersion: "v2.3.7", status: "success", startedAt: "2026-03-22 14:30:00", finishedAt: "2026-03-22 14:34:12", duration: "4m 12s", triggeredBy: "carlos.silva" },
+    { id: "h1-2", version: "v2.3.7", previousVersion: "v2.3.6", status: "success", startedAt: "2026-03-20 09:15:00", finishedAt: "2026-03-20 09:18:45", duration: "3m 45s", triggeredBy: "ana.santos" },
+    { id: "h1-3", version: "v2.3.6", previousVersion: "v2.3.5", status: "failed", startedAt: "2026-03-18 16:00:00", finishedAt: "2026-03-18 16:05:30", duration: "5m 30s", triggeredBy: "marcos.lima" },
+    { id: "h1-4", version: "v2.3.5", previousVersion: "v2.3.4", status: "success", startedAt: "2026-03-15 11:00:00", finishedAt: "2026-03-15 11:03:20", duration: "3m 20s", triggeredBy: "carlos.silva" },
+    { id: "h1-5", version: "v2.3.4", previousVersion: "v2.3.3", status: "rolled_back", startedAt: "2026-03-12 08:45:00", finishedAt: "2026-03-12 08:52:10", duration: "7m 10s", triggeredBy: "julia.ferreira" },
+  ],
+  "svc-2": [
+    { id: "h2-1", version: "v1.12.0", previousVersion: "v1.11.9", status: "success", startedAt: "2026-03-21 10:00:00", finishedAt: "2026-03-21 10:03:55", duration: "3m 55s", triggeredBy: "ana.santos" },
+    { id: "h2-2", version: "v1.11.9", previousVersion: "v1.11.8", status: "success", startedAt: "2026-03-19 15:30:00", finishedAt: "2026-03-19 15:33:10", duration: "3m 10s", triggeredBy: "carlos.silva" },
+    { id: "h2-3", version: "v1.11.8", previousVersion: "v1.11.7", status: "failed", startedAt: "2026-03-17 12:00:00", finishedAt: "2026-03-17 12:06:40", duration: "6m 40s", triggeredBy: "marcos.lima" },
+  ],
+  "svc-3": [
+    { id: "h3-1", version: "v3.0.5", previousVersion: "v3.0.4", status: "success", startedAt: "2026-03-22 08:00:00", finishedAt: "2026-03-22 08:04:30", duration: "4m 30s", triggeredBy: "julia.ferreira" },
+    { id: "h3-2", version: "v3.0.4", previousVersion: "v3.0.3", status: "rolled_back", startedAt: "2026-03-20 17:00:00", finishedAt: "2026-03-20 17:08:15", duration: "8m 15s", triggeredBy: "ana.santos" },
+  ],
+  "svc-4": [
+    { id: "h4-1", version: "v2.0.3", previousVersion: "v2.0.2", status: "success", startedAt: "2026-03-21 07:30:00", finishedAt: "2026-03-21 07:33:50", duration: "3m 50s", triggeredBy: "carlos.silva" },
+    { id: "h4-2", version: "v2.0.2", previousVersion: "v2.0.1", status: "failed", startedAt: "2026-03-19 09:00:00", finishedAt: "2026-03-19 09:07:20", duration: "7m 20s", triggeredBy: "marcos.lima" },
+    { id: "h4-3", version: "v2.0.1", previousVersion: "v2.0.0", status: "success", startedAt: "2026-03-16 14:00:00", finishedAt: "2026-03-16 14:03:00", duration: "3m 00s", triggeredBy: "julia.ferreira" },
+    { id: "h4-4", version: "v2.0.0", previousVersion: "v1.9.12", status: "success", startedAt: "2026-03-14 10:00:00", finishedAt: "2026-03-14 10:05:45", duration: "5m 45s", triggeredBy: "ana.santos" },
+  ],
+  "svc-5": [
+    { id: "h5-1", version: "v1.8.2", previousVersion: "v1.8.1", status: "success", startedAt: "2026-03-22 06:00:00", finishedAt: "2026-03-22 06:03:30", duration: "3m 30s", triggeredBy: "carlos.silva" },
+    { id: "h5-2", version: "v1.8.1", previousVersion: "v1.8.0", status: "success", startedAt: "2026-03-19 11:00:00", finishedAt: "2026-03-19 11:04:10", duration: "4m 10s", triggeredBy: "marcos.lima" },
+  ],
+};
 
 // --- Badge helpers ---
 const getDeployBadge = (status: DeployStatus) => {
@@ -597,6 +638,10 @@ export default function ChangeExecutionPmid() {
                       Logs
                     </TabsTrigger>
                     <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
+                    <TabsTrigger value="history" className="flex-1">
+                      <History className="h-3 w-3 mr-1" />
+                      Histórico
+                    </TabsTrigger>
                     <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
                   </TabsList>
 
@@ -682,6 +727,53 @@ export default function ChangeExecutionPmid() {
                             </CardContent>
                           </Card>
                         ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* History Tab */}
+                  <TabsContent value="history">
+                    <ScrollArea className="h-[500px] pr-2">
+                      <div className="space-y-3 mt-3">
+                        {(mockDeployHistory[selectedService.id] || []).length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">Nenhum histórico disponível</p>
+                        ) : (
+                          (mockDeployHistory[selectedService.id] || []).map((entry) => (
+                            <Card key={entry.id} className="border-border/50">
+                              <CardContent className="p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-mono font-semibold">{entry.version}</span>
+                                    <Badge
+                                      variant={entry.status === "success" ? "default" : entry.status === "failed" ? "destructive" : "outline"}
+                                      className={`text-xs ${
+                                        entry.status === "success" ? "bg-green-600 hover:bg-green-600/80" :
+                                        entry.status === "rolled_back" ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : ""
+                                      }`}
+                                    >
+                                      {entry.status === "success" && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                      {entry.status === "failed" && <XCircle className="h-3 w-3 mr-1" />}
+                                      {entry.status === "rolled_back" && <Undo2 className="h-3 w-3 mr-1" />}
+                                      {entry.status === "success" ? "Sucesso" : entry.status === "failed" ? "Falhou" : "Rollback"}
+                                    </Badge>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">{entry.duration}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <GitBranch className="h-3 w-3" />
+                                  <span className="font-mono">{entry.previousVersion} → {entry.version}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {entry.startedAt}
+                                  </span>
+                                  <span>por {entry.triggeredBy}</span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
                       </div>
                     </ScrollArea>
                   </TabsContent>
