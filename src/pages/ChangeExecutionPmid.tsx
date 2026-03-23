@@ -180,6 +180,35 @@ const mockServices: PmidService[] = [
   },
 ];
 
+const mockDeployHistory: Record<string, DeployHistoryEntry[]> = {
+  "svc-1": [
+    { id: "h1-1", version: "v2.3.8", previousVersion: "v2.3.7", status: "success", startedAt: "2026-03-22 14:30:00", finishedAt: "2026-03-22 14:34:12", duration: "4m 12s", triggeredBy: "carlos.silva" },
+    { id: "h1-2", version: "v2.3.7", previousVersion: "v2.3.6", status: "success", startedAt: "2026-03-20 09:15:00", finishedAt: "2026-03-20 09:18:45", duration: "3m 45s", triggeredBy: "ana.santos" },
+    { id: "h1-3", version: "v2.3.6", previousVersion: "v2.3.5", status: "failed", startedAt: "2026-03-18 16:00:00", finishedAt: "2026-03-18 16:05:30", duration: "5m 30s", triggeredBy: "marcos.lima" },
+    { id: "h1-4", version: "v2.3.5", previousVersion: "v2.3.4", status: "success", startedAt: "2026-03-15 11:00:00", finishedAt: "2026-03-15 11:03:20", duration: "3m 20s", triggeredBy: "carlos.silva" },
+    { id: "h1-5", version: "v2.3.4", previousVersion: "v2.3.3", status: "rolled_back", startedAt: "2026-03-12 08:45:00", finishedAt: "2026-03-12 08:52:10", duration: "7m 10s", triggeredBy: "julia.ferreira" },
+  ],
+  "svc-2": [
+    { id: "h2-1", version: "v1.12.0", previousVersion: "v1.11.9", status: "success", startedAt: "2026-03-21 10:00:00", finishedAt: "2026-03-21 10:03:55", duration: "3m 55s", triggeredBy: "ana.santos" },
+    { id: "h2-2", version: "v1.11.9", previousVersion: "v1.11.8", status: "success", startedAt: "2026-03-19 15:30:00", finishedAt: "2026-03-19 15:33:10", duration: "3m 10s", triggeredBy: "carlos.silva" },
+    { id: "h2-3", version: "v1.11.8", previousVersion: "v1.11.7", status: "failed", startedAt: "2026-03-17 12:00:00", finishedAt: "2026-03-17 12:06:40", duration: "6m 40s", triggeredBy: "marcos.lima" },
+  ],
+  "svc-3": [
+    { id: "h3-1", version: "v3.0.5", previousVersion: "v3.0.4", status: "success", startedAt: "2026-03-22 08:00:00", finishedAt: "2026-03-22 08:04:30", duration: "4m 30s", triggeredBy: "julia.ferreira" },
+    { id: "h3-2", version: "v3.0.4", previousVersion: "v3.0.3", status: "rolled_back", startedAt: "2026-03-20 17:00:00", finishedAt: "2026-03-20 17:08:15", duration: "8m 15s", triggeredBy: "ana.santos" },
+  ],
+  "svc-4": [
+    { id: "h4-1", version: "v2.0.3", previousVersion: "v2.0.2", status: "success", startedAt: "2026-03-21 07:30:00", finishedAt: "2026-03-21 07:33:50", duration: "3m 50s", triggeredBy: "carlos.silva" },
+    { id: "h4-2", version: "v2.0.2", previousVersion: "v2.0.1", status: "failed", startedAt: "2026-03-19 09:00:00", finishedAt: "2026-03-19 09:07:20", duration: "7m 20s", triggeredBy: "marcos.lima" },
+    { id: "h4-3", version: "v2.0.1", previousVersion: "v2.0.0", status: "success", startedAt: "2026-03-16 14:00:00", finishedAt: "2026-03-16 14:03:00", duration: "3m 00s", triggeredBy: "julia.ferreira" },
+    { id: "h4-4", version: "v2.0.0", previousVersion: "v1.9.12", status: "success", startedAt: "2026-03-14 10:00:00", finishedAt: "2026-03-14 10:05:45", duration: "5m 45s", triggeredBy: "ana.santos" },
+  ],
+  "svc-5": [
+    { id: "h5-1", version: "v1.8.2", previousVersion: "v1.8.1", status: "success", startedAt: "2026-03-22 06:00:00", finishedAt: "2026-03-22 06:03:30", duration: "3m 30s", triggeredBy: "carlos.silva" },
+    { id: "h5-2", version: "v1.8.1", previousVersion: "v1.8.0", status: "success", startedAt: "2026-03-19 11:00:00", finishedAt: "2026-03-19 11:04:10", duration: "4m 10s", triggeredBy: "marcos.lima" },
+  ],
+};
+
 // --- Badge helpers ---
 const getDeployBadge = (status: DeployStatus) => {
   const config: Record<DeployStatus, { variant: "default" | "destructive" | "secondary" | "outline"; icon: React.ReactNode; className?: string }> = {
