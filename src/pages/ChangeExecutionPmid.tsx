@@ -27,8 +27,10 @@ import {
   Terminal,
   Undo2,
   History,
+  GitMerge,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ResourceTree, { type TreeNode } from "@/components/pmid/ResourceTree";
 
 type DeployStatus = "Pending" | "Deploying" | "Deployed" | "Failed" | "RollingBack" | "RolledBack";
 type HealthStatus = "Healthy" | "Degraded" | "Progressing" | "Suspended" | "Missing" | "Unknown";
