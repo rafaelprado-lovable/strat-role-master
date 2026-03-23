@@ -694,6 +694,10 @@ export default function ChangeExecutionPmid() {
                       Logs
                     </TabsTrigger>
                     <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
+                    <TabsTrigger value="tree" className="flex-1">
+                      <GitMerge className="h-3 w-3 mr-1" />
+                      Tree
+                    </TabsTrigger>
                     <TabsTrigger value="history" className="flex-1">
                       <History className="h-3 w-3 mr-1" />
                       Histórico
