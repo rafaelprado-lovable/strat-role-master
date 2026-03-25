@@ -619,7 +619,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           <NodeExecutionPanel
             nodeId={node.id}
             definitionId={d.definition_id}
-            inputs={inputs}
+            inputs={{ ...(d.config || {}), ...(inputs || {}) }}
           />
         )}
       </div>
