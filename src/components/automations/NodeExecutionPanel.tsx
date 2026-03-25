@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, Plus, Trash2 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
+import type { PluginField } from '@/types/pluginSchemas';
 
 type FieldType = 'string' | 'integer' | 'boolean' | 'json';
 
@@ -23,10 +24,10 @@ interface ConfigField {
   type: FieldType;
 }
 
-function inferType(value: unknown): FieldType {
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number' && Number.isInteger(value)) return 'integer';
-  if (typeof value === 'object' && value !== null) return 'json';
+function pluginTypeToFieldType(t: string): FieldType {
+  if (t === 'boolean') return 'boolean';
+  if (t === 'number') return 'integer';
+  if (t === 'json' || t === 'text') return 'json';
   return 'string';
 }
 
@@ -49,6 +50,7 @@ function parseFieldValue(raw: string, type: FieldType): { value: unknown; error?
       return { value: null, error: 'Use true ou false' };
     }
     case 'json': {
+      if (!raw.trim()) return { value: null };
       try { return { value: JSON.parse(raw) }; }
       catch { return { value: null, error: 'JSON inválido' }; }
     }
@@ -61,6 +63,7 @@ interface NodeExecutionPanelProps {
   nodeId: string;
   definitionId: string;
   inputs: Record<string, unknown>;
+  schemaFields?: PluginField[];
 }
 
 interface ExecutionResult {
@@ -70,7 +73,7 @@ interface ExecutionResult {
   duration?: number;
 }
 
-export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecutionPanelProps) {
+export function NodeExecutionPanel({ nodeId, definitionId, inputs, schemaFields }: NodeExecutionPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [running, setRunning] = useState(false);
   const [resolveTemplates, setResolveTemplates] = useState(false);
@@ -80,23 +83,28 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
 
   const inputsKey = JSON.stringify(inputs);
 
-  const buildFieldsFromInputs = useCallback((inp: Record<string, unknown>): ConfigField[] => {
-    return Object.entries(inp).map(([key, val]) => ({
+  const buildFields = useCallback((): ConfigField[] => {
+    if (schemaFields && schemaFields.length > 0) {
+      return schemaFields.map(sf => ({
+        key: sf.name,
+        value: inputs[sf.name] !== undefined ? serializeValue(inputs[sf.name]) : '',
+        type: pluginTypeToFieldType(sf.type),
+      }));
+    }
+    return Object.entries(inputs).map(([key, val]) => ({
       key,
       value: serializeValue(val),
-      type: inferType(val),
+      type: typeof val === 'boolean' ? 'boolean' as FieldType
+        : typeof val === 'number' ? 'integer' as FieldType
+        : typeof val === 'object' && val !== null ? 'json' as FieldType
+        : 'string' as FieldType,
     }));
-  }, []);
+  }, [schemaFields, inputsKey]);
 
   useEffect(() => {
-    setFields(buildFieldsFromInputs(inputs));
+    setFields(buildFields());
     setFieldErrors({});
-  }, [definitionId, nodeId, inputsKey]);
-
-  const handleResetFields = () => {
-    setFields(buildFieldsFromInputs(inputs));
-    setFieldErrors({});
-  };
+  }, [definitionId, nodeId, inputsKey, schemaFields]);
 
   const updateField = (index: number, patch: Partial<ConfigField>) => {
     setFields(prev => prev.map((f, i) => i === index ? { ...f, ...patch } : f));
@@ -112,12 +120,12 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   };
 
   const handleExecute = async () => {
-    // Validate & build config
     const errors: Record<number, string> = {};
     const config: Record<string, unknown> = {};
 
     fields.forEach((f, i) => {
-      if (!f.key.trim()) { errors[i] = 'Campo obrigatório'; return; }
+      if (!f.key.trim()) return; // skip empty keys
+      if (!f.value.trim()) return; // skip empty values
       const parsed = parseFieldValue(f.value, f.type);
       if (parsed.error) { errors[i] = parsed.error; return; }
       config[f.key] = parsed.value;
@@ -181,7 +189,6 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
             Executa este bloco isoladamente via <code className="bg-muted px-1 rounded font-mono">/v1/create/node/execution</code>.
           </p>
 
-          {/* resolve_templates toggle */}
           <div className="flex items-center justify-between">
             <Label className="text-xs">resolve_templates</Label>
             <Switch checked={resolveTemplates} onCheckedChange={setResolveTemplates} />
@@ -190,29 +197,19 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
           {/* Config fields */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Config (campos)</Label>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1" onClick={handleResetFields}>
-                  <RotateCcw className="h-3 w-3" /> Resetar
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1" onClick={addField}>
-                  <Plus className="h-3 w-3" /> Campo
-                </Button>
-              </div>
+              <Label className="text-xs text-muted-foreground">Config</Label>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1" onClick={addField}>
+                <Plus className="h-3 w-3" /> Campo
+              </Button>
             </div>
 
             <div className="space-y-2">
               {fields.map((field, i) => (
                 <div key={i} className="space-y-1 rounded-md border border-border p-2 bg-muted/30">
                   <div className="flex items-center gap-1.5">
-                    <Input
-                      value={field.key}
-                      onChange={e => updateField(i, { key: e.target.value })}
-                      placeholder="chave"
-                      className="h-7 text-[11px] font-mono flex-1"
-                    />
+                    <Label className="text-[10px] font-mono text-muted-foreground flex-1 truncate">{field.key || '(sem nome)'}</Label>
                     <Select value={field.type} onValueChange={v => updateField(i, { type: v as FieldType })}>
-                      <SelectTrigger className="h-7 text-[10px] w-[90px]">
+                      <SelectTrigger className="h-6 text-[10px] w-[80px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -221,9 +218,11 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => removeField(i)}>
-                      <Trash2 className="h-3 w-3 text-muted-foreground" />
-                    </Button>
+                    {!schemaFields?.find(sf => sf.name === field.key) && (
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => removeField(i)}>
+                        <Trash2 className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    )}
                   </div>
 
                   {field.type === 'json' ? (
@@ -261,7 +260,7 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
               ))}
 
               {fields.length === 0 && (
-                <p className="text-[10px] text-muted-foreground italic">Nenhum campo configurado. Clique em "+ Campo" para adicionar.</p>
+                <p className="text-[10px] text-muted-foreground italic">Nenhum campo disponível.</p>
               )}
             </div>
           </div>
