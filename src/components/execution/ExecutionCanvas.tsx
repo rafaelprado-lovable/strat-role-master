@@ -68,7 +68,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const state: TaskState = d.taskState || 'waiting_start';
   const isSkipped = !!d.isSkipped;
   const skipReason = d.skipReason;
-  const s = stateStyles[state];
+  const s = stateStyles[state] || stateStyles.waiting_start;
   const hasForEach = d.hasForEach;
   const hasStream = d.hasStream;
   const hasLoop = d.hasLoop;
