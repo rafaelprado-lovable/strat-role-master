@@ -920,6 +920,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
               allNodes={allNodes}
               apiDefinitions={apiDefinitions}
               onInsertRef={(ref) => insertReference(field.name, ref)}
+              onChangeType={(t) => setTypeOverrides(prev => ({ ...prev, [field.name]: t }))}
             />
           ))}
         </div>
