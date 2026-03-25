@@ -616,10 +616,11 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
 
         {/* ============ NODE EXECUTION (UNIT TEST) ============ */}
         {d.definition_id && (
-          <NodeExecutionPanel
+          <NodeExecutionPanelWithSchema
             nodeId={node.id}
             definitionId={d.definition_id}
-            inputs={{ ...(d.config || {}), ...(inputs || {}) }}
+            inputs={inputs}
+            apiDefinitions={apiDefinitions}
           />
         )}
       </div>
@@ -704,6 +705,26 @@ function RefDropdown({ allNodes, currentNodeId, definitions, apiDefinitions, onS
         </div>
       )}
     </div>
+  );
+}
+
+// ========== Node Execution with Schema ==========
+
+function NodeExecutionPanelWithSchema({ nodeId, definitionId, inputs, apiDefinitions }: { nodeId: string; definitionId: string; inputs: Record<string, unknown>; apiDefinitions: Definition[] }) {
+  const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
+  const staticSchema = PLUGIN_SCHEMAS[definitionId];
+
+  const schemaFields: PluginField[] = apiDef?.inputs
+    ? apiDef.inputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
+    : (staticSchema?.inputs || []);
+
+  return (
+    <NodeExecutionPanel
+      nodeId={nodeId}
+      definitionId={definitionId}
+      inputs={inputs}
+      schemaFields={schemaFields}
+    />
   );
 }
 
