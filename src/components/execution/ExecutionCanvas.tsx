@@ -53,11 +53,12 @@ const iconMap: Record<string, React.ElementType> = {
   delay_v1: Timer,
 };
 
-const stateStyles: Record<TaskState, { ring: string; bg: string; pulse?: boolean; label: string; dot: string }> = {
+const stateStyles: Record<string, { ring: string; bg: string; pulse?: boolean; label: string; dot: string }> = {
   waiting_start: { ring: 'ring-muted-foreground/30', bg: 'bg-muted/40', label: 'Aguardando', dot: 'bg-muted-foreground' },
   running: { ring: 'ring-primary', bg: 'bg-primary/10', pulse: true, label: 'Executando', dot: 'bg-primary' },
   finished: { ring: 'ring-chart-2', bg: 'bg-chart-2/10', label: 'Concluído', dot: 'bg-chart-2' },
   error: { ring: 'ring-destructive', bg: 'bg-destructive/10', label: 'Erro', dot: 'bg-destructive' },
+  failed: { ring: 'ring-destructive', bg: 'bg-destructive/10', label: 'Falhou', dot: 'bg-destructive' },
 };
 
 // Using chart-2 for green/success since that's available
