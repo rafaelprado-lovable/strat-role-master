@@ -237,6 +237,7 @@ export function AutomationsTable({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}><Edit2 className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(wf); }}><Copy className="h-4 w-4 mr-2" /> Duplicar</DropdownMenuItem>
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}><Play className="h-4 w-4 mr-2" /> Executar agora</DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(wf.id); }}><Trash2 className="h-4 w-4 mr-2" /> Excluir</DropdownMenuItem>
@@ -313,6 +314,7 @@ export function AutomationsTable({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(wf); }}><Edit2 className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(wf); }}><Copy className="h-4 w-4 mr-2" /> Duplicar</DropdownMenuItem>
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRun(wf.id); }}><Play className="h-4 w-4 mr-2" /> Executar agora</DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(wf.id); }}><Trash2 className="h-4 w-4 mr-2" /> Excluir</DropdownMenuItem>
