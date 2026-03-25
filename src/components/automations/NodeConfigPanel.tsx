@@ -616,10 +616,11 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
 
         {/* ============ NODE EXECUTION (UNIT TEST) ============ */}
         {d.definition_id && (
-          <NodeExecutionPanel
+          <NodeExecutionPanelWithSchema
             nodeId={node.id}
             definitionId={d.definition_id}
-            inputs={{ ...(d.config || {}), ...(inputs || {}) }}
+            inputs={inputs}
+            apiDefinitions={apiDefinitions}
           />
         )}
       </div>
