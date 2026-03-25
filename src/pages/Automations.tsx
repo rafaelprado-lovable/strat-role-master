@@ -84,20 +84,24 @@ export default function Automations() {
     }
   };
 
-  const handleDuplicate = (workflow: Workflow) => {
-    const newWf: Workflow = {
-      ...workflow,
-      id: `wf-${Date.now()}`,
-      name: `${workflow.name} (Cópia)`,
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastRunAt: null,
-      runCount: 0,
-    };
-    // Add locally, user can then publish via JSON dialog
-    setWorkflows((prev) => [...prev, newWf]);
-    toast.success('Workflow duplicado (salve para persistir)');
+  const handleDuplicate = async (workflow: Workflow) => {
+    try {
+      const duplicated: Workflow = {
+        ...workflow,
+        id: `wf-${Date.now()}`,
+        name: `${workflow.name} - copy`,
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastRunAt: null,
+        runCount: 0,
+      };
+      await workflowService.create(duplicated);
+      toast.success('Workflow duplicado com sucesso');
+      fetchWorkflows();
+    } catch (err: any) {
+      toast.error(`Erro ao duplicar: ${err.message}`);
+    }
   };
 
   const handleToggleStatus = (id: string) => {
