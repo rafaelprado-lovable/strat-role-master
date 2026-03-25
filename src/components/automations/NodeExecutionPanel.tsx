@@ -3,8 +3,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, RotateCcw } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
+
+type PayloadType = 'json' | 'string' | 'integer' | 'boolean';
+
+const PAYLOAD_TYPES: { value: PayloadType; label: string }[] = [
+  { value: 'json', label: 'JSON' },
+  { value: 'string', label: 'String' },
+  { value: 'integer', label: 'Integer' },
+  { value: 'boolean', label: 'Boolean' },
+];
 
 interface NodeExecutionPanelProps {
   nodeId: string;
