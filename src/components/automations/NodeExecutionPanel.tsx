@@ -89,7 +89,7 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   useEffect(() => {
     setFields(buildFieldsFromInputs(inputs));
     setFieldErrors({});
-  }, [definitionId, nodeId]);
+  }, [definitionId, nodeId, inputs]);
 
   const handleResetFields = () => {
     setFields(buildFieldsFromInputs(inputs));
