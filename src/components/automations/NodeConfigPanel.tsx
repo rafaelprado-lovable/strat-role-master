@@ -16,6 +16,7 @@ import type { Definition, DefinitionField } from '@/services/definitionService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ImportHttpDialog } from './ImportHttpDialog';
 import { ExportHttpDialog } from './ExportHttpDialog';
+import { NodeExecutionPanel } from './NodeExecutionPanel';
 import type { ParsedHttpRequest } from '@/services/httpImportParser';
 
 interface NodeConfigPanelProps {
@@ -612,6 +613,15 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           onUpdateInputs={onUpdateInputs}
           currentNodeId={node.id}
         />
+
+        {/* ============ NODE EXECUTION (UNIT TEST) ============ */}
+        {d.definition_id && (
+          <NodeExecutionPanel
+            nodeId={node.id}
+            definitionId={d.definition_id}
+            inputs={inputs}
+          />
+        )}
       </div>
     </>
   );
