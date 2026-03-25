@@ -150,6 +150,21 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
               : 'Templates {{...}} NÃO serão resolvidos (ideal para testes isolados com valores fixos).'}
           </p>
 
+          {/* Payload type selector */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Tipo do payload</Label>
+            <Select value={payloadType} onValueChange={(v) => setPayloadType(v as PayloadType)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYLOAD_TYPES.map(t => (
+                  <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Editable payload */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
