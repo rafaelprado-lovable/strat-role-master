@@ -745,6 +745,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
   const staticSchema = PLUGIN_SCHEMAS[definitionId];
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [typeOverrides, setTypeOverrides] = useState<Record<string, PluginField['type']>>({});
   
   // Find the API definition to get dynamic inputs/outputs
   const apiDef = apiDefinitions.find(d => d.definition_id === definitionId);
@@ -762,9 +763,11 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
   };
   
   // Resolve inputs/outputs: prefer API definition, fallback to static PLUGIN_SCHEMAS
-  const resolvedInputs: PluginField[] = apiDef?.inputs
+  const resolvedInputs: PluginField[] = (apiDef?.inputs
     ? apiDef.inputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
-    : (staticSchema?.inputs || []);
+    : (staticSchema?.inputs || [])
+  ).map(f => typeOverrides[f.name] ? { ...f, type: typeOverrides[f.name] } : f);
+
   const resolvedOutputs: PluginField[] = apiDef?.outputs
     ? apiDef.outputs.map(f => ({ name: f.name, label: f.label, type: f.type as PluginField['type'], required: f.required, placeholder: f.placeholder, description: f.description }))
     : (staticSchema?.outputs || []);
