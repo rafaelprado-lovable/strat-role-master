@@ -58,11 +58,29 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
 
   const handleExecute = async () => {
     let parsedPayload: any;
-    try {
-      parsedPayload = JSON.parse(payloadText);
-    } catch {
-      setPayloadError('JSON inválido. Corrija o payload antes de executar.');
-      return;
+    if (payloadType === 'json') {
+      try {
+        parsedPayload = JSON.parse(payloadText);
+      } catch {
+        setPayloadError('JSON inválido. Corrija o payload antes de executar.');
+        return;
+      }
+    } else if (payloadType === 'integer') {
+      const num = Number(payloadText.trim());
+      if (isNaN(num) || !Number.isInteger(num)) {
+        setPayloadError('Valor inteiro inválido.');
+        return;
+      }
+      parsedPayload = num;
+    } else if (payloadType === 'boolean') {
+      const val = payloadText.trim().toLowerCase();
+      if (val !== 'true' && val !== 'false') {
+        setPayloadError('Use "true" ou "false".');
+        return;
+      }
+      parsedPayload = val === 'true';
+    } else {
+      parsedPayload = payloadText;
     }
     setPayloadError(null);
     setRunning(true);
