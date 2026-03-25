@@ -964,28 +964,47 @@ interface PluginFieldInputProps {
   onInsertRef: (ref: string) => void;
 }
 
-function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, apiDefinitions, onInsertRef }: PluginFieldInputProps) {
+const INPUT_TYPE_OPTIONS: { value: PluginField['type']; label: string }[] = [
+  { value: 'string', label: 'String' },
+  { value: 'text', label: 'Text' },
+  { value: 'number', label: 'Number' },
+  { value: 'boolean', label: 'Boolean' },
+  { value: 'json', label: 'JSON' },
+  { value: 'list', label: 'List' },
+];
+
+function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, apiDefinitions, onInsertRef, onChangeType }: PluginFieldInputProps) {
   const [showRefs, setShowRefs] = useState(false);
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs">
+      <div className="flex items-center justify-between gap-1">
+        <Label className="text-xs flex-1 min-w-0 truncate">
           {field.label}
           {field.required && <span className="text-destructive ml-0.5">*</span>}
           <span className="text-muted-foreground font-normal ml-1.5 text-[10px]">{field.name}</span>
         </Label>
+        <Select value={field.type} onValueChange={(v) => onChangeType?.(v as PluginField['type'])}>
+          <SelectTrigger className="h-6 text-[10px] w-[75px] shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {INPUT_TYPE_OPTIONS.map(t => (
+              <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {upstreamNodes.length > 0 && (
           <button
             onClick={() => setShowRefs(!showRefs)}
-            className="text-[10px] text-primary hover:underline"
+            className="text-[10px] text-primary hover:underline shrink-0"
           >
             {showRefs ? 'Fechar' : '{{ref}}'}
           </button>
         )}
       </div>
 
-      {field.type === 'json' || field.type === 'text' ? (
+      {field.type === 'json' || field.type === 'text' || field.type === 'list' ? (
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
