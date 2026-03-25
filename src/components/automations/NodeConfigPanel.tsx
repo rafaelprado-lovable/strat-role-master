@@ -613,6 +613,15 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           onUpdateInputs={onUpdateInputs}
           currentNodeId={node.id}
         />
+
+        {/* ============ NODE EXECUTION (UNIT TEST) ============ */}
+        {d.definition_id && (
+          <NodeExecutionPanel
+            nodeId={node.id}
+            definitionId={d.definition_id}
+            inputs={inputs}
+          />
+        )}
       </div>
     </>
   );
