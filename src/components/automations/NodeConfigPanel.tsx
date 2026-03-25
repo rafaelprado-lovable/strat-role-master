@@ -962,6 +962,7 @@ interface PluginFieldInputProps {
   allNodes: Node[];
   apiDefinitions: Definition[];
   onInsertRef: (ref: string) => void;
+  onChangeType?: (type: PluginField['type']) => void;
 }
 
 const INPUT_TYPE_OPTIONS: { value: PluginField['type']; label: string }[] = [
