@@ -3,8 +3,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, RotateCcw } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
+
+type PayloadType = 'json' | 'string' | 'integer' | 'boolean';
+
+const PAYLOAD_TYPES: { value: PayloadType; label: string }[] = [
+  { value: 'json', label: 'JSON' },
+  { value: 'string', label: 'String' },
+  { value: 'integer', label: 'Integer' },
+  { value: 'boolean', label: 'Boolean' },
+];
 
 interface NodeExecutionPanelProps {
   nodeId: string;
@@ -26,6 +36,7 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [payloadText, setPayloadText] = useState('');
   const [payloadError, setPayloadError] = useState<string | null>(null);
+  const [payloadType, setPayloadType] = useState<PayloadType>('json');
 
   const buildDefaultPayload = () => JSON.stringify({
     definition_id: definitionId,
@@ -47,11 +58,29 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
 
   const handleExecute = async () => {
     let parsedPayload: any;
-    try {
-      parsedPayload = JSON.parse(payloadText);
-    } catch {
-      setPayloadError('JSON inválido. Corrija o payload antes de executar.');
-      return;
+    if (payloadType === 'json') {
+      try {
+        parsedPayload = JSON.parse(payloadText);
+      } catch {
+        setPayloadError('JSON inválido. Corrija o payload antes de executar.');
+        return;
+      }
+    } else if (payloadType === 'integer') {
+      const num = Number(payloadText.trim());
+      if (isNaN(num) || !Number.isInteger(num)) {
+        setPayloadError('Valor inteiro inválido.');
+        return;
+      }
+      parsedPayload = num;
+    } else if (payloadType === 'boolean') {
+      const val = payloadText.trim().toLowerCase();
+      if (val !== 'true' && val !== 'false') {
+        setPayloadError('Use "true" ou "false".');
+        return;
+      }
+      parsedPayload = val === 'true';
+    } else {
+      parsedPayload = payloadText;
     }
     setPayloadError(null);
     setRunning(true);
@@ -120,6 +149,21 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
               ? 'Templates {{...}} serão resolvidos pelo motor antes da execução.'
               : 'Templates {{...}} NÃO serão resolvidos (ideal para testes isolados com valores fixos).'}
           </p>
+
+          {/* Payload type selector */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Tipo do payload</Label>
+            <Select value={payloadType} onValueChange={(v) => setPayloadType(v as PayloadType)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYLOAD_TYPES.map(t => (
+                  <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Editable payload */}
           <div className="space-y-1.5">
