@@ -78,6 +78,8 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   const [fields, setFields] = useState<ConfigField[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
 
+  const inputsKey = JSON.stringify(inputs);
+
   const buildFieldsFromInputs = useCallback((inp: Record<string, unknown>): ConfigField[] => {
     return Object.entries(inp).map(([key, val]) => ({
       key,
@@ -89,7 +91,7 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   useEffect(() => {
     setFields(buildFieldsFromInputs(inputs));
     setFieldErrors({});
-  }, [definitionId, nodeId, inputs]);
+  }, [definitionId, nodeId, inputsKey]);
 
   const handleResetFields = () => {
     setFields(buildFieldsFromInputs(inputs));
