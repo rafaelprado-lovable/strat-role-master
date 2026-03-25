@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap } from 'lucide-react';
+import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, RotateCcw } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 
 interface NodeExecutionPanelProps {
@@ -24,26 +24,47 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   const [running, setRunning] = useState(false);
   const [resolveTemplates, setResolveTemplates] = useState(false);
   const [result, setResult] = useState<ExecutionResult | null>(null);
+  const [payloadText, setPayloadText] = useState('');
+  const [payloadError, setPayloadError] = useState<string | null>(null);
+
+  const buildDefaultPayload = () => JSON.stringify({
+    definition_id: definitionId,
+    task_id: `${nodeId}-unit`,
+    resolve_templates: resolveTemplates,
+    config: inputs,
+  }, null, 2);
+
+  // Sync payload when inputs/definitionId/resolveTemplates change (only if not manually edited)
+  useEffect(() => {
+    setPayloadText(buildDefaultPayload());
+    setPayloadError(null);
+  }, [definitionId, nodeId, resolveTemplates]);
+
+  const handleResetPayload = () => {
+    setPayloadText(buildDefaultPayload());
+    setPayloadError(null);
+  };
 
   const handleExecute = async () => {
+    let parsedPayload: any;
+    try {
+      parsedPayload = JSON.parse(payloadText);
+    } catch {
+      setPayloadError('JSON inválido. Corrija o payload antes de executar.');
+      return;
+    }
+    setPayloadError(null);
     setRunning(true);
     setResult(null);
     const start = Date.now();
 
     try {
-      const payload = {
-        definition_id: definitionId,
-        task_id: `${nodeId}-unit`,
-        resolve_templates: resolveTemplates,
-        config: inputs,
-      };
-
       const response = await apiClient.rawFetch('/v1/create/node/execution', {
         method: 'POST',
         headers: {
           orchestrator: 'lovable',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(parsedPayload),
       });
 
       const duration = Date.now() - start;
@@ -100,23 +121,27 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
               : 'Templates {{...}} NÃO serão resolvidos (ideal para testes isolados com valores fixos).'}
           </p>
 
-          {/* Payload preview */}
+          {/* Editable payload */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Payload que será enviado</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Payload (editável)</Label>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] gap-1" onClick={handleResetPayload}>
+                <RotateCcw className="h-3 w-3" />
+                Resetar
+              </Button>
+            </div>
             <Textarea
-              value={JSON.stringify(
-                {
-                  definition_id: definitionId,
-                  task_id: `${nodeId}-unit`,
-                  resolve_templates: resolveTemplates,
-                  config: inputs,
-                },
-                null,
-                2
-              )}
-              readOnly
-              className="text-[11px] min-h-[120px] font-mono bg-muted/50"
+              value={payloadText}
+              onChange={(e) => {
+                setPayloadText(e.target.value);
+                setPayloadError(null);
+              }}
+              autoFormatJson
+              className={`text-[11px] min-h-[120px] font-mono bg-muted/50 ${payloadError ? 'border-destructive' : ''}`}
             />
+            {payloadError && (
+              <p className="text-[10px] text-destructive">{payloadError}</p>
+            )}
           </div>
 
           {/* Execute button */}
