@@ -36,6 +36,7 @@ export function NodeExecutionPanel({ nodeId, definitionId, inputs }: NodeExecuti
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [payloadText, setPayloadText] = useState('');
   const [payloadError, setPayloadError] = useState<string | null>(null);
+  const [payloadType, setPayloadType] = useState<PayloadType>('json');
 
   const buildDefaultPayload = () => JSON.stringify({
     definition_id: definitionId,
