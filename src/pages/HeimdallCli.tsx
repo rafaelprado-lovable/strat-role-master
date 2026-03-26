@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
-import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff, Loader2, Send, Radio } from "lucide-react";
+import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff, Loader2, Send, Radio, ChevronsUpDown, Check, Link } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { executeCommand as apiExecute, pollJobStatus } from "@/services/heimdallCliService";
 
@@ -207,7 +208,8 @@ export default function HeimdallCli() {
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   const [selectedEnv, setSelectedEnv] = useState<Environment>("production");
-  const [selectedMachine, setSelectedMachine] = useState<string>(MOCK_MACHINES[0].id);
+  const [selectedMachines, setSelectedMachines] = useState<Set<string>>(new Set());
+  const [machinePopoverOpen, setMachinePopoverOpen] = useState(false);
   const [broadcastCmd, setBroadcastCmd] = useState("");
   const [broadcastTargets, setBroadcastTargets] = useState<Set<string>>(new Set());
   const [showBroadcast, setShowBroadcast] = useState(false);
@@ -244,11 +246,11 @@ export default function HeimdallCli() {
     return () => window.removeEventListener("keydown", handler);
   }, [tabs, activeTab]);
 
-  const addTab = useCallback(() => {
-    const machine = MOCK_MACHINES.find((m) => m.id === selectedMachine);
+  const addTab = useCallback((machineId: string) => {
+    const machine = MOCK_MACHINES.find((m) => m.id === machineId);
     if (!machine) return;
 
-    const id = `tab-${Date.now()}`;
+    const id = `tab-${Date.now()}-${machineId}`;
     const welcomeLine: TerminalLine = {
       type: "system",
       text: `Conectado a ${machine.name} (${machine.host}) como ${machine.sshUser}. Os comandos serão executados via SSH remoto.`,
@@ -259,8 +261,38 @@ export default function HeimdallCli() {
       ...prev,
       { id, machine, lines: [welcomeLine], history: [], historyIndex: -1, isExecuting: false },
     ]);
-    setActiveTab(id);
-  }, [selectedMachine]);
+    return id;
+  }, []);
+
+  const connectSelected = useCallback(() => {
+    if (selectedMachines.size === 0) return;
+    let lastId = "";
+    selectedMachines.forEach((mid) => {
+      const id = addTab(mid);
+      if (id) lastId = id;
+    });
+    if (lastId) setActiveTab(lastId);
+    setSelectedMachines(new Set());
+    setMachinePopoverOpen(false);
+  }, [selectedMachines, addTab]);
+
+  const connectAll = useCallback(() => {
+    let lastId = "";
+    filteredMachines.forEach((m) => {
+      const id = addTab(m.id);
+      if (id) lastId = id;
+    });
+    if (lastId) setActiveTab(lastId);
+  }, [filteredMachines, addTab]);
+
+  const toggleMachineSelection = useCallback((machineId: string) => {
+    setSelectedMachines((prev) => {
+      const next = new Set(prev);
+      if (next.has(machineId)) next.delete(machineId);
+      else next.add(machineId);
+      return next;
+    });
+  }, []);
 
   const closeTab = (tabId: string) => {
     setTabs((prev) => {
@@ -426,34 +458,73 @@ export default function HeimdallCli() {
             </SelectContent>
           </Select>
 
-          {/* Machine selector */}
-          <Select value={selectedMachine} onValueChange={setSelectedMachine}>
-            <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="Selecionar máquina" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredMachines.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  <div className="flex items-center gap-2">
+          {/* Machine combobox */}
+          <Popover open={machinePopoverOpen} onOpenChange={setMachinePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[260px] justify-between font-normal">
+                {selectedMachines.size === 0
+                  ? "Selecionar máquinas..."
+                  : `${selectedMachines.size} máquina(s) selecionada(s)`}
+                <ChevronsUpDown className="h-4 w-4 opacity-50 ml-2" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[280px] p-2" align="end">
+              <div className="space-y-1 max-h-[240px] overflow-y-auto">
+                {filteredMachines.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMachineSelection(m.id)}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-accent transition-colors",
+                      selectedMachines.has(m.id) && "bg-accent"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      selectedMachines.has(m.id) ? "bg-primary text-primary-foreground" : "opacity-50"
+                    )}>
+                      {selectedMachines.has(m.id) && <Check className="h-3 w-3" />}
+                    </div>
                     <Circle
                       className={cn(
                         "h-2 w-2 fill-current",
-                        m.status === "online"
-                          ? "text-[hsl(120,60%,50%)]"
-                          : "text-destructive"
+                        m.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
                       )}
                     />
                     <Server className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{m.name}</span>
-                    <span className="text-muted-foreground text-xs">({m.host})</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={addTab} size="sm" className="gap-1.5">
+                    <span className="text-muted-foreground text-xs ml-auto">({m.host})</span>
+                  </button>
+                ))}
+              </div>
+              <div className="border-t border-border mt-2 pt-2 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1 text-xs"
+                  onClick={() => setSelectedMachines(new Set(filteredMachines.map((m) => m.id)))}
+                >
+                  Selecionar todas
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="flex-1 text-xs"
+                  onClick={() => setSelectedMachines(new Set())}
+                >
+                  Limpar
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button onClick={connectSelected} size="sm" className="gap-1.5" disabled={selectedMachines.size === 0}>
             <Plus className="h-4 w-4" />
-            Nova sessão
+            Conectar ({selectedMachines.size})
+          </Button>
+          <Button onClick={connectAll} size="sm" variant="outline" className="gap-1.5">
+            <Link className="h-4 w-4" />
+            Conectar todas
           </Button>
           {tabs.length >= 2 && (
             <Button
