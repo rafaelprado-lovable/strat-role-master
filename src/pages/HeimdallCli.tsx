@@ -31,23 +31,37 @@ const ENV_COLORS: Record<Environment, string> = {
   development: "hsl(210,70%,50%)",
 };
 
+interface Cluster {
+  id: string;
+  name: string;
+  environment: Environment;
+}
+
+const MOCK_CLUSTERS: Cluster[] = [
+  { id: "c1", name: "cluster-a", environment: "production" },
+  { id: "c2", name: "cluster-b", environment: "production" },
+  { id: "c3", name: "cluster-stg", environment: "staging" },
+  { id: "c4", name: "cluster-dev", environment: "development" },
+];
+
 interface Machine {
   id: string;
   name: string;
   host: string;
   status: "online" | "offline";
   environment: Environment;
+  clusterId: string;
   sshUser: string;
 }
 
 const MOCK_MACHINES: Machine[] = [
-  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", sshUser: "nmws_app" },
-  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", sshUser: "nmws_app" },
-  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", sshUser: "nmws_app" },
-  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", sshUser: "nmws_app" },
+  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
+  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
+  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", clusterId: "c2", sshUser: "nmws_app" },
+  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
+  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
 ];
 
 // ---------- types ----------
