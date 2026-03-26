@@ -31,23 +31,37 @@ const ENV_COLORS: Record<Environment, string> = {
   development: "hsl(210,70%,50%)",
 };
 
+interface Cluster {
+  id: string;
+  name: string;
+  environment: Environment;
+}
+
+const MOCK_CLUSTERS: Cluster[] = [
+  { id: "c1", name: "cluster-a", environment: "production" },
+  { id: "c2", name: "cluster-b", environment: "production" },
+  { id: "c3", name: "cluster-stg", environment: "staging" },
+  { id: "c4", name: "cluster-dev", environment: "development" },
+];
+
 interface Machine {
   id: string;
   name: string;
   host: string;
   status: "online" | "offline";
   environment: Environment;
+  clusterId: string;
   sshUser: string;
 }
 
 const MOCK_MACHINES: Machine[] = [
-  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", sshUser: "nmws_app" },
-  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", sshUser: "nmws_app" },
-  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", sshUser: "nmws_app" },
-  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", sshUser: "nmws_app" },
-  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", sshUser: "nmws_app" },
+  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
+  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
+  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", clusterId: "c2", sshUser: "nmws_app" },
+  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
+  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
 ];
 
 // ---------- types ----------
@@ -208,13 +222,17 @@ export default function HeimdallCli() {
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   const [selectedEnv, setSelectedEnv] = useState<Environment>("production");
+  const [selectedCluster, setSelectedCluster] = useState<string>("all");
   const [selectedMachines, setSelectedMachines] = useState<Set<string>>(new Set());
   const [machinePopoverOpen, setMachinePopoverOpen] = useState(false);
   const [broadcastCmd, setBroadcastCmd] = useState("");
   const [broadcastTargets, setBroadcastTargets] = useState<Set<string>>(new Set());
   const [showBroadcast, setShowBroadcast] = useState(false);
 
-  const filteredMachines = MOCK_MACHINES.filter((m) => m.environment === selectedEnv);
+  const filteredClusters = MOCK_CLUSTERS.filter((c) => c.environment === selectedEnv);
+  const filteredMachines = MOCK_MACHINES.filter(
+    (m) => m.environment === selectedEnv && (selectedCluster === "all" || m.clusterId === selectedCluster)
+  );
 
   // Keyboard shortcuts: Alt+← / Alt+→ to switch sessions, Alt+1-9 to jump
   useEffect(() => {
@@ -447,6 +465,7 @@ export default function HeimdallCli() {
           <Select value={selectedEnv} onValueChange={(v) => {
             const env = v as Environment;
             setSelectedEnv(env);
+            setSelectedCluster("all");
             setSelectedMachines(new Set());
           }}>
             <SelectTrigger className="w-[180px]">
@@ -467,6 +486,24 @@ export default function HeimdallCli() {
             </SelectContent>
           </Select>
 
+          {/* Cluster selector */}
+          <Select value={selectedCluster} onValueChange={(v) => {
+            setSelectedCluster(v);
+            setSelectedMachines(new Set());
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Cluster" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os clusters</SelectItem>
+              {filteredClusters.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Machine combobox */}
           <Popover open={machinePopoverOpen} onOpenChange={setMachinePopoverOpen}>
             <PopoverTrigger asChild>
@@ -477,34 +514,45 @@ export default function HeimdallCli() {
                 <ChevronsUpDown className="h-4 w-4 opacity-50 ml-2" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-2" align="end">
-              <div className="space-y-1 max-h-[240px] overflow-y-auto">
-                {filteredMachines.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleMachineSelection(m.id)}
-                    className={cn(
-                      "flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-accent transition-colors",
-                      selectedMachines.has(m.id) && "bg-accent"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                      selectedMachines.has(m.id) ? "bg-primary text-primary-foreground" : "opacity-50"
-                    )}>
-                      {selectedMachines.has(m.id) && <Check className="h-3 w-3" />}
+            <PopoverContent className="w-[320px] p-2" align="end">
+              <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                {(selectedCluster === "all" ? filteredClusters : filteredClusters.filter(c => c.id === selectedCluster)).map((cluster) => {
+                  const clusterMachines = filteredMachines.filter(m => m.clusterId === cluster.id);
+                  if (clusterMachines.length === 0) return null;
+                  return (
+                    <div key={cluster.id}>
+                      <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {cluster.name}
+                      </div>
+                      {clusterMachines.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => toggleMachineSelection(m.id)}
+                          className={cn(
+                            "flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-accent transition-colors",
+                            selectedMachines.has(m.id) && "bg-accent"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                            selectedMachines.has(m.id) ? "bg-primary text-primary-foreground" : "opacity-50"
+                          )}>
+                            {selectedMachines.has(m.id) && <Check className="h-3 w-3" />}
+                          </div>
+                          <Circle
+                            className={cn(
+                              "h-2 w-2 fill-current",
+                              m.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
+                            )}
+                          />
+                          <Server className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{m.name}</span>
+                          <span className="text-muted-foreground text-xs ml-auto">({m.host})</span>
+                        </button>
+                      ))}
                     </div>
-                    <Circle
-                      className={cn(
-                        "h-2 w-2 fill-current",
-                        m.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
-                      )}
-                    />
-                    <Server className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{m.name}</span>
-                    <span className="text-muted-foreground text-xs ml-auto">({m.host})</span>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
               <div className="border-t border-border mt-2 pt-2 flex gap-2">
                 <Button
