@@ -465,6 +465,7 @@ export default function HeimdallCli() {
           <Select value={selectedEnv} onValueChange={(v) => {
             const env = v as Environment;
             setSelectedEnv(env);
+            setSelectedCluster("all");
             setSelectedMachines(new Set());
           }}>
             <SelectTrigger className="w-[180px]">
@@ -480,6 +481,24 @@ export default function HeimdallCli() {
                     />
                     <span>{ENV_LABELS[env]}</span>
                   </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Cluster selector */}
+          <Select value={selectedCluster} onValueChange={(v) => {
+            setSelectedCluster(v);
+            setSelectedMachines(new Set());
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Cluster" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os clusters</SelectItem>
+              {filteredClusters.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>
