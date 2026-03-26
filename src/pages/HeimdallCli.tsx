@@ -282,7 +282,8 @@ export default function HeimdallCli() {
       // Update pending line to show job_id
       updateTabLines(tabId, (lines) => {
         const updated = [...lines];
-        const pendingIdx = updated.findLastIndex((l) => l.type === "pending");
+        let pendingIdx = -1;
+        for (let i = updated.length - 1; i >= 0; i--) { if (updated[i].type === "pending") { pendingIdx = i; break; } }
         if (pendingIdx >= 0) {
           updated[pendingIdx] = { type: "system", text: `Job ${job_id} criado. Aguardando resultado...`, timestamp: now() };
         }
@@ -293,8 +294,8 @@ export default function HeimdallCli() {
       const result = await pollJobStatus(job_id, (status) => {
         updateTabLines(tabId, (lines) => {
           const updated = [...lines];
-          // Update last system line with current status
-          const lastSys = updated.findLastIndex((l) => l.type === "system" && l.text.includes(job_id));
+          let lastSys = -1;
+          for (let i = updated.length - 1; i >= 0; i--) { if (updated[i].type === "system" && updated[i].text.includes(job_id)) { lastSys = i; break; } }
           if (lastSys >= 0) {
             updated[lastSys] = { type: "system", text: `Job ${job_id} — status: ${status.status}`, timestamp: now() };
           }
