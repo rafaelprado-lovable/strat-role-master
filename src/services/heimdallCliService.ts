@@ -30,7 +30,7 @@ export async function executeCommand(payload: ExecutePayload): Promise<ExecuteRe
 export async function pollJobStatus(
   jobId: string,
   onUpdate: (status: JobStatus) => void,
-  intervalMs = 1500,
+  intervalMs = 500,
   maxAttempts = 120,
 ): Promise<JobStatus> {
   for (let i = 0; i < maxAttempts; i++) {
