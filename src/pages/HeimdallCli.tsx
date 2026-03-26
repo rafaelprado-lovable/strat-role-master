@@ -69,6 +69,7 @@ interface TerminalLine {
   type: "input" | "output" | "error" | "system" | "pending";
   text: string;
   timestamp: string;
+  cwd?: string;
 }
 
 interface TerminalTab {
@@ -78,6 +79,7 @@ interface TerminalTab {
   history: string[];
   historyIndex: number;
   isExecuting: boolean;
+  cwd: string;
 }
 
 function now() {
@@ -171,7 +173,7 @@ function TerminalView({
               <span>
                 <span className="text-[hsl(120,60%,50%)]">{tab.machine.sshUser}@{tab.machine.name}</span>
                 <span className="text-muted-foreground">:</span>
-                <span className="text-[hsl(210,80%,65%)]">~</span>
+                <span className="text-[hsl(210,80%,65%)]">{line.cwd || "~"}</span>
                 <span className="text-muted-foreground">$ </span>
                 <span className="text-[hsl(0,0%,90%)]">{line.text}</span>
               </span>
@@ -198,7 +200,7 @@ function TerminalView({
         <div className="flex items-center leading-6">
           <span className="text-[hsl(120,60%,50%)]">{tab.machine.sshUser}@{tab.machine.name}</span>
           <span className="text-muted-foreground">:</span>
-          <span className="text-[hsl(210,80%,65%)]">~</span>
+          <span className="text-[hsl(210,80%,65%)]">{tab.cwd}</span>
           <span className="text-muted-foreground">$ </span>
           <input
             ref={inputRef}
@@ -277,7 +279,7 @@ export default function HeimdallCli() {
 
     setTabs((prev) => [
       ...prev,
-      { id, machine, lines: [welcomeLine], history: [], historyIndex: -1, isExecuting: false },
+      { id, machine, lines: [welcomeLine], history: [], historyIndex: -1, isExecuting: false, cwd: "~" },
     ]);
     return id;
   }, []);
@@ -345,7 +347,7 @@ export default function HeimdallCli() {
     }
 
     // Add input line + pending indicator
-    const inputLine: TerminalLine = { type: "input", text: cmd, timestamp: now() };
+    const inputLine: TerminalLine = { type: "input", text: cmd, timestamp: now(), cwd: tab.cwd };
     const pendingLine: TerminalLine = { type: "pending", text: "Enviando comando via SSH...", timestamp: now() };
 
     setTabs((prev) =>
@@ -356,12 +358,17 @@ export default function HeimdallCli() {
       )
     );
 
+    // Build the actual command: prepend cd to cwd if not home
+    const actualCommand = tab.cwd === "~"
+      ? cmd
+      : `cd ${tab.cwd} && ${cmd}`;
+
     try {
       // 1. Execute command via API
       const { job_id } = await apiExecute({
         server: tab.machine.name,
         user: tab.machine.sshUser,
-        command: cmd,
+        command: actualCommand,
       });
 
       // Update pending line to show job_id
@@ -399,6 +406,33 @@ export default function HeimdallCli() {
           ...lines,
           { type: "output", text: decoded, timestamp: now() },
         ]);
+
+        // Update cwd if command was a cd
+        const cdMatch = cmd.trim().match(/^cd\s+(.+)/);
+        if (cdMatch) {
+          const target = cdMatch[1].trim().replace(/\/+$/, "");
+          setTabs((prev) => prev.map((t) => {
+            if (t.id !== tabId) return t;
+            let newCwd: string;
+            if (target === "~" || target === "") {
+              newCwd = "~";
+            } else if (target === "..") {
+              if (t.cwd === "~" || t.cwd === "/") newCwd = t.cwd;
+              else {
+                const parts = t.cwd.split("/");
+                parts.pop();
+                newCwd = parts.join("/") || "/";
+              }
+            } else if (target.startsWith("/")) {
+              newCwd = target;
+            } else if (t.cwd === "~") {
+              newCwd = `~/${target}`;
+            } else {
+              newCwd = `${t.cwd}/${target}`;
+            }
+            return { ...t, cwd: newCwd };
+          }));
+        }
       } else {
         const errorOutput = (result.output || result.error || `Job ${job_id} falhou`)
           .replace(/\\n/g, "\n")
