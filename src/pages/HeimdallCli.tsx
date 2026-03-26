@@ -371,7 +371,7 @@ export default function HeimdallCli() {
       });
 
       // 3. Show result
-      if (result.status === "completed") {
+      if (result.status === "completed" || result.status === "finished") {
         updateTabLines(tabId, (lines) => [
           ...lines,
           { type: "output", text: result.output || "(sem output)", timestamp: now() },

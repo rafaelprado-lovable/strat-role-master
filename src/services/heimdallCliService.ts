@@ -12,7 +12,7 @@ interface ExecuteResponse {
 
 interface JobStatus {
   id: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "finished" | "failed";
   output?: string;
   error?: string;
 }
@@ -38,7 +38,7 @@ export async function pollJobStatus(
     if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
     const status: JobStatus = await res.json();
     onUpdate(status);
-    if (status.status === "completed" || status.status === "failed") {
+    if (status.status === "completed" || status.status === "finished" || status.status === "failed") {
       return status;
     }
     await new Promise((r) => setTimeout(r, intervalMs));
