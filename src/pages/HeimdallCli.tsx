@@ -14,18 +14,36 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 // ---------- mock data ----------
+type Environment = "production" | "staging" | "development";
+
+const ENV_LABELS: Record<Environment, string> = {
+  production: "Produção",
+  staging: "Homologação",
+  development: "Desenvolvimento",
+};
+
+const ENV_COLORS: Record<Environment, string> = {
+  production: "hsl(0,70%,50%)",
+  staging: "hsl(45,90%,45%)",
+  development: "hsl(210,70%,50%)",
+};
+
 interface Machine {
   id: string;
   name: string;
   host: string;
   status: "online" | "offline";
+  environment: Environment;
 }
 
 const MOCK_MACHINES: Machine[] = [
-  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online" },
-  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online" },
-  { id: "m3", name: "staging-app-01", host: "10.0.2.10", status: "online" },
-  { id: "m4", name: "dev-worker-01", host: "10.0.3.5", status: "offline" },
+  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production" },
+  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production" },
+  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production" },
+  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging" },
+  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging" },
+  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development" },
+  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development" },
 ];
 
 const MOCK_RESPONSES: Record<string, string> = {
@@ -226,7 +244,10 @@ function TerminalView({
 export default function HeimdallCli() {
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [selectedEnv, setSelectedEnv] = useState<Environment>("production");
   const [selectedMachine, setSelectedMachine] = useState<string>(MOCK_MACHINES[0].id);
+
+  const filteredMachines = MOCK_MACHINES.filter((m) => m.environment === selectedEnv);
 
   const addTab = useCallback(() => {
     const machine = MOCK_MACHINES.find((m) => m.id === selectedMachine);
@@ -292,12 +313,38 @@ export default function HeimdallCli() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Environment selector */}
+          <Select value={selectedEnv} onValueChange={(v) => {
+            const env = v as Environment;
+            setSelectedEnv(env);
+            const first = MOCK_MACHINES.find((m) => m.environment === env);
+            if (first) setSelectedMachine(first.id);
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Ambiente" />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(ENV_LABELS) as Environment[]).map((env) => (
+                <SelectItem key={env} value={env}>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full inline-block"
+                      style={{ backgroundColor: ENV_COLORS[env] }}
+                    />
+                    <span>{ENV_LABELS[env]}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Machine selector */}
           <Select value={selectedMachine} onValueChange={setSelectedMachine}>
             <SelectTrigger className="w-[240px]">
               <SelectValue placeholder="Selecionar máquina" />
             </SelectTrigger>
             <SelectContent>
-              {MOCK_MACHINES.map((m) => (
+              {filteredMachines.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
                   <div className="flex items-center gap-2">
                     <Circle
