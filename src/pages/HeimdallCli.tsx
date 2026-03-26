@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
-import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff } from "lucide-react";
+import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { executeCommand as apiExecute, pollJobStatus } from "@/services/heimdallCliService";
 
 // ---------- mock data ----------
 type Environment = "production" | "staging" | "development";
@@ -34,50 +34,22 @@ interface Machine {
   host: string;
   status: "online" | "offline";
   environment: Environment;
+  sshUser: string;
 }
 
 const MOCK_MACHINES: Machine[] = [
-  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production" },
-  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production" },
-  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production" },
-  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging" },
-  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging" },
-  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development" },
-  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development" },
+  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", sshUser: "nmws_app" },
+  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", sshUser: "nmws_app" },
+  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", sshUser: "nmws_app" },
+  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", sshUser: "nmws_app" },
+  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", sshUser: "nmws_app" },
+  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", sshUser: "nmws_app" },
+  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", sshUser: "nmws_app" },
 ];
-
-const MOCK_RESPONSES: Record<string, string> = {
-  help: `Available commands:
-  ls        - list directory contents
-  pwd       - print working directory
-  whoami    - display current user
-  uptime    - show system uptime
-  df -h     - disk usage
-  free -m   - memory usage
-  ps aux    - running processes
-  cat       - display file contents
-  clear     - clear terminal
-  help      - show this help`,
-  ls: "bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var",
-  pwd: "/home/nmws_app",
-  whoami: "nmws_app",
-  uptime: " 14:32:07 up 42 days,  3:15,  1 user,  load average: 0.08, 0.03, 0.01",
-  "df -h": `Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1        50G   18G   30G  38% /
-tmpfs           3.9G     0  3.9G   0% /dev/shm
-/dev/sdb1       200G   95G   96G  50% /data`,
-  "free -m": `              total        used        free      shared  buff/cache   available
-Mem:           7982        2134        3521          42        2326        5512
-Swap:          2047           0        2047`,
-  "ps aux": `USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-root         1  0.0  0.1 169364 11200 ?        Ss   Mar14   0:08 /sbin/init
-nmws_app  1234  0.1  0.5 456780 42100 ?        Sl   Mar14   2:30 /opt/app/server
-nmws_app  1235  0.0  0.2 234560 18200 ?        S    Mar14   0:45 /opt/app/worker`,
-};
 
 // ---------- types ----------
 interface TerminalLine {
-  type: "input" | "output" | "error" | "system";
+  type: "input" | "output" | "error" | "system" | "pending";
   text: string;
   timestamp: string;
 }
@@ -88,35 +60,11 @@ interface TerminalTab {
   lines: TerminalLine[];
   history: string[];
   historyIndex: number;
+  isExecuting: boolean;
 }
 
 function now() {
   return new Date().toLocaleTimeString("pt-BR", { hour12: false });
-}
-
-function simulateCommand(cmd: string, machine: Machine): TerminalLine[] {
-  const trimmed = cmd.trim().toLowerCase();
-
-  if (trimmed === "clear") return [];
-
-  if (machine.status === "offline") {
-    return [{ type: "error", text: `ssh: connect to host ${machine.host} port 22: Connection refused`, timestamp: now() }];
-  }
-
-  const response = MOCK_RESPONSES[trimmed];
-  if (response) {
-    return [{ type: "output", text: response, timestamp: now() }];
-  }
-
-  if (trimmed.startsWith("cat ")) {
-    return [{ type: "error", text: `cat: ${trimmed.slice(4)}: No such file or directory`, timestamp: now() }];
-  }
-
-  if (trimmed.startsWith("echo ")) {
-    return [{ type: "output", text: trimmed.slice(5), timestamp: now() }];
-  }
-
-  return [{ type: "error", text: `bash: ${trimmed.split(" ")[0]}: command not found`, timestamp: now() }];
 }
 
 // ---------- Terminal component ----------
@@ -139,6 +87,8 @@ function TerminalView({
   }, [tab.lines.length]);
 
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (tab.isExecuting) return;
+
     if (e.key === "Enter" && input.trim()) {
       onExecute(tab.id, input.trim());
       setInput("");
@@ -178,8 +128,11 @@ function TerminalView({
           <span className="w-3 h-3 rounded-full bg-[hsl(120,60%,50%)]" />
         </div>
         <span className="text-muted-foreground text-xs ml-2">
-          {tab.machine.name} — {tab.machine.host}
+          {tab.machine.sshUser}@{tab.machine.name} — {tab.machine.host}
         </span>
+        {tab.isExecuting && (
+          <Loader2 className="w-3.5 h-3.5 text-[hsl(45,90%,55%)] animate-spin ml-2" />
+        )}
         <Badge
           variant={tab.machine.status === "online" ? "default" : "destructive"}
           className="ml-auto text-[10px] h-5"
@@ -199,7 +152,7 @@ function TerminalView({
           <div key={i} className="leading-6">
             {line.type === "input" && (
               <span>
-                <span className="text-[hsl(120,60%,50%)]">nmws_app@{tab.machine.name}</span>
+                <span className="text-[hsl(120,60%,50%)]">{tab.machine.sshUser}@{tab.machine.name}</span>
                 <span className="text-muted-foreground">:</span>
                 <span className="text-[hsl(210,80%,65%)]">~</span>
                 <span className="text-muted-foreground">$ </span>
@@ -215,12 +168,18 @@ function TerminalView({
             {line.type === "system" && (
               <pre className="text-[hsl(210,60%,60%)] whitespace-pre-wrap italic">{line.text}</pre>
             )}
+            {line.type === "pending" && (
+              <span className="text-[hsl(45,90%,55%)] flex items-center gap-2">
+                <Loader2 className="w-3 h-3 animate-spin inline" />
+                {line.text}
+              </span>
+            )}
           </div>
         ))}
 
         {/* prompt line */}
         <div className="flex items-center leading-6">
-          <span className="text-[hsl(120,60%,50%)]">nmws_app@{tab.machine.name}</span>
+          <span className="text-[hsl(120,60%,50%)]">{tab.machine.sshUser}@{tab.machine.name}</span>
           <span className="text-muted-foreground">:</span>
           <span className="text-[hsl(210,80%,65%)]">~</span>
           <span className="text-muted-foreground">$ </span>
@@ -229,7 +188,8 @@ function TerminalView({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
-            className="flex-1 bg-transparent text-[hsl(0,0%,90%)] outline-none caret-[hsl(120,60%,50%)] ml-0.5"
+            disabled={tab.isExecuting}
+            className="flex-1 bg-transparent text-[hsl(0,0%,90%)] outline-none caret-[hsl(120,60%,50%)] ml-0.5 disabled:opacity-40"
             autoFocus
             spellCheck={false}
             autoComplete="off"
@@ -256,13 +216,13 @@ export default function HeimdallCli() {
     const id = `tab-${Date.now()}`;
     const welcomeLine: TerminalLine = {
       type: "system",
-      text: `Conectado a ${machine.name} (${machine.host}). Digite "help" para ver os comandos disponíveis.`,
+      text: `Conectado a ${machine.name} (${machine.host}) como ${machine.sshUser}. Os comandos serão executados via SSH remoto.`,
       timestamp: now(),
     };
 
     setTabs((prev) => [
       ...prev,
-      { id, machine, lines: [welcomeLine], history: [], historyIndex: -1 },
+      { id, machine, lines: [welcomeLine], history: [], historyIndex: -1, isExecuting: false },
     ]);
     setActiveTab(id);
   }, [selectedMachine]);
@@ -277,26 +237,97 @@ export default function HeimdallCli() {
     });
   };
 
-  const executeCommand = useCallback((tabId: string, cmd: string) => {
-    setTabs((prev) =>
-      prev.map((t) => {
-        if (t.id !== tabId) return t;
-
-        const inputLine: TerminalLine = { type: "input", text: cmd, timestamp: now() };
-
-        if (cmd.trim().toLowerCase() === "clear") {
-          return { ...t, lines: [], history: [...t.history, cmd] };
-        }
-
-        const outputLines = simulateCommand(cmd, t.machine);
-        return {
-          ...t,
-          lines: [...t.lines, inputLine, ...outputLines],
-          history: [...t.history, cmd],
-        };
-      })
-    );
+  const updateTabLines = useCallback((tabId: string, updater: (lines: TerminalLine[]) => TerminalLine[]) => {
+    setTabs((prev) => prev.map((t) => t.id === tabId ? { ...t, lines: updater(t.lines) } : t));
   }, []);
+
+  const setTabExecuting = useCallback((tabId: string, isExecuting: boolean) => {
+    setTabs((prev) => prev.map((t) => t.id === tabId ? { ...t, isExecuting } : t));
+  }, []);
+
+  const handleExecute = useCallback(async (tabId: string, cmd: string) => {
+    const tab = tabs.find((t) => t.id === tabId);
+    if (!tab) return;
+
+    // Handle clear locally
+    if (cmd.trim().toLowerCase() === "clear") {
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === tabId ? { ...t, lines: [], history: [...t.history, cmd] } : t
+        )
+      );
+      return;
+    }
+
+    // Add input line + pending indicator
+    const inputLine: TerminalLine = { type: "input", text: cmd, timestamp: now() };
+    const pendingLine: TerminalLine = { type: "pending", text: "Enviando comando via SSH...", timestamp: now() };
+
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === tabId
+          ? { ...t, lines: [...t.lines, inputLine, pendingLine], history: [...t.history, cmd], isExecuting: true }
+          : t
+      )
+    );
+
+    try {
+      // 1. Execute command via API
+      const { job_id } = await apiExecute({
+        server: tab.machine.name,
+        user: tab.machine.sshUser,
+        command: cmd,
+      });
+
+      // Update pending line to show job_id
+      updateTabLines(tabId, (lines) => {
+        const updated = [...lines];
+        let pendingIdx = -1;
+        for (let i = updated.length - 1; i >= 0; i--) { if (updated[i].type === "pending") { pendingIdx = i; break; } }
+        if (pendingIdx >= 0) {
+          updated[pendingIdx] = { type: "system", text: `Job ${job_id} criado. Aguardando resultado...`, timestamp: now() };
+        }
+        return updated;
+      });
+
+      // 2. Poll for result
+      const result = await pollJobStatus(job_id, (status) => {
+        updateTabLines(tabId, (lines) => {
+          const updated = [...lines];
+          let lastSys = -1;
+          for (let i = updated.length - 1; i >= 0; i--) { if (updated[i].type === "system" && updated[i].text.includes(job_id)) { lastSys = i; break; } }
+          if (lastSys >= 0) {
+            updated[lastSys] = { type: "system", text: `Job ${job_id} — status: ${status.status}`, timestamp: now() };
+          }
+          return updated;
+        });
+      });
+
+      // 3. Show result
+      if (result.status === "completed") {
+        updateTabLines(tabId, (lines) => [
+          ...lines,
+          { type: "output", text: result.output || "(sem output)", timestamp: now() },
+        ]);
+      } else {
+        updateTabLines(tabId, (lines) => [
+          ...lines,
+          { type: "error", text: result.error || `Job ${job_id} falhou`, timestamp: now() },
+        ]);
+      }
+    } catch (err: any) {
+      updateTabLines(tabId, (lines) => {
+        // Remove pending line if still there
+        const filtered = lines.filter((l) => l.type !== "pending");
+        return [
+          ...filtered,
+          { type: "error", text: `Erro: ${err.message || "Falha na comunicação com o agente"}`, timestamp: now() },
+        ];
+      });
+    } finally {
+      setTabExecuting(tabId, false);
+    }
+  }, [tabs, updateTabLines, setTabExecuting]);
 
   return (
     <div className="space-y-4">
@@ -399,6 +430,7 @@ export default function HeimdallCli() {
                   )}
                 />
                 <span className="text-xs">{t.machine.name}</span>
+                {t.isExecuting && <Loader2 className="h-3 w-3 animate-spin text-[hsl(45,90%,55%)]" />}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -414,7 +446,7 @@ export default function HeimdallCli() {
 
           {tabs.map((t) => (
             <TabsContent key={t.id} value={t.id} className="mt-2">
-              <TerminalView tab={t} onExecute={executeCommand} />
+              <TerminalView tab={t} onExecute={handleExecute} />
             </TabsContent>
           ))}
         </Tabs>
