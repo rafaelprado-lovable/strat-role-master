@@ -525,6 +525,17 @@ export default function HeimdallCli() {
             <Link className="h-4 w-4" />
             Conectar todas
           </Button>
+          {tabs.length > 0 && (
+            <Button
+              onClick={() => { setTabs([]); setActiveTab(""); }}
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-destructive hover:text-destructive"
+            >
+              <X className="h-4 w-4" />
+              Desconectar todas
+            </Button>
+          )}
           {tabs.length >= 2 && (
             <Button
               onClick={() => setShowBroadcast((v) => !v)}
