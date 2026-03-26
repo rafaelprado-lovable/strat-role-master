@@ -78,6 +78,7 @@ interface TerminalTab {
   history: string[];
   historyIndex: number;
   isExecuting: boolean;
+  cwd: string;
 }
 
 function now() {
