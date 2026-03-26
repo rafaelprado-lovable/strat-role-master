@@ -372,9 +372,14 @@ export default function HeimdallCli() {
 
       // 3. Show result
       if (result.status === "completed" || result.status === "finished") {
+        const decoded = (result.output || "(sem output)")
+          .replace(/\\n/g, "\n")
+          .replace(/\\t/g, "\t")
+          .replace(/\\r/g, "\r")
+          .replace(/\\\\/g, "\\");
         updateTabLines(tabId, (lines) => [
           ...lines,
-          { type: "output", text: result.output || "(sem output)", timestamp: now() },
+          { type: "output", text: decoded, timestamp: now() },
         ]);
       } else {
         updateTabLines(tabId, (lines) => [
