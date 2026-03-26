@@ -382,9 +382,14 @@ export default function HeimdallCli() {
           { type: "output", text: decoded, timestamp: now() },
         ]);
       } else {
+        const errorOutput = (result.output || result.error || `Job ${job_id} falhou`)
+          .replace(/\\n/g, "\n")
+          .replace(/\\t/g, "\t")
+          .replace(/\\r/g, "\r")
+          .replace(/\\\\/g, "\\");
         updateTabLines(tabId, (lines) => [
           ...lines,
-          { type: "error", text: result.error || `Job ${job_id} falhou`, timestamp: now() },
+          { type: "error", text: errorOutput, timestamp: now() },
         ]);
       }
     } catch (err: any) {
