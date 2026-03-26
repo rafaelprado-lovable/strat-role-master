@@ -214,6 +214,36 @@ export default function HeimdallCli() {
 
   const filteredMachines = MOCK_MACHINES.filter((m) => m.environment === selectedEnv);
 
+  // Keyboard shortcuts: Ctrl+Tab / Ctrl+Shift+Tab to switch sessions, Ctrl+1-9 to jump
+  useEffect(() => {
+    const handler = (e: globalThis.KeyboardEvent) => {
+      if (tabs.length < 2) return;
+
+      // Ctrl+Tab (next) / Ctrl+Shift+Tab (prev)
+      if (e.ctrlKey && e.key === "Tab") {
+        e.preventDefault();
+        const idx = tabs.findIndex((t) => t.id === activeTab);
+        const next = e.shiftKey
+          ? (idx - 1 + tabs.length) % tabs.length
+          : (idx + 1) % tabs.length;
+        setActiveTab(tabs[next].id);
+        return;
+      }
+
+      // Ctrl+1 through Ctrl+9
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "9") {
+        const target = parseInt(e.key) - 1;
+        if (target < tabs.length) {
+          e.preventDefault();
+          setActiveTab(tabs[target].id);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tabs, activeTab]);
+
   const addTab = useCallback(() => {
     const machine = MOCK_MACHINES.find((m) => m.id === selectedMachine);
     if (!machine) return;
