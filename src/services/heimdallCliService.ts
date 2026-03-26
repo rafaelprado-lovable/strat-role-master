@@ -38,7 +38,7 @@ export async function pollJobStatus(
     if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
     const status: JobStatus = await res.json();
     onUpdate(status);
-    if (status.status === "completed" || status.status === "finished" || status.status === "failed") {
+    if (status.status !== "pending" && status.status !== "running") {
       return status;
     }
     await new Promise((r) => setTimeout(r, intervalMs));
