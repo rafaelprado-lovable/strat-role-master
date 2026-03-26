@@ -437,8 +437,7 @@ export default function HeimdallCli() {
           <Select value={selectedEnv} onValueChange={(v) => {
             const env = v as Environment;
             setSelectedEnv(env);
-            const first = MOCK_MACHINES.find((m) => m.environment === env);
-            if (first) setSelectedMachine(first.id);
+            setSelectedMachines(new Set());
           }}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Ambiente" />
