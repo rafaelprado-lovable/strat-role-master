@@ -35,6 +35,7 @@ import NodeDocs from "./pages/NodeDocs";
 import Audit from "./pages/Audit";
 import Runbooks from "./pages/Runbooks";
 import ChangeExecutionPmid from "./pages/ChangeExecutionPmid";
+import HeimdallCli from "./pages/HeimdallCli";
 
 const queryClient = new QueryClient();
 
@@ -283,6 +284,14 @@ const App = () => (
                   <AppLayout>
                     <Runbooks />
                   </AppLayout>
+              }
+            />
+            <Route
+              path="/heimdall-cli"
+              element={
+                <AppLayout>
+                  <HeimdallCli />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
