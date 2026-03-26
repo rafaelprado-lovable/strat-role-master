@@ -12,7 +12,7 @@ interface ExecuteResponse {
 
 interface JobStatus {
   id: string;
-  status: "pending" | "running" | "completed" | "finished" | "failed";
+  status: string;
   output?: string;
   error?: string;
 }
