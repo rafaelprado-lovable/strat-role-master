@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
-import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Terminal, Server, Plus, X, Circle, Wifi, WifiOff, Loader2, Send, Radio } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { executeCommand as apiExecute, pollJobStatus } from "@/services/heimdallCliService";
 
@@ -206,6 +208,9 @@ export default function HeimdallCli() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [selectedEnv, setSelectedEnv] = useState<Environment>("production");
   const [selectedMachine, setSelectedMachine] = useState<string>(MOCK_MACHINES[0].id);
+  const [broadcastCmd, setBroadcastCmd] = useState("");
+  const [broadcastTargets, setBroadcastTargets] = useState<Set<string>>(new Set());
+  const [showBroadcast, setShowBroadcast] = useState(false);
 
   const filteredMachines = MOCK_MACHINES.filter((m) => m.environment === selectedEnv);
 
@@ -329,6 +334,28 @@ export default function HeimdallCli() {
     }
   }, [tabs, updateTabLines, setTabExecuting]);
 
+  const toggleBroadcastTarget = useCallback((tabId: string) => {
+    setBroadcastTargets((prev) => {
+      const next = new Set(prev);
+      if (next.has(tabId)) next.delete(tabId);
+      else next.add(tabId);
+      return next;
+    });
+  }, []);
+
+  const selectAllBroadcast = useCallback(() => {
+    setBroadcastTargets(new Set(tabs.map((t) => t.id)));
+  }, [tabs]);
+
+  const handleBroadcast = useCallback(() => {
+    if (!broadcastCmd.trim() || broadcastTargets.size === 0) return;
+    const cmd = broadcastCmd.trim();
+    broadcastTargets.forEach((tabId) => {
+      handleExecute(tabId, cmd);
+    });
+    setBroadcastCmd("");
+  }, [broadcastCmd, broadcastTargets, handleExecute]);
+
   return (
     <div className="space-y-4">
       {/* header */}
@@ -398,8 +425,78 @@ export default function HeimdallCli() {
             <Plus className="h-4 w-4" />
             Nova sessão
           </Button>
+          {tabs.length >= 2 && (
+            <Button
+              onClick={() => setShowBroadcast((v) => !v)}
+              size="sm"
+              variant={showBroadcast ? "default" : "outline"}
+              className="gap-1.5"
+            >
+              <Radio className="h-4 w-4" />
+              Broadcast
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* broadcast bar */}
+      {showBroadcast && tabs.length >= 2 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Radio className="h-4 w-4 text-primary" />
+            Broadcast — enviar comando para múltiplas sessões
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((t) => (
+              <label
+                key={t.id}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm cursor-pointer transition-colors",
+                  broadcastTargets.has(t.id)
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                )}
+              >
+                <Checkbox
+                  checked={broadcastTargets.has(t.id)}
+                  onCheckedChange={() => toggleBroadcastTarget(t.id)}
+                />
+                <Circle
+                  className={cn(
+                    "h-2 w-2 fill-current",
+                    t.machine.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
+                  )}
+                />
+                <span>{t.machine.name}</span>
+                {t.isExecuting && <Loader2 className="h-3 w-3 animate-spin text-[hsl(45,90%,55%)]" />}
+              </label>
+            ))}
+            <Button variant="ghost" size="sm" onClick={selectAllBroadcast} className="text-xs">
+              Selecionar todas
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              value={broadcastCmd}
+              onChange={(e) => setBroadcastCmd(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleBroadcast(); }}
+              placeholder="Comando para enviar a todas as sessões selecionadas..."
+              className="font-mono text-sm"
+            />
+            <Button
+              onClick={handleBroadcast}
+              size="sm"
+              disabled={!broadcastCmd.trim() || broadcastTargets.size === 0}
+              className="gap-1.5"
+            >
+              <Send className="h-4 w-4" />
+              Enviar ({broadcastTargets.size})
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* tabs area */}
       {tabs.length === 0 ? (
