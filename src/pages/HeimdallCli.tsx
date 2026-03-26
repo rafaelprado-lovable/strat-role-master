@@ -514,34 +514,45 @@ export default function HeimdallCli() {
                 <ChevronsUpDown className="h-4 w-4 opacity-50 ml-2" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-2" align="end">
-              <div className="space-y-1 max-h-[240px] overflow-y-auto">
-                {filteredMachines.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleMachineSelection(m.id)}
-                    className={cn(
-                      "flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-accent transition-colors",
-                      selectedMachines.has(m.id) && "bg-accent"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                      selectedMachines.has(m.id) ? "bg-primary text-primary-foreground" : "opacity-50"
-                    )}>
-                      {selectedMachines.has(m.id) && <Check className="h-3 w-3" />}
+            <PopoverContent className="w-[320px] p-2" align="end">
+              <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                {(selectedCluster === "all" ? filteredClusters : filteredClusters.filter(c => c.id === selectedCluster)).map((cluster) => {
+                  const clusterMachines = filteredMachines.filter(m => m.clusterId === cluster.id);
+                  if (clusterMachines.length === 0) return null;
+                  return (
+                    <div key={cluster.id}>
+                      <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {cluster.name}
+                      </div>
+                      {clusterMachines.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => toggleMachineSelection(m.id)}
+                          className={cn(
+                            "flex items-center gap-2 w-full px-2 py-1.5 rounded-sm text-sm hover:bg-accent transition-colors",
+                            selectedMachines.has(m.id) && "bg-accent"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                            selectedMachines.has(m.id) ? "bg-primary text-primary-foreground" : "opacity-50"
+                          )}>
+                            {selectedMachines.has(m.id) && <Check className="h-3 w-3" />}
+                          </div>
+                          <Circle
+                            className={cn(
+                              "h-2 w-2 fill-current",
+                              m.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
+                            )}
+                          />
+                          <Server className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{m.name}</span>
+                          <span className="text-muted-foreground text-xs ml-auto">({m.host})</span>
+                        </button>
+                      ))}
                     </div>
-                    <Circle
-                      className={cn(
-                        "h-2 w-2 fill-current",
-                        m.status === "online" ? "text-[hsl(120,60%,50%)]" : "text-destructive"
-                      )}
-                    />
-                    <Server className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{m.name}</span>
-                    <span className="text-muted-foreground text-xs ml-auto">({m.host})</span>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
               <div className="border-t border-border mt-2 pt-2 flex gap-2">
                 <Button
