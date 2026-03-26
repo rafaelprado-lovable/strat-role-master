@@ -222,13 +222,17 @@ export default function HeimdallCli() {
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   const [selectedEnv, setSelectedEnv] = useState<Environment>("production");
+  const [selectedCluster, setSelectedCluster] = useState<string>("all");
   const [selectedMachines, setSelectedMachines] = useState<Set<string>>(new Set());
   const [machinePopoverOpen, setMachinePopoverOpen] = useState(false);
   const [broadcastCmd, setBroadcastCmd] = useState("");
   const [broadcastTargets, setBroadcastTargets] = useState<Set<string>>(new Set());
   const [showBroadcast, setShowBroadcast] = useState(false);
 
-  const filteredMachines = MOCK_MACHINES.filter((m) => m.environment === selectedEnv);
+  const filteredClusters = MOCK_CLUSTERS.filter((c) => c.environment === selectedEnv);
+  const filteredMachines = MOCK_MACHINES.filter(
+    (m) => m.environment === selectedEnv && (selectedCluster === "all" || m.clusterId === selectedCluster)
+  );
 
   // Keyboard shortcuts: Alt+← / Alt+→ to switch sessions, Alt+1-9 to jump
   useEffect(() => {
