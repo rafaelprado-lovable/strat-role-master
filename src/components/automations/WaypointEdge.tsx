@@ -74,17 +74,19 @@ export function WaypointEdge({
 
   const edgeStyle = useMemo(() => {
     const base = { strokeWidth: 2, ...style };
+    if (edgeData.switchCase) return { ...base, stroke: 'hsl(var(--chart-2))' };
     if (isLoop) return { ...base, stroke: 'hsl(var(--chart-4))', strokeDasharray: '6 3' };
     if (hasCondition) return { ...base, stroke: 'hsl(var(--chart-2))' };
     return { ...base, stroke: 'hsl(var(--primary))' };
-  }, [isLoop, hasCondition, style]);
+  }, [isLoop, hasCondition, edgeData.switchCase, style]);
 
   const edgeLabel = useMemo(() => {
+    if (edgeData.switchCase) return `🔀 ${edgeData.switchCase}`;
     if (isLoop && hasCondition) return `🔄 while: ${edgeData.condition} (max ${edgeData.max_iterations || '?'})`;
     if (isLoop) return `🔄 while true (max ${edgeData.max_iterations || '?'})`;
     if (hasCondition) return `⚡ ${edgeData.condition}`;
     return '';
-  }, [isLoop, hasCondition, edgeData.condition, edgeData.max_iterations]);
+  }, [isLoop, hasCondition, edgeData.condition, edgeData.max_iterations, edgeData.switchCase]);
 
   const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints, isSelfLoop);
 

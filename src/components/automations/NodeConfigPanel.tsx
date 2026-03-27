@@ -246,7 +246,8 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
             <Select value={d.definition_id || ''} onValueChange={(v) => {
               const def = definitions.find(dd => dd.value === v);
               const newLabel = def?.label || v;
-              update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
+              const switchUpdate = v === 'switch_v1' ? { switchCases: ['Case 1', 'Case 2', 'Default'] } : { switchCases: undefined };
+              update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger', ...switchUpdate });
               onRenameNode(node.id, newLabel);
             }}>
               <SelectTrigger className="h-9 text-sm">
@@ -272,6 +273,67 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
               placeholder="Descrição opcional"
             />
           </div>
+
+          {/* Switch Cases */}
+          {d.definition_id === 'switch_v1' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-chart-2/10">
+                    <Share2 className="h-4 w-4 text-chart-2" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-chart-2">Switch Cases</Label>
+                    <p className="text-[10px] text-muted-foreground">Caminhos de saída do switch</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => {
+                    const cases = (d.switchCases as string[]) || [];
+                    update({ switchCases: [...cases, `Case ${cases.length + 1}`] });
+                  }}
+                >
+                  + Case
+                </Button>
+              </div>
+              <div className="space-y-1.5 pl-1 border-l-2 border-chart-2/20 ml-3">
+                {((d.switchCases as string[]) || []).map((c: string, i: number) => (
+                  <div key={i} className="flex items-center gap-2 pl-4">
+                    <div
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ background: `hsl(${['210 100% 50%', '142 70% 45%', '35 95% 55%', '280 80% 55%', '350 80% 55%', '190 100% 45%'][i % 6]})` }}
+                    />
+                    <Input
+                      value={c}
+                      onChange={(e) => {
+                        const cases = [...((d.switchCases as string[]) || [])];
+                        cases[i] = e.target.value;
+                        update({ switchCases: cases });
+                      }}
+                      className="h-7 text-xs flex-1"
+                      placeholder={`Case ${i + 1}`}
+                    />
+                    {((d.switchCases as string[]) || []).length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          const cases = ((d.switchCases as string[]) || []).filter((_: string, j: number) => j !== i);
+                          update({ switchCases: cases });
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* ===== TAB: INPUTS ===== */}

@@ -259,6 +259,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
       isTrigger: blockLibrary.find(d => d.value === n.definition_id)?.category === 'trigger',
+      ...(n.definition_id === 'switch_v1' ? { switchCases: (n.config as any)?.switchCases || ['Case 1', 'Case 2', 'Default'] } : {}),
     },
   })) || [];
 
@@ -338,7 +339,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       const node: any = {
         id: n.id,
         definition_id: d.definition_id || '',
-        config: {},
+        config: {
+          ...(d.switchCases ? { switchCases: d.switchCases } : {}),
+        },
         position: n.position,
       };
       if (d.for_each) node.for_each = d.for_each;
@@ -371,26 +374,38 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const onConnect = useCallback(
     (connection: Connection) => {
       const isSelfLoop = connection.source === connection.target;
+
+      // Resolve switch case label from sourceHandle
+      let switchCase: string | undefined;
+      if (connection.sourceHandle?.startsWith('switch-')) {
+        const idx = parseInt(connection.sourceHandle.replace('switch-', ''), 10);
+        const sourceNode = nodes.find(n => n.id === connection.source);
+        const cases = (sourceNode?.data as any)?.switchCases as string[] | undefined;
+        if (cases && cases[idx] !== undefined) {
+          switchCase = cases[idx];
+        }
+      }
+
       const newEdge = {
         ...connection,
         type: 'waypoint',
         data: {
-          condition: '',
+          condition: switchCase ? `${connection.source}.output.case == "${switchCase}"` : '',
           loop: isSelfLoop,
           max_iterations: isSelfLoop ? 5 : undefined,
+          ...(switchCase ? { switchCase } : {}),
         },
       };
       if (isSelfLoop) {
         newEdge.sourceHandle = 'loop-out';
         newEdge.targetHandle = 'loop-in';
-        // Mark the node as having a loop
         setNodes((nds) => nds.map((n) =>
           n.id === connection.source ? { ...n, data: { ...n.data, hasLoop: true } } : n
         ));
       }
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, setNodes]
+    [setEdges, setNodes, nodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -428,11 +443,20 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         const nextIndex = existing.length > 0 ? Math.max(...existing) + 1 : 1;
         const nodeId = existing.length === 0 ? base : `${base}-${nextIndex}`;
 
+        const isSwitch = defId === 'switch_v1';
         const newNode: Node = {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, icon: blockLibrary.find(d => d.value === defId)?.icon || '', description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
+          data: {
+            label,
+            definition_id: defId,
+            icon: blockLibrary.find(d => d.value === defId)?.icon || '',
+            description: '',
+            hasForEach: false,
+            isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger',
+            ...(isSwitch ? { switchCases: ['Case 1', 'Case 2', 'Default'] } : {}),
+          },
         };
 
         return [...nds, newNode];
