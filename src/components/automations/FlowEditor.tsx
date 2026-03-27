@@ -535,7 +535,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   }, []);
 
   const createAutoVersion = useCallback(async (wf: Workflow) => {
-    if (!wf.id || wf.id.startsWith('wf-')) return; // skip unsaved workflows
+    if (!wf.id) return;
     try {
       await workflowVersionService.create(wf.id, exportWorkflowJson(wf) as Record<string, unknown>);
     } catch (err) {
@@ -544,9 +544,59 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   }, []);
 
   const handleRestoreVersion = useCallback((snapshot: Record<string, unknown>) => {
-    // Reload page with restored data — parent will re-render with updated workflow
-    window.location.reload();
-  }, []);
+    // Apply snapshot to current editor state
+    const snapNodes = (snapshot.nodes as any[]) || [];
+    const snapEdges = (snapshot.edges as any[]) || [];
+
+    const restoredNodes = snapNodes.map((n: any, i: number) => ({
+      id: n.id,
+      type: 'task' as const,
+      position: n.position || { x: i * 280, y: 150 },
+      data: {
+        label: n.config?.label || n.definition_id,
+        definition_id: n.definition_id || '',
+        icon: blockLibrary.find(d => d.value === n.definition_id)?.icon || '',
+        description: n.config?.description || '',
+        for_each: n.for_each,
+        hasForEach: !!n.for_each,
+        hasLoop: false,
+        isTrigger: blockLibrary.find(d => d.value === n.definition_id)?.category === 'trigger',
+      },
+    }));
+
+    const restoredEdges = snapEdges.map((e: any, i: number) => {
+      const isSelfLoop = e.from === e.to;
+      return {
+        id: e.id || `e-${i}`,
+        source: e.from,
+        target: e.to,
+        sourceHandle: isSelfLoop ? 'loop-out' : 'right',
+        targetHandle: isSelfLoop ? 'loop-in' : 'left',
+        type: 'waypoint' as const,
+        data: {
+          condition: e.condition || '',
+          loop: e.loop || false,
+          max_iterations: e.max_iterations,
+          reopen_tasks: e.reopen_tasks || [],
+        },
+      };
+    });
+
+    setNodes(restoredNodes);
+    setEdges(restoredEdges);
+
+    // Restore inputs
+    const restoredInputs: Record<string, Record<string, unknown>> = {};
+    snapNodes.forEach((n: any) => {
+      if (n.config) restoredInputs[n.id] = n.config;
+    });
+    setNodeInputs(restoredInputs);
+
+    if (snapshot.name) setName(snapshot.name as string);
+    if (snapshot.description !== undefined) setDescription((snapshot.description as string) || '');
+
+    toast.success('Versão restaurada no editor');
+  }, [blockLibrary, setNodes, setEdges]);
 
   const handleSave = () => {
     const wf = buildWorkflow();
@@ -661,7 +711,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </span>
             )}
           </Button>
-          {workflow?.id && !workflow.id.startsWith('wf-') && (
+          {workflow?.id && (
             <Button variant="outline" size="sm" onClick={() => setVersionHistoryOpen(true)}>
               <History className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Versões</span>
