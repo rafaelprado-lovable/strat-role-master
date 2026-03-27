@@ -135,6 +135,22 @@ const NetworkAgentCheck = () => {
     }
   }, [endpoints]);
 
+  // ─── Click on destination node → call ping API ────────────────
+  const handleNodeClick = useCallback(async (name: string, host: string) => {
+    setSelectedNode({ name, host });
+    setNodePing(null);
+    setNodePingLoading(true);
+    try {
+      const ping = await pingHost(host);
+      setNodePing(ping);
+    } catch (err: any) {
+      setNodePing(null);
+      setError(`Erro ao pingar ${host}: ${err.message}`);
+    } finally {
+      setNodePingLoading(false);
+    }
+  }, []);
+
   // ─── Traffic animation helpers ────────────────────────────────
   const clearTraffic = () => {
     if (trafficIntervalRef.current) {
