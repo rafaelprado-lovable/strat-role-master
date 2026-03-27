@@ -741,10 +741,10 @@ const NetworkAgentCheck = () => {
         </Card>
       </div>
 
-      {/* Main Grid: sidebar + canvas */}
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4 min-w-0" style={{ minHeight: 'calc(100vh - 320px)' }}>
+      {/* Main layout: sidebar + canvas */}
+      <div className="flex flex-col xl:flex-row gap-4 min-w-0" style={{ height: 'calc(100vh - 340px)', minHeight: 500 }}>
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="xl:w-[320px] xl:shrink-0 xl:overflow-y-auto space-y-4 xl:max-h-full">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Filtro de rota</CardTitle>
