@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network, Loader2, X } from 'lucide-react';
 import {
   fetchEndpoints,
   runAllTests,
+  pingHost,
   type EndpointConfig,
   type EndpointResult,
   type PingResult,
@@ -95,6 +96,9 @@ const NetworkAgentCheck = () => {
   const [lastRun, setLastRun] = useState<Date | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [error, setError] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<{ name: string; host: string } | null>(null);
+  const [nodePing, setNodePing] = useState<PingResult | null>(null);
+  const [nodePingLoading, setNodePingLoading] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const trafficIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -488,7 +492,12 @@ const NetworkAgentCheck = () => {
         if (top + node.offsetHeight > window.innerHeight - margin) top = window.innerHeight - node.offsetHeight - margin;
       }
       tooltipDiv.style('left', `${left}px`).style('top', `${top}px`);
-    }).on('mouseout', () => tooltipDiv.style('opacity', '0'));
+    }).on('mouseout', () => tooltipDiv.style('opacity', '0'))
+      .on('click', (_event, d) => {
+        if (d.type === 'destination' && d.host) {
+          handleNodeClick(d.name || d.host, d.host);
+        }
+      });
 
     // Start packet animation loop
     const emitPackets = () => {
