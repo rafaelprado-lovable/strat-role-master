@@ -63,17 +63,31 @@ export interface Workflow {
 export const DEFINITION_IDS = [
   // Gatilhos
   { value: 'get_specific_incident_v1', label: 'Get Incident', icon: 'alert-triangle', description: 'Busca incidente específico', category: 'trigger' },
-  // Filtros
+  { value: 'webhook_trigger_v1', label: 'Webhook', icon: 'webhook', description: 'Dispara workflow via webhook HTTP', category: 'trigger' },
+  { value: 'schedule_trigger_v1', label: 'Schedule', icon: 'calendar-clock', description: 'Dispara workflow por agendamento (cron)', category: 'trigger' },
+  // Filtros / Controle de fluxo
   { value: 'condition_v1', label: 'Condition', icon: 'git-branch', description: 'Filtra fluxo com base em condição', category: 'filter' },
   { value: 'switch_v1', label: 'Switch', icon: 'split', description: 'Divide fluxo em múltiplos caminhos', category: 'filter' },
   { value: 'filter_v1', label: 'Filter', icon: 'filter', description: 'Filtra itens de uma lista por critério', category: 'filter' },
-  // Ações
+  { value: 'merge_v1', label: 'Merge', icon: 'git-merge', description: 'Combina dados de múltiplas entradas', category: 'filter' },
+  { value: 'split_v1', label: 'Split Out', icon: 'split-square-horizontal', description: 'Divide um item em múltiplos itens', category: 'filter' },
+  { value: 'aggregate_v1', label: 'Aggregate', icon: 'layers', description: 'Agrega múltiplos itens em um só', category: 'filter' },
+  { value: 'sort_v1', label: 'Sort', icon: 'arrow-up-down', description: 'Ordena itens por campo', category: 'filter' },
+  { value: 'limit_v1', label: 'Limit', icon: 'list-end', description: 'Limita quantidade de itens', category: 'filter' },
+  { value: 'deduplicate_v1', label: 'Remove Duplicates', icon: 'copy-minus', description: 'Remove itens duplicados por chave', category: 'filter' },
+  { value: 'noop_v1', label: 'No Operation', icon: 'circle-dot', description: 'Passa dados sem alteração (útil para organizar fluxo)', category: 'filter' },
+  // Ações / Transformação
   { value: 'ssh_agent_v1', label: 'SSH Execution', icon: 'terminal', description: 'Executa comando via SSH', category: 'action' },
   { value: 'send_whatsapp_message_v1', label: 'WhatsApp Message', icon: 'message-circle', description: 'Envia mensagem via WhatsApp', category: 'action' },
   { value: 'http_agent_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
   { value: 'delay_v1', label: 'Delay', icon: 'timer', description: 'Aguarda um tempo antes de continuar', category: 'action' },
   { value: 'llm_agent_v1', label: 'LLM Analyse', icon: 'brain', description: 'Análise inteligente via LLM', category: 'action' },
   { value: 'code_execution_v1', label: 'Code', icon: 'code-2', description: 'Executa código personalizado (Python, JS, Shell, JSON)', category: 'action' },
+  { value: 'set_v1', label: 'Set', icon: 'pencil-line', description: 'Define ou transforma valores de campos', category: 'action' },
+  { value: 'rename_keys_v1', label: 'Rename Keys', icon: 'replace', description: 'Renomeia chaves dos dados', category: 'action' },
+  { value: 'summarize_v1', label: 'Summarize', icon: 'bar-chart-3', description: 'Resume dados com operações (soma, média, contagem)', category: 'action' },
+  { value: 'split_batches_v1', label: 'Split In Batches', icon: 'group', description: 'Divide itens em lotes para processamento', category: 'action' },
+  { value: 'wait_v1', label: 'Wait', icon: 'hourglass', description: 'Pausa e aguarda evento ou tempo', category: 'action' },
 ] as const;
 
 export type DefinitionId = typeof DEFINITION_IDS[number]['value'];
