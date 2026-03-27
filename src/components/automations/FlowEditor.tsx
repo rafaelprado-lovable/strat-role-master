@@ -222,20 +222,8 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
-  // Fetch definitions from API
-  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>(STATIC_BLOCKS);
-  const [apiDefinitions, setApiDefinitions] = useState<Definition[]>([]);
-
-  useEffect(() => {
-    definitionService.list().then(defs => {
-      if (Array.isArray(defs) && defs.length > 0) {
-        setBlockLibrary(definitionsToBlocks(defs));
-        setApiDefinitions(defs);
-      }
-    }).catch(err => {
-      console.warn('Falha ao carregar definições da API, usando fallback estático:', err);
-    });
-  }, []);
+  // Hardcoded block library — always available
+  const blockLibrary = STATIC_BLOCKS;
 
   const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
   const filters = useMemo(() => blockLibrary.filter(b => b.category === 'filter'), [blockLibrary]);
@@ -866,7 +854,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
             allNodes={nodes}
             definitions={blockLibrary}
-            apiDefinitions={apiDefinitions}
+            apiDefinitions={[]}
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
             onUpdateEdge={handleEdgeDataUpdate}
