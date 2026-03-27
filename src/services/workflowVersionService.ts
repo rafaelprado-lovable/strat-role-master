@@ -1,14 +1,12 @@
-import { apiClient } from './apiClient';
-
 export interface WorkflowVersion {
   id: string;
   workflow_id: string;
   version: number;
-  label?: string; // named version (manual tag)
-  snapshot: Record<string, unknown>; // full workflow JSON at this point
+  label?: string;
+  snapshot: Record<string, unknown>;
   created_at: string;
   created_by?: string;
-  auto: boolean; // true = auto-saved, false = manually tagged
+  auto: boolean;
 }
 
 export interface VersionDiff {
@@ -21,56 +19,65 @@ export interface VersionDiff {
   config_changes: Record<string, { field: string; from: unknown; to: unknown }[]>;
 }
 
-const ORCHESTRATOR_HEADER = { orchestrator: 'lovable' };
+const STORAGE_KEY = 'workflow_versions';
+
+function loadAll(): WorkflowVersion[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAll(versions: WorkflowVersion[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(versions));
+}
 
 export const workflowVersionService = {
-  /** List all versions for a workflow */
   async list(workflowId: string): Promise<WorkflowVersion[]> {
-    return apiClient.get<WorkflowVersion[]>(
-      `/v1/read/workflow/versions?workflow_id=${encodeURIComponent(workflowId)}`
-    );
+    const all = loadAll();
+    return all
+      .filter(v => v.workflow_id === workflowId)
+      .sort((a, b) => b.version - a.version);
   },
 
-  /** Get a specific version */
   async get(versionId: string): Promise<WorkflowVersion> {
-    return apiClient.get<WorkflowVersion>(
-      `/v1/read/workflow/version?version_id=${encodeURIComponent(versionId)}`
-    );
+    const all = loadAll();
+    const found = all.find(v => v.id === versionId);
+    if (!found) throw new Error('Versão não encontrada');
+    return found;
   },
 
-  /** Create a version snapshot (auto or manual) */
   async create(workflowId: string, snapshot: Record<string, unknown>, label?: string): Promise<WorkflowVersion> {
-    const response = await apiClient.rawFetch('/v1/create/workflow/version', {
-      method: 'POST',
-      headers: ORCHESTRATOR_HEADER,
-      body: JSON.stringify({
-        workflow_id: workflowId,
-        snapshot,
-        label: label || undefined,
-        auto: !label,
-      }),
-    });
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
-    }
-    return response.json();
+    const all = loadAll();
+    const existing = all.filter(v => v.workflow_id === workflowId);
+    const nextVersion = existing.length > 0
+      ? Math.max(...existing.map(v => v.version)) + 1
+      : 1;
+
+    const newVersion: WorkflowVersion = {
+      id: `ver-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      workflow_id: workflowId,
+      version: nextVersion,
+      label: label || undefined,
+      snapshot: JSON.parse(JSON.stringify(snapshot)),
+      created_at: new Date().toISOString(),
+      auto: !label,
+    };
+
+    all.push(newVersion);
+    saveAll(all);
+    return newVersion;
   },
 
-  /** Restore a workflow to a specific version */
-  async restore(workflowId: string, versionId: string): Promise<void> {
-    const response = await apiClient.rawFetch('/v1/update/workflow/restore', {
-      method: 'POST',
-      headers: ORCHESTRATOR_HEADER,
-      body: JSON.stringify({ workflow_id: workflowId, version_id: versionId }),
-    });
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(`Erro HTTP ${response.status}: ${errorText || response.statusText}`);
-    }
+  async restore(_workflowId: string, versionId: string): Promise<WorkflowVersion> {
+    const all = loadAll();
+    const found = all.find(v => v.id === versionId);
+    if (!found) throw new Error('Versão não encontrada');
+    return found;
   },
 
-  /** Compare two versions locally */
   compare(versionA: WorkflowVersion, versionB: WorkflowVersion): VersionDiff {
     const nodesA: any[] = (versionA.snapshot.nodes as any[]) || [];
     const nodesB: any[] = (versionB.snapshot.nodes as any[]) || [];
