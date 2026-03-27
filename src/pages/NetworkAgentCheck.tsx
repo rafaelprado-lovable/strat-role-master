@@ -741,10 +741,10 @@ const NetworkAgentCheck = () => {
         </Card>
       </div>
 
-      {/* Main Grid: sidebar + canvas */}
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4 min-w-0" style={{ minHeight: 'calc(100vh - 320px)' }}>
+      {/* Main layout: sidebar + canvas */}
+      <div className="flex flex-col xl:flex-row gap-4 min-w-0" style={{ height: 'calc(100vh - 340px)', minHeight: 500 }}>
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="xl:w-[320px] xl:shrink-0 xl:overflow-y-auto space-y-4 xl:max-h-full">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Filtro de rota</CardTitle>
@@ -875,8 +875,8 @@ const NetworkAgentCheck = () => {
         </div>
 
         {/* Network Canvas */}
-        <Card className="min-w-0 overflow-visible">
-          <CardHeader className="pb-2">
+        <Card className="min-w-0 flex-1 flex flex-col overflow-hidden">
+          <CardHeader className="pb-2 shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Activity className="h-4 w-4" />
@@ -895,14 +895,12 @@ const NetworkAgentCheck = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 flex-1 min-h-0">
             <div
               ref={canvasRef}
-              className="w-full border-t border-border relative overflow-hidden"
+              className="w-full h-full border-t border-border relative overflow-hidden"
               style={{
-                height: 'calc(100vh - 380px)',
-                minHeight: 500,
-                maxHeight: 800,
+                minHeight: 400,
                 background: 'radial-gradient(circle at 50% 50%, hsl(var(--muted) / 0.05), transparent 70%), hsl(var(--card))',
                 backgroundSize: '28px 28px',
               }}
