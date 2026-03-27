@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network, Loader2, X } from 'lucide-react';
 import {
   fetchEndpoints,
   runAllTests,
+  pingHost,
   type EndpointConfig,
   type EndpointResult,
   type PingResult,
@@ -95,6 +96,9 @@ const NetworkAgentCheck = () => {
   const [lastRun, setLastRun] = useState<Date | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [error, setError] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<{ name: string; host: string } | null>(null);
+  const [nodePing, setNodePing] = useState<PingResult | null>(null);
+  const [nodePingLoading, setNodePingLoading] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const trafficIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -130,6 +134,22 @@ const NetworkAgentCheck = () => {
       setLoading(false);
     }
   }, [endpoints]);
+
+  // ─── Click on destination node → call ping API ────────────────
+  const handleNodeClick = useCallback(async (name: string, host: string) => {
+    setSelectedNode({ name, host });
+    setNodePing(null);
+    setNodePingLoading(true);
+    try {
+      const ping = await pingHost(host);
+      setNodePing(ping);
+    } catch (err: any) {
+      setNodePing(null);
+      setError(`Erro ao pingar ${host}: ${err.message}`);
+    } finally {
+      setNodePingLoading(false);
+    }
+  }, []);
 
   // ─── Traffic animation helpers ────────────────────────────────
   const clearTraffic = () => {
@@ -488,7 +508,12 @@ const NetworkAgentCheck = () => {
         if (top + node.offsetHeight > window.innerHeight - margin) top = window.innerHeight - node.offsetHeight - margin;
       }
       tooltipDiv.style('left', `${left}px`).style('top', `${top}px`);
-    }).on('mouseout', () => tooltipDiv.style('opacity', '0'));
+    }).on('mouseout', () => tooltipDiv.style('opacity', '0'))
+      .on('click', (_event, d) => {
+        if (d.type === 'destination' && d.host) {
+          handleNodeClick(d.name || d.host, d.host);
+        }
+      });
 
     // Start packet animation loop
     const emitPackets = () => {
@@ -708,6 +733,60 @@ const NetworkAgentCheck = () => {
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {/* Node Detail Panel */}
+          {selectedNode && (
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Detalhe do Nó</CardTitle>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedNode(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-3">
+                {nodePingLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : nodePing ? (
+                  <div className="space-y-1.5 text-xs font-mono">
+                    {[
+                      ['Destino', selectedNode.name],
+                      ['Host', selectedNode.host],
+                      ['Nome resolvido', nodePing.resolved_name || '-'],
+                      ['Status', '__status__'],
+                      ['Pacotes (T/R)', `${nodePing.transmitted}/${nodePing.received}`],
+                      ['Perda', `${nodePing.loss}%`],
+                      ['Alerta', nodePing.alert?.reason || (nodePing.alert?.sent ? 'enviado' : '-')],
+                      ['RTT medio', nodePing.rtt_avg != null ? `${nodePing.rtt_avg.toFixed(2)} ms` : '-'],
+                      ['RTT min/max', nodePing.rtt_min != null && nodePing.rtt_max != null ? `${nodePing.rtt_min.toFixed(2)} / ${nodePing.rtt_max.toFixed(2)} ms` : '-'],
+                    ].map(([label, value]) => {
+                      if (value === '__status__') {
+                        const sev = getSeverity(nodePing);
+                        const st = toStatusLabel(sev);
+                        return (
+                          <div key={label} className="flex justify-between">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className={sev === 'success' ? 'text-emerald-400 font-semibold' : sev === 'warning' ? 'text-amber-400 font-semibold' : 'text-destructive font-semibold'}>
+                              {nodePing.error || st.text}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={label as string} className="flex justify-between">
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className="text-foreground">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">Erro ao obter dados de ping</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-2">
