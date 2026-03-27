@@ -218,20 +218,15 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
-  // Start with hardcoded blocks, merge API definitions on top
-  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>(STATIC_BLOCKS);
+  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>([]);
 
   useEffect(() => {
     definitionService.list().then(defs => {
       if (Array.isArray(defs) && defs.length > 0) {
-        const apiBlocks = definitionsToBlocks(defs);
-        // Merge: API blocks + static blocks not already in API
-        const apiValues = new Set(apiBlocks.map(b => b.value));
-        const merged = [...apiBlocks, ...STATIC_BLOCKS.filter(b => !apiValues.has(b.value))];
-        setBlockLibrary(merged);
+        setBlockLibrary(definitionsToBlocks(defs));
       }
     }).catch(err => {
-      console.warn('Falha ao carregar definições da API, usando fallback estático:', err);
+      console.warn('Falha ao carregar definições da API:', err);
     });
   }, []);
 
