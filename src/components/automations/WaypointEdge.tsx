@@ -74,10 +74,11 @@ export function WaypointEdge({
 
   const edgeStyle = useMemo(() => {
     const base = { strokeWidth: 2, ...style };
+    if (edgeData.switchCase) return { ...base, stroke: 'hsl(var(--chart-2))' };
     if (isLoop) return { ...base, stroke: 'hsl(var(--chart-4))', strokeDasharray: '6 3' };
     if (hasCondition) return { ...base, stroke: 'hsl(var(--chart-2))' };
     return { ...base, stroke: 'hsl(var(--primary))' };
-  }, [isLoop, hasCondition, style]);
+  }, [isLoop, hasCondition, edgeData.switchCase, style]);
 
   const edgeLabel = useMemo(() => {
     if (edgeData.switchCase) return `🔀 ${edgeData.switchCase}`;
