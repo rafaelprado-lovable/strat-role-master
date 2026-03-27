@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Edit2, MoreVertical, Play, Pause, Trash2, Copy, Clock, Search, Plus,
-  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay,
+  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay, RefreshCw,
 } from 'lucide-react';
 import { Workflow, WorkflowTag } from '@/types/automations';
 import { format } from 'date-fns';
