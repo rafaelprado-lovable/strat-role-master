@@ -226,16 +226,16 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           {/* ID */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">ID do Nó</Label>
-            <Input value={node.id} disabled className="h-9 text-sm font-mono bg-muted/50" />
+            <Textarea value={node.id} disabled className="text-sm font-mono bg-muted/50 min-h-[36px]" />
           </div>
 
           {/* Label */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">Nome</Label>
-            <Input
+            <Textarea
               value={d.label || ''}
               onChange={(e) => update({ label: e.target.value })}
-              className="h-9 text-sm"
+              className="text-sm min-h-[36px]"
               placeholder="Nome do bloco"
             />
           </div>
@@ -265,10 +265,10 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
           {/* Description */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">Descrição</Label>
-            <Input
+            <Textarea
               value={d.description || ''}
               onChange={(e) => update({ description: e.target.value })}
-              className="h-9 text-sm"
+              className="text-sm min-h-[36px]"
               placeholder="Descrição opcional"
             />
           </div>
@@ -339,11 +339,11 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                         Condição do while <span className="text-destructive">*</span>
                       </Label>
                       <div className="flex gap-1">
-                        <Input
+                      <Textarea
                           value={loopData.condition || ''}
                           onChange={(e) => updateLoopEdge({ condition: e.target.value })}
                           placeholder="node-id.output.status != 200"
-                          className="h-9 text-sm font-mono flex-1"
+                          className="text-sm font-mono flex-1 min-h-[36px]"
                         />
                         <RefDropdown
                           allNodes={allNodes}
@@ -557,11 +557,11 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                   <div className="space-y-1.5">
                     <Label className="text-xs">items <span className="text-destructive">*</span></Label>
                     <div className="flex gap-1">
-                      <Input
+                      <Textarea
                         value={forEach?.items || ''}
                         onChange={(e) => updateForEach('items', e.target.value)}
                         placeholder="{{node-x.output.items}}"
-                        className="h-9 text-sm font-mono flex-1"
+                        className="text-sm font-mono flex-1 min-h-[36px]"
                       />
                       <RefDropdown
                         allNodes={allNodes}
@@ -597,18 +597,18 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label className="text-xs">item_var</Label>
-                      <Input
+                      <Textarea
                         value={forEach?.item_var || 'item'}
                         onChange={(e) => updateForEach('item_var', e.target.value)}
-                        className="h-9 text-sm font-mono"
+                        className="text-sm font-mono min-h-[36px]"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">index_var</Label>
-                      <Input
+                      <Textarea
                         value={forEach?.index_var || 'index'}
                         onChange={(e) => updateForEach('index_var', e.target.value)}
-                        className="h-9 text-sm font-mono"
+                        className="text-sm font-mono min-h-[36px]"
                       />
                     </div>
                   </div>
@@ -1086,13 +1086,20 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
             <SelectItem value="false">Não</SelectItem>
           </SelectContent>
         </Select>
-      ) : (
+      ) : field.type === 'number' ? (
         <Input
-          type={field.type === 'number' ? 'number' : 'text'}
+          type="number"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           className="h-9 text-sm font-mono"
+        />
+      ) : (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className="text-sm font-mono min-h-[36px]"
         />
       )}
 
