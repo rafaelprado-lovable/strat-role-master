@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow, Background, Controls, MiniMap,
   type Node, type Edge, BackgroundVariant, Panel,
@@ -7,7 +7,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio, SkipForward, Ban } from 'lucide-react';
+import { Terminal, MessageCircle, Globe, AlertTriangle, Timer, Repeat, Zap, Radio, SkipForward, Ban, CheckCircle2 } from 'lucide-react';
 import type { TaskState, ExecutionController } from '@/types/execution';
 
 export const skipReasonDetails: Record<string, { label: string; detail: string }> = {
@@ -90,6 +90,31 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const loopCount = d.loopCount;
   const duration = d.duration_ms;
 
+  // Track previous state for transition animations
+  const prevStateRef = useRef<TaskState>(state);
+  const [animClass, setAnimClass] = useState('');
+
+  useEffect(() => {
+    if (prevStateRef.current !== state) {
+      const prev = prevStateRef.current;
+      prevStateRef.current = state;
+
+      if (state === 'running') {
+        setAnimClass('exec-node-enter-running');
+      } else if (state === 'finished' && (prev === 'running')) {
+        setAnimClass('exec-node-enter-finished');
+      } else if (state === 'error') {
+        setAnimClass('exec-node-enter-error');
+      } else {
+        setAnimClass('');
+      }
+
+      // Clear animation class after it plays
+      const timer = setTimeout(() => setAnimClass(''), 700);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
+
   // Border color based on state
   const borderColor = isSkipped
     ? 'hsl(var(--muted-foreground) / 0.25)'
@@ -97,9 +122,18 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
       ? `hsl(${hsl} / 0.4)`
       : `hsl(${s.border})`;
 
+  // Glow shadow for running/finished states
+  const glowShadow = state === 'running'
+    ? `0 0 16px hsl(var(--primary) / 0.4), 0 0 6px hsl(var(--primary) / 0.2)`
+    : state === 'finished'
+      ? `0 0 12px hsl(var(--chart-2) / 0.3)`
+      : state === 'error'
+        ? `0 0 12px hsl(var(--destructive) / 0.3)`
+        : undefined;
+
   return (
     <div
-      className="relative flex flex-col items-center gap-1 w-[90px] group/node"
+      className={`relative flex flex-col items-center gap-1 w-[90px] group/node ${animClass}`}
     >
       {/* Left (target) handle */}
       <Handle
@@ -114,19 +148,41 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
       <div
         className={`
           relative w-[56px] h-[56px] rounded-xl flex items-center justify-center
-          border-2 shadow-md transition-all duration-200
+          border-2 transition-all duration-500 ease-out
           bg-card
           ${isSkipped ? 'opacity-50 grayscale' : ''}
-          ${!isSkipped && s.pulse ? 'shadow-lg' : ''}
-          ${selected ? 'ring-2 ring-ring ring-offset-1 ring-offset-background scale-105 shadow-lg' : 'group-hover/node:shadow-lg group-hover/node:scale-[1.03]'}
+          ${selected ? 'ring-2 ring-ring ring-offset-1 ring-offset-background scale-105' : 'group-hover/node:scale-[1.03]'}
         `}
-        style={{ borderColor }}
+        style={{
+          borderColor,
+          boxShadow: glowShadow,
+        }}
       >
-        {/* State indicator dot */}
+        {/* State indicator */}
         {!isSkipped && (
-          <div className="absolute -top-1 -right-1 flex items-center justify-center">
-            {s.pulse && <div className={`absolute w-3.5 h-3.5 rounded-full ${s.dot} animate-ping opacity-60`} />}
-            <div className={`relative w-2.5 h-2.5 rounded-full ${s.dot} border-2 border-background`} />
+          <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
+            {state === 'running' && (
+              <>
+                <div className={`absolute w-4 h-4 rounded-full ${s.dot} animate-ping opacity-40`} />
+                <div className={`absolute w-3 h-3 rounded-full ${s.dot} opacity-20 animate-pulse`} />
+              </>
+            )}
+            {state === 'finished' && (
+              <div className="relative bg-background rounded-full p-px">
+                <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
+              </div>
+            )}
+            {state === 'error' && (
+              <div className="relative bg-background rounded-full p-px">
+                <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+              </div>
+            )}
+            {state === 'waiting_start' && (
+              <div className={`relative w-2.5 h-2.5 rounded-full ${s.dot} border-2 border-background`} />
+            )}
+            {state === 'running' && (
+              <div className={`relative w-2.5 h-2.5 rounded-full ${s.dot} border-2 border-background`} />
+            )}
           </div>
         )}
         {isSkipped && (
@@ -136,26 +192,26 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
         )}
 
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-500"
           style={{ background: isSkipped ? 'hsl(var(--muted) / 0.5)' : `hsl(${hsl} / 0.15)` }}
         >
           <Icon
             size={20}
             strokeWidth={2.4}
             absoluteStrokeWidth
-            className="shrink-0"
+            className={`shrink-0 transition-all duration-300 ${state === 'running' ? 'animate-pulse' : ''}`}
             style={{ color: isSkipped ? 'hsl(var(--muted-foreground))' : `hsl(${hsl})` }}
           />
         </div>
       </div>
 
       {/* Label */}
-      <span className={`text-[10px] font-medium text-center leading-tight max-w-[100px] truncate ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+      <span className={`text-[10px] font-medium text-center leading-tight max-w-[100px] truncate transition-colors duration-300 ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
         {d.label}
       </span>
 
       {/* State label badge */}
-      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${isSkipped ? 'bg-muted/80 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30 uppercase tracking-wider`}>
+      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-500 ${isSkipped ? 'bg-muted/80 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30 uppercase tracking-wider`}>
         {isSkipped ? 'Skip' : s.label}
       </span>
 
@@ -203,9 +259,9 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
         </span>
       )}
 
-      {/* Duration */}
+      {/* Duration — fade in */}
       {duration !== undefined && state === 'finished' && (
-        <span className="text-[7px] text-muted-foreground font-mono">
+        <span className="text-[7px] text-muted-foreground font-mono animate-fade-in">
           {duration >= 1000 ? `${(duration / 1000).toFixed(1)}s` : `${duration}ms`}
         </span>
       )}

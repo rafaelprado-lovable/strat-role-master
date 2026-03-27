@@ -109,3 +109,40 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Execution node state transition animations */
+@keyframes exec-node-running {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.12); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+@keyframes exec-node-finished {
+  0% { transform: scale(1); filter: brightness(1); }
+  25% { transform: scale(1.15); filter: brightness(1.2); }
+  50% { transform: scale(0.95); filter: brightness(1.1); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes exec-node-error {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-3px); }
+  30% { transform: translateX(3px); }
+  45% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  90% { transform: translateX(1px); }
+}
+
+.exec-node-enter-running {
+  animation: exec-node-running 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.exec-node-enter-finished {
+  animation: exec-node-finished 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.exec-node-enter-error {
+  animation: exec-node-error 0.5s ease-out;
+}

@@ -560,7 +560,7 @@ export default function WorkflowExecution() {
   })();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] gap-3 md:gap-4">
+    <div className="flex flex-col h-[calc(100vh-4rem)] gap-3 md:gap-4">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
