@@ -1039,15 +1039,15 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
   const [showRefs, setShowRefs] = useState(false);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between gap-1">
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-1.5">
         <Label className="text-xs flex-1 min-w-0 truncate">
           {field.label}
           {field.required && <span className="text-destructive ml-0.5">*</span>}
           <span className="text-muted-foreground font-normal ml-1.5 text-[10px]">{field.name}</span>
         </Label>
         <Select value={field.type} onValueChange={(v) => onChangeType?.(v as PluginField['type'])}>
-          <SelectTrigger className="h-6 text-[10px] w-[75px] shrink-0">
+          <SelectTrigger className="h-7 text-[10px] w-[80px] shrink-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -1057,12 +1057,14 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
           </SelectContent>
         </Select>
         {upstreamNodes.length > 0 && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowRefs(!showRefs)}
-            className="text-[10px] text-primary hover:underline shrink-0"
+            className="h-7 px-2 text-[10px] text-primary shrink-0 gap-1"
           >
             {showRefs ? 'Fechar' : '{{ref}}'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -1071,12 +1073,12 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className={cn("text-sm min-h-[60px]", field.type === 'json' && "font-mono")}
+          className={cn("text-sm min-h-[80px]", field.type === 'json' && "font-mono")}
           autoFormatJson={field.type === 'json'}
         />
       ) : field.type === 'boolean' ? (
         <Select value={value || ''} onValueChange={onChange}>
-          <SelectTrigger className="h-8 text-sm">
+          <SelectTrigger className="h-9 text-sm">
             <SelectValue placeholder="Selecione..." />
           </SelectTrigger>
           <SelectContent>
@@ -1090,7 +1092,7 @@ function PluginFieldInput({ field, value, onChange, upstreamNodes, allNodes, api
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className="h-8 text-sm font-mono"
+          className="h-9 text-sm font-mono"
         />
       )}
 
