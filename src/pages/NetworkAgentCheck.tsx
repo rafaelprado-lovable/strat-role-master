@@ -794,35 +794,72 @@ const NetworkAgentCheck = () => {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="h-[320px]">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium">Host</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium">Resolved</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r) => (
-                      <tr
-                        key={r.name}
-                        className="border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleNodeClick(r.name, r.host)}
-                      >
-                        <td className="p-2 font-mono font-semibold">{r.name}</td>
-                        <td className="p-2 font-mono text-muted-foreground">{r.host}</td>
-                        <td className="p-2 font-mono text-muted-foreground truncate max-w-[120px]">{r.ping?.resolved_name || '--'}</td>
+                <div className="overflow-x-auto">
+                  <table className="text-xs min-w-[800px] w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-2 text-muted-foreground font-medium whitespace-nowrap">Endpoint</th>
+                        <th className="text-left p-2 text-muted-foreground font-medium whitespace-nowrap">Host</th>
+                        <th className="text-left p-2 text-muted-foreground font-medium whitespace-nowrap">Resolved</th>
+                        <th className="text-left p-2 text-muted-foreground font-medium whitespace-nowrap">Status</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">T/R</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">Perda</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">RTT avg</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">RTT min</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">RTT max</th>
+                        <th className="text-left p-2 text-muted-foreground font-medium whitespace-nowrap">Alerta</th>
                       </tr>
-                    ))}
-                    {!results.length && (
-                      <tr>
-                        <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                          Execute o diagnóstico para ver resultados
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {results.map((r) => {
+                        const severity = getSeverity(r.ping);
+                        const status = toStatusLabel(severity);
+                        const alertSent = r.ping?.alert?.sent;
+                        return (
+                          <tr
+                            key={r.name}
+                            className="border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleNodeClick(r.name, r.host)}
+                          >
+                            <td className="p-2 font-mono font-semibold whitespace-nowrap">{r.name}</td>
+                            <td className="p-2 font-mono text-muted-foreground whitespace-nowrap">{r.host}</td>
+                            <td className="p-2 font-mono text-muted-foreground whitespace-nowrap">{r.ping?.resolved_name || '--'}</td>
+                            <td className="p-2 whitespace-nowrap">
+                              <Badge variant={status.variant} className="text-xs">
+                                {status.text}
+                              </Badge>
+                            </td>
+                            <td className="p-2 text-right whitespace-nowrap">{r.ping?.transmitted ?? '--'}/{r.ping?.received ?? '--'}</td>
+                            <td className="p-2 text-right whitespace-nowrap">{r.ping?.loss ?? '--'}%</td>
+                            <td className="p-2 text-right whitespace-nowrap">
+                              {r.ping?.rtt_avg != null ? `${r.ping.rtt_avg.toFixed(2)} ms` : '--'}
+                            </td>
+                            <td className="p-2 text-right whitespace-nowrap">
+                              {r.ping?.rtt_min != null ? `${r.ping.rtt_min.toFixed(2)} ms` : '--'}
+                            </td>
+                            <td className="p-2 text-right whitespace-nowrap">
+                              {r.ping?.rtt_max != null ? `${r.ping.rtt_max.toFixed(2)} ms` : '--'}
+                            </td>
+                            <td className="p-2 whitespace-nowrap">
+                              {alertSent != null ? (
+                                <Badge variant={alertSent ? 'destructive' : 'secondary'} className="text-xs">
+                                  {alertSent ? 'Enviado' : 'Não'}
+                                </Badge>
+                              ) : '--'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {!results.length && (
+                        <tr>
+                          <td colSpan={10} className="p-4 text-center text-muted-foreground">
+                            Execute o diagnóstico para ver resultados
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
