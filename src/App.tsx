@@ -36,6 +36,7 @@ import Audit from "./pages/Audit";
 import Runbooks from "./pages/Runbooks";
 import ChangeExecutionPmid from "./pages/ChangeExecutionPmid";
 import HeimdallCli from "./pages/HeimdallCli";
+import NetworkAgentCheck from "./pages/NetworkAgentCheck";
 
 const queryClient = new QueryClient();
 
