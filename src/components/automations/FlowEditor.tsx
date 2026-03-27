@@ -17,9 +17,12 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Globe,
+  ArrowLeft, Save, Clock, Globe, History,
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
+import { VersionHistoryDialog } from './VersionHistoryDialog';
+import { workflowVersionService } from '@/services/workflowVersionService';
+import { exportWorkflowJson } from '@/types/automations';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
@@ -318,6 +321,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [validationDialogOpen, setValidationDialogOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
