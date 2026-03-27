@@ -21,6 +21,7 @@ import {
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
 import { workflowVersionService } from '@/services/workflowVersionService';
+import { VersionHistoryDialog } from './VersionHistoryDialog';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
