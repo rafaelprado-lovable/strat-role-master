@@ -38,7 +38,7 @@ export interface EndpointResult {
 }
 
 // ─── Mock flag ────────────────────────────────────────────────────
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 // ─── Mock Data ────────────────────────────────────────────────────
 const MOCK_ENDPOINTS: EndpointConfig[] = [
