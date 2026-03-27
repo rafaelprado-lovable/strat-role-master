@@ -374,26 +374,38 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const onConnect = useCallback(
     (connection: Connection) => {
       const isSelfLoop = connection.source === connection.target;
+
+      // Resolve switch case label from sourceHandle
+      let switchCase: string | undefined;
+      if (connection.sourceHandle?.startsWith('switch-')) {
+        const idx = parseInt(connection.sourceHandle.replace('switch-', ''), 10);
+        const sourceNode = nodes.find(n => n.id === connection.source);
+        const cases = (sourceNode?.data as any)?.switchCases as string[] | undefined;
+        if (cases && cases[idx] !== undefined) {
+          switchCase = cases[idx];
+        }
+      }
+
       const newEdge = {
         ...connection,
         type: 'waypoint',
         data: {
-          condition: '',
+          condition: switchCase ? `${connection.source}.output.case == "${switchCase}"` : '',
           loop: isSelfLoop,
           max_iterations: isSelfLoop ? 5 : undefined,
+          ...(switchCase ? { switchCase } : {}),
         },
       };
       if (isSelfLoop) {
         newEdge.sourceHandle = 'loop-out';
         newEdge.targetHandle = 'loop-in';
-        // Mark the node as having a loop
         setNodes((nds) => nds.map((n) =>
           n.id === connection.source ? { ...n, data: { ...n.data, hasLoop: true } } : n
         ));
       }
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, setNodes]
+    [setEdges, setNodes, nodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
