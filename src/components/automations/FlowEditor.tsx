@@ -861,7 +861,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             loopEdge={edges.find(e => e.source === selectedNode.id && e.target === selectedNode.id) || null}
             allNodes={nodes}
             definitions={blockLibrary}
-            apiDefinitions={[]}
+            apiDefinitions={apiDefinitions}
             onUpdate={handleNodeDataUpdate}
             onUpdateInputs={handleUpdateInputs}
             onUpdateEdge={handleEdgeDataUpdate}
