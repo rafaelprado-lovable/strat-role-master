@@ -219,11 +219,13 @@ interface FlowEditorProps {
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>([]);
+  const [apiDefinitions, setApiDefinitions] = useState<Definition[]>([]);
 
   useEffect(() => {
     definitionService.list().then(defs => {
       if (Array.isArray(defs) && defs.length > 0) {
         setBlockLibrary(definitionsToBlocks(defs));
+        setApiDefinitions(defs);
       }
     }).catch(err => {
       console.warn('Falha ao carregar definições da API:', err);
