@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Edit2, MoreVertical, Play, Pause, Trash2, Copy, Clock, Search, Plus,
-  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay,
+  Zap, Activity, GitBranch, Calendar, Hash, Workflow as WorkflowIcon, MonitorPlay, RefreshCw,
 } from 'lucide-react';
 import { Workflow, WorkflowTag } from '@/types/automations';
 import { format } from 'date-fns';
@@ -79,17 +79,24 @@ export function AutomationsTable({
     return matchesSearch && matchesTags;
   });
 
-  // Split into active and draft groups, stable sort by name within each
+  // Execuções em andamento (separate list, no reordering)
+  const runningWorkflows = useMemo(() => {
+    if (!runningReady) return [];
+    return filtered
+      .filter(w => runningMap[w.id])
+      .sort((a, b) => {
+        const aTime = runningMap[a.id]?.created_at || '';
+        const bTime = runningMap[b.id]?.created_at || '';
+        return bTime.localeCompare(aTime); // most recent first
+      });
+  }, [filtered, runningMap, runningReady]);
+
+  // Split into active and draft groups, stable sort by name (no execution reordering)
   const activeWorkflows = useMemo(() => {
     return [...filtered]
       .filter(w => w.status === 'active')
-      .sort((a, b) => {
-        const aRunning = runningMap[a.id] ? 1 : 0;
-        const bRunning = runningMap[b.id] ? 1 : 0;
-        if (bRunning !== aRunning) return bRunning - aRunning;
-        return a.name.localeCompare(b.name);
-      });
-  }, [filtered, runningMap]);
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
 
   const draftWorkflows = useMemo(() => {
     return [...filtered]
@@ -199,6 +206,75 @@ export function AutomationsTable({
           </motion.div>
         ) : (
           <div className="space-y-6">
+            {/* Running Executions */}
+            {runningWorkflows.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <MonitorPlay className="h-4 w-4 text-primary animate-pulse" />
+                  <span className="text-sm font-medium text-foreground">Execuções em andamento</span>
+                  <Badge variant="outline" className="text-[11px] px-1.5 py-0 text-primary border-primary/30">
+                    {runningWorkflows.length}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {runningWorkflows.map((wf, i) => {
+                    const running = runningMap[wf.id];
+                    const progress = running && running.total_nodes > 0 ? Math.round((running.executed_nodes / running.total_nodes) * 100) : 0;
+                    return (
+                      <motion.div
+                        key={`running-${wf.id}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: i * 0.05, duration: 0.3 }}
+                      >
+                        <Card
+                          className="group relative overflow-hidden border-primary/30 bg-primary/[0.03] backdrop-blur-sm hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 cursor-pointer"
+                          onClick={() => navigate(`/automations/execute/${wf.id}`)}
+                        >
+                          <div className="relative p-5 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-foreground truncate">{wf.name}</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5 font-mono">{running?.execution_id}</p>
+                              </div>
+                              <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 bg-primary/15 text-primary border-primary/30 shrink-0">
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                                Em execução
+                              </Badge>
+                            </div>
+                            {running && running.total_nodes > 0 && (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>{running.executed_nodes} de {running.total_nodes} nós</span>
+                                  <span className="font-mono">{progress}%</span>
+                                </div>
+                                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <motion.div
+                                    className="h-full bg-primary rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ duration: 0.5 }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {running?.created_at && (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                Iniciado {format(new Date(running.created_at), "dd MMM 'às' HH:mm", { locale: ptBR })}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                <Separator className="my-2" />
+              </div>
+            )}
+
             {activeWorkflows.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
