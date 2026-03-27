@@ -711,7 +711,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </span>
             )}
           </Button>
-          {workflow?.id && !workflow.id.startsWith('wf-') && (
+          {workflow?.id && (
             <Button variant="outline" size="sm" onClick={() => setVersionHistoryOpen(true)}>
               <History className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Versões</span>
