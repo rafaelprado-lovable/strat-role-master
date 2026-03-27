@@ -73,11 +73,7 @@ function definitionsToBlocks(defs: Definition[]): BlockDef[] {
   }));
 }
 
-// Fallback from static list
-const STATIC_BLOCKS: BlockDef[] = DEFINITION_IDS.map(d => ({
-  ...d,
-  Icon: iconResolver(d.icon),
-}));
+// No static fallback — blocks come exclusively from the API
 
 const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
