@@ -611,7 +611,7 @@ const NetworkAgentCheck = () => {
     d.toLocaleDateString('pt-BR') + ' - ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="min-w-0 py-6 px-4 md:px-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -648,7 +648,7 @@ const NetworkAgentCheck = () => {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Endpoints</CardTitle>
@@ -696,7 +696,7 @@ const NetworkAgentCheck = () => {
       </div>
 
       {/* Main Grid: sidebar + canvas */}
-      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-4" style={{ minHeight: 'calc(100vh - 320px)' }}>
+      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-4 min-w-0" style={{ minHeight: 'calc(100vh - 320px)' }}>
         {/* Sidebar */}
         <div className="space-y-4">
           <Card>
@@ -792,9 +792,9 @@ const NetworkAgentCheck = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Resumo por Endpoint</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <ScrollArea className="h-[320px]">
-                <table className="w-full text-xs">
+                <table className="w-full text-xs min-w-[700px]">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
