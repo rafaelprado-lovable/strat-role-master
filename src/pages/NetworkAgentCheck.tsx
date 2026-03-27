@@ -753,7 +753,7 @@ const NetworkAgentCheck = () => {
                     {[
                       ['Destino', selectedNode.name],
                       ['Host', selectedNode.host],
-                      ['Nome resolvido', nodePing.resolved_name || '-'],
+                      ['Nome\nresolvido', nodePing.resolved_name || '-'],
                       ['Status', '__status__'],
                       ['Pacotes (T/R)', `${nodePing.transmitted}/${nodePing.received}`],
                       ['Perda', `${nodePing.loss}%`],
@@ -765,18 +765,18 @@ const NetworkAgentCheck = () => {
                         const sev = getSeverity(nodePing);
                         const st = toStatusLabel(sev);
                         return (
-                          <div key={label} className="flex justify-between">
-                            <span className="text-muted-foreground">{label}</span>
-                            <span className={sev === 'success' ? 'text-emerald-400 font-semibold' : sev === 'warning' ? 'text-amber-400 font-semibold' : 'text-destructive font-semibold'}>
+                          <div key={label} className="flex justify-between gap-2">
+                            <span className="text-muted-foreground shrink-0">{label}</span>
+                            <span className={`text-right truncate ${sev === 'success' ? 'text-emerald-400 font-semibold' : sev === 'warning' ? 'text-amber-400 font-semibold' : 'text-destructive font-semibold'}`}>
                               {nodePing.error || st.text}
                             </span>
                           </div>
                         );
                       }
                       return (
-                        <div key={label as string} className="flex justify-between">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className="text-foreground">{value}</span>
+                        <div key={label as string} className="flex justify-between gap-2">
+                          <span className="text-muted-foreground shrink-0 whitespace-pre-line">{label}</span>
+                          <span className="text-foreground text-right truncate">{value}</span>
                         </div>
                       );
                     })}
