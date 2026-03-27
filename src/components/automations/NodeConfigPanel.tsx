@@ -246,7 +246,8 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
             <Select value={d.definition_id || ''} onValueChange={(v) => {
               const def = definitions.find(dd => dd.value === v);
               const newLabel = def?.label || v;
-              update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
+              const switchUpdate = v === 'switch_v1' ? { switchCases: ['Case 1', 'Case 2', 'Default'] } : { switchCases: undefined };
+              update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger', ...switchUpdate });
               onRenameNode(node.id, newLabel);
             }}>
               <SelectTrigger className="h-9 text-sm">
