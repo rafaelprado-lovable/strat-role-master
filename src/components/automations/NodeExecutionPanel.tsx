@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, Zap, Plus, Trash2 } from 'lucide-react';
+import { Play, Loader2, CheckCircle2, XCircle, Zap, Plus, Trash2 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import type { PluginField } from '@/types/pluginSchemas';
 
