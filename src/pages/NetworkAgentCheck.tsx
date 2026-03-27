@@ -832,6 +832,8 @@ const NetworkAgentCheck = () => {
                     )}
                   </tbody>
                 </table>
+                </div>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </CardContent>
           </Card>
