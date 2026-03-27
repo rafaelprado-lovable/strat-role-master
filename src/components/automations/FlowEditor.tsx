@@ -30,7 +30,7 @@ import { WorkflowValidator } from './WorkflowValidator';
 import { workflowService } from '@/services/workflowService';
 import { definitionService, type Definition } from '@/services/definitionService';
 import {
-  Workflow, AutomationSchedule, DEFINITION_IDS,
+  Workflow, AutomationSchedule,
   validateWorkflow, exportWorkflowJson, type WorkflowNode, type WorkflowEdge as WfEdge,
   type WorkflowTag,
 } from '@/types/automations';
