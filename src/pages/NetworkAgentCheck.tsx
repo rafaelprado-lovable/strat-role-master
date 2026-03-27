@@ -102,6 +102,7 @@ const NetworkAgentCheck = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const mainGroupRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const trafficIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [canvasBounds, setCanvasBounds] = useState({ width: 0, height: 0 });
 
   // ─── Load endpoints on mount ──────────────────────────────────
   useEffect(() => {
@@ -161,6 +162,36 @@ const NetworkAgentCheck = () => {
 
   useEffect(() => () => clearTraffic(), []);
 
+  useEffect(() => {
+    const container = canvasRef.current;
+    if (!container) return;
+
+    const updateCanvasBounds = () => {
+      const nextWidth = container.clientWidth;
+      const nextHeight = container.clientHeight || 500;
+
+      setCanvasBounds((current) =>
+        current.width === nextWidth && current.height === nextHeight
+          ? current
+          : { width: nextWidth, height: nextHeight }
+      );
+    };
+
+    updateCanvasBounds();
+
+    const resizeObserver = new ResizeObserver(() => {
+      window.requestAnimationFrame(updateCanvasBounds);
+    });
+
+    resizeObserver.observe(container);
+    window.addEventListener('resize', updateCanvasBounds);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateCanvasBounds);
+    };
+  }, []);
+
   // ─── Build D3 visualization ───────────────────────────────────
   useEffect(() => {
     if (!results.length || !canvasRef.current) return;
@@ -168,8 +199,10 @@ const NetworkAgentCheck = () => {
 
     const container = canvasRef.current;
     container.innerHTML = '';
-    const width = container.clientWidth;
-    const height = container.clientHeight || 500;
+    const width = canvasBounds.width || container.clientWidth;
+    const height = canvasBounds.height || container.clientHeight || 500;
+    if (!width || !height) return;
+
     const centerX = width / 2;
     const centerY = height / 2;
 
@@ -282,6 +315,19 @@ const NetworkAgentCheck = () => {
     simulation.stop();
     for (let i = 0; i < 260; i++) simulation.tick();
 
+    const minX = d3.min(uniqueNodes, (node) => node.x ?? 0) ?? 0;
+    const maxX = d3.max(uniqueNodes, (node) => node.x ?? 0) ?? 0;
+    const minY = d3.min(uniqueNodes, (node) => node.y ?? 0) ?? 0;
+    const maxY = d3.max(uniqueNodes, (node) => node.y ?? 0) ?? 0;
+    const graphWidth = Math.max(maxX - minX, 1);
+    const graphHeight = Math.max(maxY - minY, 1);
+    const padding = 96;
+    const availableWidth = Math.max(width - padding * 2, 1);
+    const availableHeight = Math.max(height - padding * 2, 1);
+    const fitScale = Math.max(Math.min(availableWidth / graphWidth, availableHeight / graphHeight, 1.1), 0.42);
+    const graphCenterX = (minX + maxX) / 2;
+    const graphCenterY = (minY + maxY) / 2;
+
     // Zoom
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.2, 4])
@@ -289,8 +335,8 @@ const NetworkAgentCheck = () => {
 
     const initialTransform = d3.zoomIdentity
       .translate(width / 2, height / 2)
-      .scale(0.7)
-      .translate(-centerX, -centerY);
+      .scale(fitScale)
+      .translate(-graphCenterX, -graphCenterY);
 
     svg.call(zoom).call(zoom.transform, initialTransform);
 
@@ -554,7 +600,7 @@ const NetworkAgentCheck = () => {
     emitPackets();
     trafficIntervalRef.current = setInterval(emitPackets, 4000);
 
-  }, [results]);
+  }, [canvasBounds.height, canvasBounds.width, results]);
 
   // ─── Filter map ───────────────────────────────────────────────
   useEffect(() => {
