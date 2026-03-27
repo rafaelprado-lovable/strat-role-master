@@ -780,89 +780,51 @@ const NetworkAgentCheck = () => {
             </CardContent>
           </Card>
 
-          {/* Node Detail Panel */}
-          {selectedNode && (
-            <Card>
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm">Detalhe do Nó</CardTitle>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedNode(null)}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-3">
-                {nodePingLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : nodePing ? (
-                  <div className="space-y-1.5 text-xs font-mono">
-                    {[
-                      ['Destino', selectedNode.name],
-                      ['Host', selectedNode.host],
-                      ['Nome\nresolvido', nodePing.resolved_name || '-'],
-                      ['Status', '__status__'],
-                      ['Pacotes (T/R)', `${nodePing.transmitted}/${nodePing.received}`],
-                      ['Perda', `${nodePing.loss}%`],
-                      ['Alerta', nodePing.alert?.reason || (nodePing.alert?.sent ? 'enviado' : '-')],
-                      ['RTT medio', nodePing.rtt_avg != null ? `${nodePing.rtt_avg.toFixed(2)} ms` : '-'],
-                      ['RTT min/max', nodePing.rtt_min != null && nodePing.rtt_max != null ? `${nodePing.rtt_min.toFixed(2)} / ${nodePing.rtt_max.toFixed(2)} ms` : '-'],
-                    ].map(([label, value]) => {
-                      if (value === '__status__') {
-                        const sev = getSeverity(nodePing);
-                        const st = toStatusLabel(sev);
-                        return (
-                          <div key={label} className="flex justify-between gap-2">
-                            <span className="text-muted-foreground shrink-0">{label}</span>
-                            <span className={`text-right truncate ${sev === 'success' ? 'text-emerald-400 font-semibold' : sev === 'warning' ? 'text-amber-400 font-semibold' : 'text-destructive font-semibold'}`}>
-                              {nodePing.error || st.text}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return (
-                        <div key={label as string} className="flex justify-between gap-2">
-                          <span className="text-muted-foreground shrink-0 whitespace-pre-line">{label}</span>
-                          <span className="text-foreground text-right truncate">{value}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">Erro ao obter dados de ping</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Resumo por Endpoint</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[320px]">
-                <table className="w-full text-xs table-fixed">
-                  <thead>
+              <ScrollArea className="max-h-[calc(100vh-480px)] min-h-[200px]">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
-                      <th className="text-left p-2 text-muted-foreground font-medium w-[30%]">Endpoint</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium w-[35%]">Host</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium w-[35%]">Resolved</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Status</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Perda</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium whitespace-nowrap">RTT<br/>medio</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((r) => (
-                      <tr
-                        key={r.name}
-                        className="border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleNodeClick(r.name, r.host)}
-                      >
-                        <td className="p-2 font-mono font-semibold truncate">{r.name}</td>
-                        <td className="p-2 font-mono text-muted-foreground truncate">{r.host}</td>
-                        <td className="p-2 font-mono text-muted-foreground truncate">{r.ping?.resolved_name || '--'}</td>
-                      </tr>
-                    ))}
+                    {results.map((r) => {
+                      const sev = getSeverity(r.ping);
+                      const st = toStatusLabel(sev);
+                      return (
+                        <tr
+                          key={r.name}
+                          className="border-b border-border/50 hover:bg-muted/50 transition-colors"
+                        >
+                          <td className="p-2">
+                            <div className="font-semibold text-foreground">{r.name}</div>
+                            <div className="text-muted-foreground font-mono text-[10px] break-all leading-tight mt-0.5">{r.host}</div>
+                          </td>
+                          <td className="p-2">
+                            <span className={`font-semibold ${sev === 'success' ? 'text-emerald-400' : sev === 'warning' ? 'text-amber-400' : 'text-destructive'}`}>
+                              {r.ping?.error ? 'Erro' : st.text}
+                            </span>
+                          </td>
+                          <td className="p-2 font-mono">{r.ping?.loss ?? '--'}%</td>
+                          <td className="p-2 text-right font-mono whitespace-nowrap">
+                            {r.ping?.rtt_avg != null ? `${r.ping.rtt_avg.toFixed(2)}` : '--'}
+                            <br/>
+                            <span className="text-muted-foreground">ms</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {!results.length && (
                       <tr>
-                        <td colSpan={3} className="p-4 text-center text-muted-foreground">
+                        <td colSpan={4} className="p-4 text-center text-muted-foreground">
                           Execute o diagnóstico para ver resultados
                         </td>
                       </tr>
