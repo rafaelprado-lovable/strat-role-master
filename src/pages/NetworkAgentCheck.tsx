@@ -829,7 +829,7 @@ const NetworkAgentCheck = () => {
         </div>
 
         {/* Network Canvas */}
-        <Card className="overflow-hidden min-w-0">
+        <Card className="min-w-0 overflow-visible">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -852,10 +852,11 @@ const NetworkAgentCheck = () => {
           <CardContent className="p-0">
             <div
               ref={canvasRef}
-              className="w-full border-t border-border relative"
+              className="w-full border-t border-border relative overflow-hidden"
               style={{
                 height: 'calc(100vh - 380px)',
                 minHeight: 500,
+                maxHeight: 800,
                 background: 'radial-gradient(circle at 50% 50%, hsl(var(--muted) / 0.05), transparent 70%), hsl(var(--card))',
                 backgroundSize: '28px 28px',
               }}
