@@ -567,12 +567,17 @@ const NetworkAgentCheck = () => {
         <tr><td style="color:hsl(var(--muted-foreground))">Latência</td><td>${d.avg_latency != null ? `${d.avg_latency} ms` : '-'}</td></tr>`;
     } else if (d.type === 'destination') {
       const status = toStatusLabel(d.severity);
+      const statusColor = d.severity === 'success' ? 'color:hsl(152,69%,49%)' : d.severity === 'warning' ? 'color:hsl(33,100%,64%)' : 'color:hsl(350,100%,67%)';
       rows = `
-        <tr><td style="color:hsl(var(--muted-foreground))">Destino</td><td>${d.name}</td></tr>
+        <tr><td style="color:hsl(var(--muted-foreground));padding-right:10px">Destino</td><td>${d.name}</td></tr>
         <tr><td style="color:hsl(var(--muted-foreground))">Host</td><td>${d.host}</td></tr>
-        <tr><td style="color:hsl(var(--muted-foreground))">Status</td><td>${d.error || status.text}</td></tr>
+        ${d.resolved_name ? `<tr><td style="color:hsl(var(--muted-foreground))">Nome resolvido</td><td>${d.resolved_name}</td></tr>` : ''}
+        <tr><td style="color:hsl(var(--muted-foreground))">Status</td><td style="${statusColor};font-weight:600">${d.error || status.text}</td></tr>
+        <tr><td style="color:hsl(var(--muted-foreground))">Pacotes (T/R)</td><td>${d.transmitted ?? '-'}/${d.received ?? '-'}</td></tr>
         <tr><td style="color:hsl(var(--muted-foreground))">Perda</td><td>${d.loss ?? 100}%</td></tr>
-        ${d.rtt_avg != null ? `<tr><td style="color:hsl(var(--muted-foreground))">RTT médio</td><td>${d.rtt_avg.toFixed(2)} ms</td></tr>` : ''}`;
+        ${d.alert ? `<tr><td style="color:hsl(var(--muted-foreground))">Alerta</td><td>${d.alert.reason || (d.alert.sent ? 'enviado' : '-')}</td></tr>` : ''}
+        ${d.rtt_avg != null ? `<tr><td style="color:hsl(var(--muted-foreground))">RTT medio</td><td>${d.rtt_avg.toFixed(2)} ms</td></tr>` : ''}
+        ${d.rtt_min != null && d.rtt_max != null ? `<tr><td style="color:hsl(var(--muted-foreground))">RTT min/max</td><td>${d.rtt_min.toFixed(2)} / ${d.rtt_max.toFixed(2)} ms</td></tr>` : ''}`;
     }
     return `<table style="border-collapse:collapse;width:100%">${rows}</table>`;
   };
