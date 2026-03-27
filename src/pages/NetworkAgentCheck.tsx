@@ -742,9 +742,9 @@ const NetworkAgentCheck = () => {
       </div>
 
       {/* Main layout: sidebar + canvas */}
-      <div className="flex flex-col xl:flex-row gap-4 min-w-0" style={{ height: 'calc(100vh - 340px)', minHeight: 500 }}>
-        {/* Sidebar */}
-        <div className="xl:w-[320px] xl:shrink-0 xl:overflow-y-auto space-y-4 xl:max-h-full">
+      <div className="flex flex-col xl:flex-row gap-4 min-w-0">
+        {/* Sidebar — scrolls independently on xl */}
+        <div className="w-full xl:w-[320px] xl:shrink-0 space-y-4 xl:sticky xl:top-0 xl:self-start xl:max-h-[calc(100vh-180px)] xl:overflow-y-auto">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Filtro de rota</CardTitle>
@@ -875,7 +875,7 @@ const NetworkAgentCheck = () => {
         </div>
 
         {/* Network Canvas */}
-        <Card className="min-w-0 flex-1 flex flex-col overflow-hidden">
+        <Card className="min-w-0 w-full xl:flex-1 flex flex-col overflow-hidden">
           <CardHeader className="pb-2 shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -898,9 +898,10 @@ const NetworkAgentCheck = () => {
           <CardContent className="p-0 flex-1 min-h-0">
             <div
               ref={canvasRef}
-              className="w-full h-full border-t border-border relative overflow-hidden"
+              className="w-full border-t border-border relative overflow-hidden"
               style={{
-                minHeight: 400,
+                height: 'max(50vh, 420px)',
+                maxHeight: 'calc(100vh - 260px)',
                 background: 'radial-gradient(circle at 50% 50%, hsl(var(--muted) / 0.05), transparent 70%), hsl(var(--card))',
                 backgroundSize: '28px 28px',
               }}
