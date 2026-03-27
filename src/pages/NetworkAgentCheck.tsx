@@ -865,8 +865,8 @@ const NetworkAgentCheck = () => {
               ref={canvasRef}
               className="w-full border-t border-border relative overflow-hidden"
               style={{
-                height: 'max(50vh, 420px)',
-                maxHeight: 'calc(100vh - 260px)',
+                height: 'max(35vh, 320px)',
+                maxHeight: '480px',
                 background: 'radial-gradient(circle at 50% 50%, hsl(var(--muted) / 0.05), transparent 70%), hsl(var(--card))',
                 backgroundSize: '28px 28px',
               }}
