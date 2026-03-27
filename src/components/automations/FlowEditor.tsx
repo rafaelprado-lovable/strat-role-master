@@ -428,11 +428,20 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         const nextIndex = existing.length > 0 ? Math.max(...existing) + 1 : 1;
         const nodeId = existing.length === 0 ? base : `${base}-${nextIndex}`;
 
+        const isSwitch = defId === 'switch_v1';
         const newNode: Node = {
           id: nodeId,
           type: 'task',
           position,
-          data: { label, definition_id: defId, icon: blockLibrary.find(d => d.value === defId)?.icon || '', description: '', hasForEach: false, isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger' },
+          data: {
+            label,
+            definition_id: defId,
+            icon: blockLibrary.find(d => d.value === defId)?.icon || '',
+            description: '',
+            hasForEach: false,
+            isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger',
+            ...(isSwitch ? { switchCases: ['Case 1', 'Case 2', 'Default'] } : {}),
+          },
         };
 
         return [...nds, newNode];
