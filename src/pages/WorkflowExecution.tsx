@@ -680,24 +680,28 @@ export default function WorkflowExecution() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 overflow-hidden"
+          className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 overflow-hidden min-h-0"
         >
           <ReactFlowProvider>
-            <ExecutionCanvas
-              workflow={execution.execution_data}
-              controller={execution.execution_controller}
-              selectedNodeId={selectedNodeId}
-              onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
-              selectedEdge={selectedEdge}
-              onEdgeSelect={setSelectedEdge}
-            />
+            <div className="min-h-[350px] lg:min-h-0">
+              <ExecutionCanvas
+                workflow={execution.execution_data}
+                controller={execution.execution_controller}
+                selectedNodeId={selectedNodeId}
+                onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
+                selectedEdge={selectedEdge}
+                onEdgeSelect={setSelectedEdge}
+              />
+            </div>
           </ReactFlowProvider>
-          <ExecutionPanel
-            execution={execution}
-            selectedNodeId={selectedNodeId}
-            selectedEdge={selectedEdge}
-            onRerunNode={handleRerunNode}
-          />
+          <div className="min-h-[300px] lg:min-h-0">
+            <ExecutionPanel
+              execution={execution}
+              selectedNodeId={selectedNodeId}
+              selectedEdge={selectedEdge}
+              onRerunNode={handleRerunNode}
+            />
+          </div>
         </motion.div>
       )}
     </div>
