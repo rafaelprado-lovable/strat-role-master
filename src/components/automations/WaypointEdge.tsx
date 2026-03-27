@@ -80,11 +80,12 @@ export function WaypointEdge({
   }, [isLoop, hasCondition, style]);
 
   const edgeLabel = useMemo(() => {
+    if (edgeData.switchCase) return `🔀 ${edgeData.switchCase}`;
     if (isLoop && hasCondition) return `🔄 while: ${edgeData.condition} (max ${edgeData.max_iterations || '?'})`;
     if (isLoop) return `🔄 while true (max ${edgeData.max_iterations || '?'})`;
     if (hasCondition) return `⚡ ${edgeData.condition}`;
     return '';
-  }, [isLoop, hasCondition, edgeData.condition, edgeData.max_iterations]);
+  }, [isLoop, hasCondition, edgeData.condition, edgeData.max_iterations, edgeData.switchCase]);
 
   const path = buildPath(sourceX, sourceY, targetX, targetY, waypoints, isSelfLoop);
 
