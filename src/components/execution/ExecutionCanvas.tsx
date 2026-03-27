@@ -53,15 +53,27 @@ const iconMap: Record<string, React.ElementType> = {
   delay_v1: Timer,
 };
 
-const stateStyles: Record<string, { ring: string; bg: string; pulse?: boolean; label: string; dot: string }> = {
-  waiting_start: { ring: 'ring-muted-foreground/30', bg: 'bg-muted/40', label: 'Aguardando', dot: 'bg-muted-foreground' },
-  running: { ring: 'ring-primary', bg: 'bg-primary/10', pulse: true, label: 'Executando', dot: 'bg-primary' },
-  finished: { ring: 'ring-chart-2', bg: 'bg-chart-2/10', label: 'Concluído', dot: 'bg-chart-2' },
-  error: { ring: 'ring-destructive', bg: 'bg-destructive/10', label: 'Erro', dot: 'bg-destructive' },
-  failed: { ring: 'ring-destructive', bg: 'bg-destructive/10', label: 'Falhou', dot: 'bg-destructive' },
+const stateStyles: Record<string, { border: string; bg: string; pulse?: boolean; label: string; dot: string; iconBg: string }> = {
+  waiting_start: { border: '220 10% 50%', bg: 'bg-muted/40', label: 'Aguardando', dot: 'bg-muted-foreground', iconBg: 'hsl(220 10% 50% / 0.15)' },
+  running: { border: 'var(--primary)', bg: 'bg-primary/10', pulse: true, label: 'Executando', dot: 'bg-primary', iconBg: 'hsl(var(--primary) / 0.15)' },
+  finished: { border: 'var(--chart-2)', bg: 'bg-chart-2/10', label: 'Concluído', dot: 'bg-chart-2', iconBg: 'hsl(var(--chart-2) / 0.15)' },
+  error: { border: 'var(--destructive)', bg: 'bg-destructive/10', label: 'Erro', dot: 'bg-destructive', iconBg: 'hsl(var(--destructive) / 0.15)' },
+  failed: { border: 'var(--destructive)', bg: 'bg-destructive/10', label: 'Falhou', dot: 'bg-destructive', iconBg: 'hsl(var(--destructive) / 0.15)' },
 };
 
-// Using chart-2 for green/success since that's available
+// Color map matching TaskNode for consistency
+const colorMap: Record<string, string> = {
+  ssh_execution: '270 75% 60%',
+  send_whatsapp_message_v1: '142 70% 45%',
+  api_call_v1: '190 100% 45%',
+  get_specific_incident_v1: '35 95% 55%',
+  delay_v1: '210 100% 50%',
+  llm_analyse_v1: '280 80% 55%',
+  condition_v1: '160 60% 45%',
+  switch_v1: '160 60% 45%',
+  filter_v1: '160 60% 45%',
+};
+const defaultHsl = '220 10% 50%';
 
 function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const d = data as any;
@@ -70,6 +82,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const isSkipped = !!d.isSkipped;
   const skipReason = d.skipReason;
   const s = stateStyles[state] || stateStyles.waiting_start;
+  const hsl = colorMap[d.definition_id] || defaultHsl;
   const hasForEach = d.hasForEach;
   const hasStream = d.hasStream;
   const hasLoop = d.hasLoop;
@@ -77,72 +90,107 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
   const loopCount = d.loopCount;
   const duration = d.duration_ms;
 
+  // Border color based on state
+  const borderColor = isSkipped
+    ? 'hsl(var(--muted-foreground) / 0.25)'
+    : state === 'waiting_start'
+      ? `hsl(${hsl} / 0.4)`
+      : `hsl(${s.border})`;
+
   return (
     <div
-      className={`
-        rounded-xl px-4 py-3 min-w-[200px] max-w-[260px] border-2 relative backdrop-blur-sm shadow-sm
-        ring-2 transition-all duration-300 group/node
-        ${isSkipped ? 'ring-muted-foreground/20 bg-muted/30 border-muted-foreground/20 opacity-60' : `${s.ring} ${s.bg} border-border/50`}
-        ${!isSkipped && s.pulse ? 'animate-pulse' : ''}
-        ${selected ? 'ring-offset-2 ring-offset-background shadow-lg scale-[1.02]' : ''}
-      `}
+      className="relative flex flex-col items-center gap-1 w-[90px] group/node"
     >
-      <Handle type="target" position={Position.Left} id="left" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-left-1.5" />
-      <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
-      <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !border-2 !border-background" />
+      {/* Left (target) handle */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !-left-1 !top-[30px]"
+        style={{ background: `hsl(${hsl})` }}
+      />
 
-      {/* State dot / Skipped indicator */}
-      {isSkipped ? (
-        <div className="absolute top-2 right-2">
-          <Ban className="h-3 w-3 text-muted-foreground" />
+      {/* Main icon box */}
+      <div
+        className={`
+          relative w-[56px] h-[56px] rounded-xl flex items-center justify-center
+          border-2 shadow-md transition-all duration-200
+          bg-card
+          ${isSkipped ? 'opacity-50 grayscale' : ''}
+          ${!isSkipped && s.pulse ? 'shadow-lg' : ''}
+          ${selected ? 'ring-2 ring-ring ring-offset-1 ring-offset-background scale-105 shadow-lg' : 'group-hover/node:shadow-lg group-hover/node:scale-[1.03]'}
+        `}
+        style={{ borderColor }}
+      >
+        {/* State indicator dot */}
+        {!isSkipped && (
+          <div className="absolute -top-1 -right-1 flex items-center justify-center">
+            {s.pulse && <div className={`absolute w-3.5 h-3.5 rounded-full ${s.dot} animate-ping opacity-60`} />}
+            <div className={`relative w-2.5 h-2.5 rounded-full ${s.dot} border-2 border-background`} />
+          </div>
+        )}
+        {isSkipped && (
+          <div className="absolute -top-1 -right-1 bg-background rounded-full p-0.5">
+            <Ban className="h-3 w-3 text-muted-foreground" />
+          </div>
+        )}
+
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: isSkipped ? 'hsl(var(--muted) / 0.5)' : `hsl(${hsl} / 0.15)` }}
+        >
+          <Icon
+            size={20}
+            strokeWidth={2.4}
+            absoluteStrokeWidth
+            className="shrink-0"
+            style={{ color: isSkipped ? 'hsl(var(--muted-foreground))' : `hsl(${hsl})` }}
+          />
         </div>
-      ) : (
-        <>
-          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot} ${s.pulse ? 'animate-ping' : ''}`} />
-          <div className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${s.dot}`} />
-        </>
+      </div>
+
+      {/* Label */}
+      <span className={`text-[10px] font-medium text-center leading-tight max-w-[100px] truncate ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+        {d.label}
+      </span>
+
+      {/* State label badge */}
+      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${isSkipped ? 'bg-muted/80 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30 uppercase tracking-wider`}>
+        {isSkipped ? 'Skip' : s.label}
+      </span>
+
+      {/* Feature badges row */}
+      {(hasForEach || hasStream || hasLoop) && (
+        <div className="flex items-center gap-0.5">
+          {hasForEach && (
+            <div className="flex items-center gap-0.5 px-1 py-px rounded bg-chart-4/10 border border-chart-4/20">
+              <Repeat className="h-2 w-2 text-chart-4" />
+              <span className="text-[7px] text-chart-4 font-medium">each</span>
+            </div>
+          )}
+          {hasStream && (
+            <div className="flex items-center gap-0.5 px-1 py-px rounded bg-accent/10 border border-accent/20">
+              <Radio className="h-2 w-2 text-accent" />
+              <span className="text-[7px] text-accent font-medium">stream</span>
+            </div>
+          )}
+          {hasLoop && (
+            <div className="flex items-center gap-0.5 px-1 py-px rounded bg-chart-4/10 border border-chart-4/20">
+              <Repeat className="h-2 w-2 text-chart-4" />
+              <span className="text-[7px] text-chart-4 font-medium">loop</span>
+            </div>
+          )}
+        </div>
       )}
 
-      <div className="flex items-center gap-2.5">
-        <div className="p-1.5 rounded-lg bg-card/80 shrink-0">
-          <Icon className="h-3.5 w-3.5 text-foreground" />
-        </div>
-        <div className="min-w-0">
-          <span className={`font-semibold text-sm truncate block ${isSkipped ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{d.label}</span>
-          <span className="text-[10px] text-muted-foreground font-mono block">{d.nodeId}</span>
-        </div>
-      </div>
-
-      {/* Badges */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isSkipped ? 'bg-muted/60 text-muted-foreground' : s.bg + ' text-foreground'} border border-border/30`}>
-          {isSkipped ? '⏭ Skipado' : s.label}
-        </span>
-        {hasForEach && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-chart-4/10 text-chart-4 border border-chart-4/20 flex items-center gap-1">
-            <Repeat className="h-2.5 w-2.5" /> for_each
-          </span>
-        )}
-        {hasStream && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20 flex items-center gap-1">
-            <Radio className="h-2.5 w-2.5" /> STREAM
-          </span>
-        )}
-        {hasLoop && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-chart-4/10 text-chart-4 border border-chart-4/20 flex items-center gap-1">
-            <Repeat className="h-2.5 w-2.5" /> while
-          </span>
-        )}
-      </div>
-
-      {/* Progress for for_each */}
+      {/* Progress bar for for_each */}
       {forEachProgress && (
-        <div className="mt-2">
-          <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
-            <span>{forEachProgress.completed}/{forEachProgress.total} itens</span>
+        <div className="w-[80px]">
+          <div className="flex justify-between text-[7px] text-muted-foreground mb-0.5">
+            <span>{forEachProgress.completed}/{forEachProgress.total}</span>
             <span>{Math.round((forEachProgress.completed / forEachProgress.total) * 100)}%</span>
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-chart-4 rounded-full transition-all duration-500" style={{ width: `${(forEachProgress.completed / forEachProgress.total) * 100}%` }} />
           </div>
         </div>
@@ -150,32 +198,43 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
 
       {/* Loop counter */}
       {loopCount !== undefined && (
-        <div className="mt-1.5 text-[10px] text-chart-4 font-mono">
-          🔄 Iteração {loopCount}
-        </div>
+        <span className="text-[7px] text-chart-4 font-mono font-bold">
+          iter. {loopCount}
+        </span>
       )}
 
       {/* Duration */}
       {duration !== undefined && state === 'finished' && (
-        <div className="mt-1 text-[10px] text-muted-foreground font-mono">
-          ⏱ {duration >= 1000 ? `${(duration / 1000).toFixed(1)}s` : `${duration}ms`}
-        </div>
+        <span className="text-[7px] text-muted-foreground font-mono">
+          {duration >= 1000 ? `${(duration / 1000).toFixed(1)}s` : `${duration}ms`}
+        </span>
       )}
 
       {/* Skip reason tooltip */}
       {isSkipped && skipReason && (() => {
         const detail = getSkipDetail(skipReason);
         return (
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
-            <div className="px-3 py-2 rounded-lg bg-popover border border-border shadow-lg max-w-[260px] text-center">
-              <div className="text-[11px] font-semibold text-foreground">{detail.label}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{detail.detail}</div>
+          <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 hidden group-hover/node:flex z-50 pointer-events-none">
+            <div className="px-3 py-2 rounded-lg bg-popover border border-border shadow-lg max-w-[220px] text-center">
+              <div className="text-[10px] font-semibold text-foreground">{detail.label}</div>
+              <div className="text-[9px] text-muted-foreground mt-0.5 leading-relaxed">{detail.detail}</div>
             </div>
           </div>
         );
       })()}
 
-      <Handle type="source" position={Position.Right} id="right" className="!bg-primary !w-3 !h-3 !border-2 !border-background !-right-1.5" />
+      {/* Right (source) handle */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !-right-1 !top-[30px]"
+        style={{ background: `hsl(${hsl})` }}
+      />
+
+      {/* Loop handles */}
+      <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2 !h-2 !border-2 !border-background" />
+      <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2 !h-2 !border-2 !border-background" />
     </div>
   );
 }

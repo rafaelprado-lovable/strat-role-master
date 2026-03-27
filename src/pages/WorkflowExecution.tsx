@@ -560,50 +560,50 @@ export default function WorkflowExecution() {
   })();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] gap-4">
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-3 md:gap-4">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between gap-4 pb-3 border-b border-border"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border"
       >
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/automations')}>
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/automations')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-foreground">{workflow.name}</h1>
-              <Badge variant="outline" className="text-[10px] font-mono">{workflow.id}</Badge>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base md:text-lg font-bold text-foreground truncate">{workflow.name}</h1>
+              <Badge variant="outline" className="text-[10px] font-mono hidden sm:inline-flex">{workflow.id}</Badge>
               <Badge className={`text-[10px] ${workflow.status === 'active' ? 'bg-chart-2/20 text-chart-2' : 'bg-muted text-muted-foreground'}`}>
                 {workflow.status}
               </Badge>
             </div>
             {workflow.description && (
-              <p className="text-xs text-muted-foreground mt-0.5">{workflow.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{workflow.description}</p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           {!isRunning && !loadingActiveExec ? (
             <Button size="sm" onClick={handleExecute} className="gap-1.5" disabled={loadingActiveExec}>
-              <Play className="h-3.5 w-3.5" /> Executar agora
+              <Play className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Executar agora</span><span className="sm:hidden">Executar</span>
             </Button>
           ) : isRunning ? (
             <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1.5">
-              <Square className="h-3.5 w-3.5" /> Parar execução
+              <Square className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Parar execução</span><span className="sm:hidden">Parar</span>
             </Button>
           ) : null}
           {execution && (
             <>
               <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
-                <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+                <RefreshCw className="h-3.5 w-3.5" />
               </Button>
               <Button size="sm" variant="outline" onClick={handleRerun} className="gap-1.5">
-                <RotateCcw className="h-3.5 w-3.5" /> Reexecutar
+                <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden md:inline">Reexecutar</span>
               </Button>
               <Button size="sm" variant="outline" onClick={handleExportExecution} className="gap-1.5">
-                <Download className="h-3.5 w-3.5" /> Exportar
+                <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Exportar</span>
               </Button>
             </>
           )}
@@ -615,20 +615,20 @@ export default function WorkflowExecution() {
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center gap-4 px-4 py-2.5 rounded-lg border ${stateConfig[execState]?.color || 'bg-muted text-muted-foreground border-border'}`}
+          className={`flex flex-wrap items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-2.5 rounded-lg border ${stateConfig[execState]?.color || 'bg-muted text-muted-foreground border-border'}`}
         >
-          <div className="flex items-center gap-2 font-semibold text-sm">
+          <div className="flex items-center gap-2 font-semibold text-xs md:text-sm">
             {stateConfig[execState]?.icon}
             <span>{stateConfig[execState]?.label || execState}</span>
           </div>
-          <div className="h-4 w-px bg-current opacity-20" />
+          <div className="h-4 w-px bg-current opacity-20 hidden sm:block" />
           {elapsedText && (
-            <span className="text-xs font-mono opacity-80">⏱ {elapsedText}</span>
+            <span className="text-[10px] md:text-xs font-mono opacity-80">⏱ {elapsedText}</span>
           )}
           {nodeProgress && (
             <>
-              <div className="h-4 w-px bg-current opacity-20" />
-              <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+              <div className="h-4 w-px bg-current opacity-20 hidden sm:block" />
+              <div className="flex items-center gap-2 flex-1 min-w-[100px] max-w-[200px]">
                 <div className="h-1.5 flex-1 bg-current/10 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-current rounded-full"
@@ -637,15 +637,12 @@ export default function WorkflowExecution() {
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <span className="text-xs font-mono opacity-80">{nodeProgress.done}/{nodeProgress.total}</span>
+                <span className="text-[10px] md:text-xs font-mono opacity-80">{nodeProgress.done}/{nodeProgress.total}</span>
               </div>
             </>
           )}
           {execution.execution_controller.execution_id && (
-            <>
-              <div className="h-4 w-px bg-current opacity-20" />
-              <span className="text-[10px] font-mono opacity-60 ml-auto">{execution.execution_controller.execution_id}</span>
-            </>
+            <span className="text-[9px] md:text-[10px] font-mono opacity-60 ml-auto hidden md:block truncate max-w-[180px]">{execution.execution_controller.execution_id}</span>
           )}
         </motion.div>
       )}
@@ -653,8 +650,8 @@ export default function WorkflowExecution() {
 
       {/* Loading state */}
       {(loading || loadingActiveExec) && (
-        <div className="flex-1 grid grid-cols-[1fr_380px] gap-4">
-          <Skeleton className="rounded-xl" />
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
+          <Skeleton className="rounded-xl min-h-[300px]" />
           <div className="space-y-3">
             <Skeleton className="h-10 rounded-lg" />
             <Skeleton className="h-40 rounded-lg" />
@@ -683,24 +680,28 @@ export default function WorkflowExecution() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 overflow-hidden"
+          className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 overflow-hidden min-h-0"
         >
           <ReactFlowProvider>
-            <ExecutionCanvas
-              workflow={execution.execution_data}
-              controller={execution.execution_controller}
-              selectedNodeId={selectedNodeId}
-              onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
-              selectedEdge={selectedEdge}
-              onEdgeSelect={setSelectedEdge}
-            />
+            <div className="min-h-[350px] lg:min-h-0">
+              <ExecutionCanvas
+                workflow={execution.execution_data}
+                controller={execution.execution_controller}
+                selectedNodeId={selectedNodeId}
+                onNodeSelect={(id) => { setSelectedEdge(null); setSelectedNodeId(id); }}
+                selectedEdge={selectedEdge}
+                onEdgeSelect={setSelectedEdge}
+              />
+            </div>
           </ReactFlowProvider>
-          <ExecutionPanel
-            execution={execution}
-            selectedNodeId={selectedNodeId}
-            selectedEdge={selectedEdge}
-            onRerunNode={handleRerunNode}
-          />
+          <div className="min-h-[300px] lg:min-h-0">
+            <ExecutionPanel
+              execution={execution}
+              selectedNodeId={selectedNodeId}
+              selectedEdge={selectedEdge}
+              onRerunNode={handleRerunNode}
+            />
+          </div>
         </motion.div>
       )}
     </div>
