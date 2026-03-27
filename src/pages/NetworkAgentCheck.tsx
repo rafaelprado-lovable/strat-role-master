@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network, Loader2, X } from 'lucide-react';
 import {
   fetchEndpoints,
@@ -786,7 +786,8 @@ const NetworkAgentCheck = () => {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="max-h-[calc(100vh-480px)] min-h-[200px]">
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto">
+                <table className="min-w-[400px] w-full text-xs">
                   <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
                       <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
@@ -831,6 +832,8 @@ const NetworkAgentCheck = () => {
                     )}
                   </tbody>
                 </table>
+                </div>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </CardContent>
           </Card>
