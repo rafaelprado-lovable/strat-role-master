@@ -178,471 +178,527 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
 
   const isMobile = useIsMobile();
 
+  const hasLoop = loopEnabled;
+  const hasForEach = forEachEnabled;
+  const hasDefinition = !!d.definition_id;
+
   const panelContent = (
     <>
-      {/* Header - only on desktop */}
+      {/* Header */}
       {!isMobile && (
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold text-sm text-foreground">Configuração do Nó</h3>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-            <X className="h-3 w-3" />
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Settings2 className="h-4 w-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <h3 className="font-semibold text-sm text-foreground truncate">{d.label || node.id}</h3>
+              <p className="text-[10px] text-muted-foreground font-mono truncate">{d.definition_id || 'Sem tipo definido'}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+            <X className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}
 
-      <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-        {/* ID (read-only) */}
-        <div className="space-y-1.5">
-          <Label className="text-xs">ID do Nó</Label>
-          <Input value={node.id} disabled className="h-8 text-sm font-mono bg-muted" />
-        </div>
+      <Tabs defaultValue="general" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-2 pt-1 pb-0 h-auto gap-0 shrink-0">
+          <TabsTrigger value="general" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
+            <Settings2 className="h-3.5 w-3.5" />
+            Geral
+          </TabsTrigger>
+          <TabsTrigger value="inputs" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
+            <Database className="h-3.5 w-3.5" />
+            Inputs
+          </TabsTrigger>
+          <TabsTrigger value="flow" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
+            <GitBranch className="h-3.5 w-3.5" />
+            Fluxo
+            {(hasLoop || hasForEach) && <span className="w-1.5 h-1.5 rounded-full bg-chart-4 shrink-0" />}
+          </TabsTrigger>
+          <TabsTrigger value="test" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
+            <Play className="h-3.5 w-3.5" />
+            Teste
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Label */}
-        <div className="space-y-1.5">
-          <Label className="text-xs">Nome</Label>
-          <Input
-            value={d.label || ''}
-            onChange={(e) => update({ label: e.target.value })}
-            className="h-8 text-sm"
-          />
-        </div>
-
-        {/* Definition ID */}
-        <div className="space-y-1.5">
-          <Label className="text-xs">Tipo (definition_id) <span className="text-destructive">*</span></Label>
-          <Select value={d.definition_id || ''} onValueChange={(v) => {
-            const def = definitions.find(dd => dd.value === v);
-            const newLabel = def?.label || v;
-            update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
-            onRenameNode(node.id, newLabel);
-          }}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Selecione..." />
-            </SelectTrigger>
-            <SelectContent>
-              {definitions.map((def) => (
-                <SelectItem key={def.value} value={def.value}>
-                  {def.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Description */}
-        <div className="space-y-1.5">
-          <Label className="text-xs">Descrição</Label>
-          <Input
-            value={d.description || ''}
-            onChange={(e) => update({ description: e.target.value })}
-            className="h-8 text-sm"
-          />
-        </div>
-
-        {/* ============ WHILE LOOP SECTION ============ */}
-        <div className="border-t border-border pt-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-chart-4" />
-              <Label className="text-xs font-semibold text-chart-4">While Loop</Label>
-            </div>
-            <Switch checked={loopEnabled} onCheckedChange={toggleLoop} />
+        {/* ===== TAB: GERAL ===== */}
+        <TabsContent value="general" className="flex-1 overflow-y-auto mt-0 p-5 space-y-5">
+          {/* ID */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">ID do Nó</Label>
+            <Input value={node.id} disabled className="h-9 text-sm font-mono bg-muted/50" />
           </div>
 
-          {loopEnabled && loopData && (
-            <div className="space-y-3">
-              {/* Loop Mode */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">Modo do loop</Label>
-                <Select value={loopMode} onValueChange={(v) => setLoopMode(v as any)}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="while_condition">
-                      <div className="flex items-center gap-2">
-                        <Repeat className="h-3 w-3 text-chart-4" />
-                        <span>While (condição)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="while_true">
-                      <div className="flex items-center gap-2">
-                        <Repeat className="h-3 w-3 text-chart-4" />
-                        <span>While true (fixo)</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* While condition */}
-              {loopMode === 'while_condition' && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    Condição do while <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="flex gap-1">
-                    <Input
-                      value={loopData.condition || ''}
-                      onChange={(e) => updateLoopEdge({ condition: e.target.value })}
-                      placeholder="node-id.output.status != 200"
-                      className="h-8 text-sm font-mono flex-1"
-                    />
-                    <RefDropdown
-                      allNodes={allNodes}
-                      currentNodeId={node.id}
-                      definitions={definitions}
-                      apiDefinitions={apiDefinitions}
-                      onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
-                    />
-                  </div>
-                  {!loopData.condition?.trim() && (
-                    <p className="text-xs text-destructive">⚠ Preencha a condição</p>
-                  )}
-                </div>
-              )}
-
-              {/* Max iterations */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  max_iterations <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={loopData.max_iterations || ''}
-                  onChange={(e) => updateLoopEdge({ max_iterations: parseInt(e.target.value) || undefined })}
-                  className="h-8 text-sm"
-                />
-                {(!loopData.max_iterations || loopData.max_iterations < 1) && (
-                  <p className="text-xs text-destructive">⚠ Obrigatório — limita o número máximo de repetições</p>
-                )}
-              </div>
-
-              {/* Break condition explanation */}
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-2">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0" />
-                  <p className="text-xs font-semibold text-foreground">Condições de Break</p>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className="text-destructive font-bold shrink-0">1.</span>
-                    <p>
-                      <strong>max_iterations atingido:</strong> para após{' '}
-                      <code className="bg-muted px-1 rounded text-foreground">{loopData.max_iterations || '?'}</code> execuções
-                    </p>
-                  </div>
-                  {loopMode === 'while_condition' && loopData.condition ? (
-                    <div className="flex items-start gap-2">
-                      <span className="text-destructive font-bold shrink-0">2.</span>
-                      <p>
-                        <strong>Condição falsa:</strong> quando{' '}
-                        <code className="bg-muted px-1 rounded text-foreground">{loopData.condition}</code>{' '}
-                        retornar <code className="bg-muted px-1 rounded text-destructive">false</code>
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
-                      <span className="text-chart-4 font-bold shrink-0">2.</span>
-                      <p><em>Sem condição — o loop só para pelo max_iterations</em></p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Loop Delay */}
-              <div className="space-y-3 border-t border-border pt-3">
-                <div className="flex items-center gap-2">
-                  <Timer className="h-3.5 w-3.5 text-chart-4" />
-                  <Label className="text-xs font-semibold text-chart-4">Delay entre iterações</Label>
-                </div>
-                <p className="text-[10px] text-muted-foreground -mt-1">Delay entre execuções do loop (while). Se ambos forem preenchidos, segundos tem prioridade.</p>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Delay (segundos)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={loopDelaySeconds}
-                    onChange={(e) => handleLoopDelayChange('loop_delay_seconds', e.target.value)}
-                    placeholder="Ex: 10"
-                    className="h-8 text-sm font-mono"
-                  />
-                  {loopDelaySeconds !== '' && (isNaN(Number(loopDelaySeconds)) || Number(loopDelaySeconds) < 0) && (
-                    <p className="text-xs text-destructive">⚠ Valor deve ser um número ≥ 0</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Delay (ms)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="1"
-                    value={loopDelayMs}
-                    onChange={(e) => handleLoopDelayChange('loop_delay_ms', e.target.value)}
-                    placeholder="Ex: 5000"
-                    className="h-8 text-sm font-mono"
-                  />
-                  {loopDelayMs !== '' && (isNaN(Number(loopDelayMs)) || Number(loopDelayMs) < 0) && (
-                    <p className="text-xs text-destructive">⚠ Valor deve ser um número ≥ 0</p>
-                  )}
-                </div>
-
-                {loopDelaySeconds !== '' && loopDelayMs !== '' && (
-                  <div className="flex items-start gap-2 p-2 rounded bg-chart-4/10 border border-chart-4/20">
-                    <Info className="h-3.5 w-3.5 text-chart-4 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-foreground">
-                      <strong>loop_delay_seconds</strong> tem prioridade e será usado pelo motor. O valor em ms será ignorado.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Reopen Tasks */}
-              <div className="space-y-3 border-t border-border pt-3">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="h-3.5 w-3.5 text-chart-2" />
-                  <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks (reopen_tasks)</Label>
-                </div>
-                <p className="text-[10px] text-muted-foreground -mt-1">
-                  Selecione quais nós devem ser reexecutados a cada iteração do loop. O nó atual ({node.id}) é incluído automaticamente.
-                </p>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {allNodes.map((n) => {
-                    const nd = n.data as Record<string, any>;
-                    const reopenTasks: string[] = loopData?.reopen_tasks || [];
-                    const isCurrentNode = n.id === node.id;
-                    const isChecked = isCurrentNode || reopenTasks.includes(n.id);
-                    return (
-                      <label
-                        key={n.id}
-                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer hover:bg-muted/50 ${isCurrentNode ? 'opacity-70' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={isCurrentNode}
-                          onChange={(e) => {
-                            let updated = [...reopenTasks];
-                            if (e.target.checked) {
-                              if (!updated.includes(n.id)) updated.push(n.id);
-                            } else {
-                              updated = updated.filter(id => id !== n.id);
-                            }
-                            // Always ensure current node is included
-                            if (!updated.includes(node.id)) updated.push(node.id);
-                            updateLoopEdge({ reopen_tasks: updated });
-                          }}
-                          className="rounded border-border"
-                        />
-                        <span className="font-mono text-foreground">{n.id}</span>
-                        <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
-                        {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Pseudo-code preview */}
-              <div className="p-2.5 rounded bg-muted border border-border font-mono text-xs text-foreground leading-relaxed">
-                <div className="text-chart-4">// Pseudo-código do loop</div>
-                {loopMode === 'while_condition' && loopData.condition ? (
-                  <>
-                    <div>i = 0</div>
-                    <div><span className="text-chart-4 font-bold">while</span> ({loopData.condition}) {'{'}</div>
-                    {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
-                      <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
-                    ))}
-                    <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
-                    {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
-                      <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
-                    )}
-                    <div className="pl-4">i++</div>
-                    <div className="pl-4"><span className="text-destructive font-bold">if</span> (i &gt;= {loopData.max_iterations || '?'}) <span className="text-destructive font-bold">break</span></div>
-                    <div>{'}'}</div>
-                  </>
-                ) : (
-                  <>
-                    <div><span className="text-chart-4 font-bold">for</span> (i = 0; i &lt; {loopData.max_iterations || '?'}; i++) {'{'}</div>
-                    {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
-                      <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
-                    ))}
-                    <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
-                    {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
-                      <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
-                    )}
-                    <div>{'}'}</div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* for_each */}
-        <div className="border-t border-border pt-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-xs font-semibold">for_each</Label>
-            </div>
-            <Switch checked={forEachEnabled} onCheckedChange={toggleForEach} />
+          {/* Label */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">Nome</Label>
+            <Input
+              value={d.label || ''}
+              onChange={(e) => update({ label: e.target.value })}
+              className="h-9 text-sm"
+              placeholder="Nome do bloco"
+            />
           </div>
 
-          {forEachEnabled && (
-            <div className="space-y-3 pl-1">
-              {/* Items */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">items <span className="text-destructive">*</span></Label>
-                <div className="flex gap-1">
-                  <Input
-                    value={forEach?.items || ''}
-                    onChange={(e) => updateForEach('items', e.target.value)}
-                    placeholder="{{node-x.output.items}}"
-                    className="h-8 text-sm font-mono flex-1"
-                  />
-                  <RefDropdown
-                    allNodes={allNodes}
-                    currentNodeId={node.id}
-                    definitions={definitions}
-                    apiDefinitions={apiDefinitions}
-                    onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
-                  />
-                </div>
-              </div>
+          {/* Definition ID */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">Tipo (definition_id) <span className="text-destructive">*</span></Label>
+            <Select value={d.definition_id || ''} onValueChange={(v) => {
+              const def = definitions.find(dd => dd.value === v);
+              const newLabel = def?.label || v;
+              update({ definition_id: v, label: newLabel, isTrigger: def?.category === 'trigger' });
+              onRenameNode(node.id, newLabel);
+            }}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Selecione o tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {definitions.map((def) => (
+                  <SelectItem key={def.value} value={def.value}>
+                    {def.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              {/* Stream toggle - fan-out from THIS node to children */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-3.5 w-3.5 text-chart-3" />
-                    <Label className="text-xs font-semibold text-chart-3">Stream (fan-out para filhos)</Label>
-                  </div>
-                  <Switch
-                    checked={!!forEach?.stream}
-                    onCheckedChange={(v) => updateForEach('stream', v ? 'true' : 'false')}
-                  />
-                </div>
-                {forEach?.stream && (
-                  <div className="p-2 rounded bg-chart-3/10 border border-chart-3/20">
-                    <p className="text-[10px] text-foreground">
-                      <strong>Stream ativo:</strong> cada item processado por este nó será despachado individualmente para os nós filhos (downstream), criando loops aninhados. Os nós conectados abaixo receberão <code className="bg-muted px-1 rounded">item</code> a item automaticamente.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">item_var</Label>
-                <Input
-                  value={forEach?.item_var || 'item'}
-                  onChange={(e) => updateForEach('item_var', e.target.value)}
-                  className="h-8 text-sm font-mono"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">index_var</Label>
-                <Input
-                  value={forEach?.index_var || 'index'}
-                  onChange={(e) => updateForEach('index_var', e.target.value)}
-                  className="h-8 text-sm font-mono"
-                />
-              </div>
-              {forEach?.item_var && forEach?.index_var && forEach.item_var === forEach.index_var && (
-                <p className="text-xs text-destructive">⚠ item_var e index_var não podem ser iguais</p>
-              )}
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">Descrição</Label>
+            <Input
+              value={d.description || ''}
+              onChange={(e) => update({ description: e.target.value })}
+              className="h-9 text-sm"
+              placeholder="Descrição opcional"
+            />
+          </div>
+        </TabsContent>
 
-              {/* Reopen Tasks for for_each */}
-              <div className="space-y-3 border-t border-border pt-3">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="h-3.5 w-3.5 text-chart-2" />
-                  <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks (reopen_tasks)</Label>
-                </div>
-                <p className="text-[10px] text-muted-foreground -mt-1">
-                  Selecione quais nós devem ser reexecutados a cada iteração do for_each. O nó atual ({node.id}) é incluído automaticamente.
-                </p>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                  {allNodes.map((n) => {
-                    const nd = n.data as Record<string, any>;
-                    const reopenTasks: string[] = forEach?.reopen_tasks || [];
-                    const isCurrentNode = n.id === node.id;
-                    const isChecked = isCurrentNode || reopenTasks.includes(n.id);
-                    return (
-                      <label
-                        key={n.id}
-                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer hover:bg-muted/50 ${isCurrentNode ? 'opacity-70' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={isCurrentNode}
-                          onChange={(e) => {
-                            let updated = [...reopenTasks];
-                            if (e.target.checked) {
-                              if (!updated.includes(n.id)) updated.push(n.id);
-                            } else {
-                              updated = updated.filter(id => id !== n.id);
-                            }
-                            if (!updated.includes(node.id)) updated.push(node.id);
-                            updateForEach('reopen_tasks', JSON.stringify(updated));
-                          }}
-                          className="rounded border-border"
-                        />
-                        <span className="font-mono text-foreground">{n.id}</span>
-                        <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
-                        {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ============ PLUGIN INPUTS ============ */}
-        <PluginInputsSection
-          nodeId={node.id}
-          definitionId={d.definition_id}
-          inputs={inputs}
-          allNodes={allNodes}
-          definitions={definitions}
-          apiDefinitions={apiDefinitions}
-          onUpdateInputs={onUpdateInputs}
-          currentNodeId={node.id}
-        />
-
-        {/* ============ NODE EXECUTION (UNIT TEST) ============ */}
-        {d.definition_id && (
-          <NodeExecutionPanelWithSchema
+        {/* ===== TAB: INPUTS ===== */}
+        <TabsContent value="inputs" className="flex-1 overflow-y-auto mt-0 p-5 space-y-4">
+          <PluginInputsSection
             nodeId={node.id}
             definitionId={d.definition_id}
             inputs={inputs}
+            allNodes={allNodes}
+            definitions={definitions}
             apiDefinitions={apiDefinitions}
+            onUpdateInputs={onUpdateInputs}
+            currentNodeId={node.id}
           />
-        )}
-      </div>
+        </TabsContent>
+
+        {/* ===== TAB: FLUXO (Loop + ForEach) ===== */}
+        <TabsContent value="flow" className="flex-1 overflow-y-auto mt-0 p-5 space-y-6">
+          {/* ---- WHILE LOOP ---- */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-chart-4/10">
+                  <Repeat className="h-4 w-4 text-chart-4" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-chart-4">While Loop</Label>
+                  <p className="text-[10px] text-muted-foreground">Repetir execução com condição</p>
+                </div>
+              </div>
+              <Switch checked={loopEnabled} onCheckedChange={toggleLoop} />
+            </div>
+
+            {loopEnabled && loopData && (
+              <div className="space-y-4 pl-1 border-l-2 border-chart-4/20 ml-3">
+                <div className="pl-4 space-y-4">
+                  {/* Loop Mode */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Modo do loop</Label>
+                    <Select value={loopMode} onValueChange={(v) => setLoopMode(v as any)}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="while_condition">
+                          <div className="flex items-center gap-2">
+                            <Repeat className="h-3 w-3 text-chart-4" />
+                            <span>While (condição)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="while_true">
+                          <div className="flex items-center gap-2">
+                            <Repeat className="h-3 w-3 text-chart-4" />
+                            <span>While true (fixo)</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* While condition */}
+                  {loopMode === 'while_condition' && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        Condição do while <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="flex gap-1">
+                        <Input
+                          value={loopData.condition || ''}
+                          onChange={(e) => updateLoopEdge({ condition: e.target.value })}
+                          placeholder="node-id.output.status != 200"
+                          className="h-9 text-sm font-mono flex-1"
+                        />
+                        <RefDropdown
+                          allNodes={allNodes}
+                          currentNodeId={node.id}
+                          definitions={definitions}
+                          apiDefinitions={apiDefinitions}
+                          onSelect={(ref) => updateLoopEdge({ condition: (loopData.condition || '') + `{{${ref}}}` })}
+                        />
+                      </div>
+                      {!loopData.condition?.trim() && (
+                        <p className="text-xs text-destructive">⚠ Preencha a condição</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Max iterations */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
+                      max_iterations <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={loopData.max_iterations || ''}
+                      onChange={(e) => updateLoopEdge({ max_iterations: parseInt(e.target.value) || undefined })}
+                      className="h-9 text-sm"
+                    />
+                    {(!loopData.max_iterations || loopData.max_iterations < 1) && (
+                      <p className="text-xs text-destructive">⚠ Obrigatório — limita o número máximo de repetições</p>
+                    )}
+                  </div>
+
+                  {/* Break condition info */}
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      <p className="text-xs font-semibold text-foreground">Condições de Break</p>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <span className="text-destructive font-bold shrink-0">1.</span>
+                        <p>
+                          <strong>max_iterations atingido:</strong> para após{' '}
+                          <code className="bg-muted px-1 rounded text-foreground">{loopData.max_iterations || '?'}</code> execuções
+                        </p>
+                      </div>
+                      {loopMode === 'while_condition' && loopData.condition ? (
+                        <div className="flex items-start gap-2">
+                          <span className="text-destructive font-bold shrink-0">2.</span>
+                          <p>
+                            <strong>Condição falsa:</strong> quando{' '}
+                            <code className="bg-muted px-1 rounded text-foreground">{loopData.condition}</code>{' '}
+                            retornar <code className="bg-muted px-1 rounded text-destructive">false</code>
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2">
+                          <span className="text-chart-4 font-bold shrink-0">2.</span>
+                          <p><em>Sem condição — o loop só para pelo max_iterations</em></p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Loop Delay */}
+                  <div className="space-y-3 border-t border-border pt-3">
+                    <div className="flex items-center gap-2">
+                      <Timer className="h-3.5 w-3.5 text-chart-4" />
+                      <Label className="text-xs font-semibold text-chart-4">Delay entre iterações</Label>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground -mt-1">Se ambos forem preenchidos, segundos tem prioridade.</p>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px]">Segundos</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={loopDelaySeconds}
+                          onChange={(e) => handleLoopDelayChange('loop_delay_seconds', e.target.value)}
+                          placeholder="Ex: 10"
+                          className="h-9 text-sm font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px]">Milissegundos</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="1"
+                          value={loopDelayMs}
+                          onChange={(e) => handleLoopDelayChange('loop_delay_ms', e.target.value)}
+                          placeholder="Ex: 5000"
+                          className="h-9 text-sm font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {loopDelaySeconds !== '' && loopDelayMs !== '' && (
+                      <div className="flex items-start gap-2 p-2 rounded bg-chart-4/10 border border-chart-4/20">
+                        <Info className="h-3.5 w-3.5 text-chart-4 shrink-0 mt-0.5" />
+                        <p className="text-[11px] text-foreground">
+                          <strong>loop_delay_seconds</strong> tem prioridade.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reopen Tasks */}
+                  <div className="space-y-3 border-t border-border pt-3">
+                    <div className="flex items-center gap-2">
+                      <ListChecks className="h-3.5 w-3.5 text-chart-2" />
+                      <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks</Label>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground -mt-1">
+                      Nós reexecutados a cada iteração. O nó atual ({node.id}) é incluído automaticamente.
+                    </p>
+                    <div className="space-y-1 max-h-40 overflow-y-auto rounded-md border border-border p-2">
+                      {allNodes.map((n) => {
+                        const nd = n.data as Record<string, any>;
+                        const reopenTasks: string[] = loopData?.reopen_tasks || [];
+                        const isCurrentNode = n.id === node.id;
+                        const isChecked = isCurrentNode || reopenTasks.includes(n.id);
+                        return (
+                          <label
+                            key={n.id}
+                            className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer hover:bg-muted/50 transition-colors ${isCurrentNode ? 'opacity-70' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={isCurrentNode}
+                              onChange={(e) => {
+                                let updated = [...reopenTasks];
+                                if (e.target.checked) {
+                                  if (!updated.includes(n.id)) updated.push(n.id);
+                                } else {
+                                  updated = updated.filter(id => id !== n.id);
+                                }
+                                if (!updated.includes(node.id)) updated.push(node.id);
+                                updateLoopEdge({ reopen_tasks: updated });
+                              }}
+                              className="rounded border-border"
+                            />
+                            <span className="font-mono text-foreground">{n.id}</span>
+                            <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
+                            {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pseudo-code */}
+                  <div className="p-3 rounded-lg bg-muted border border-border font-mono text-xs text-foreground leading-relaxed">
+                    <div className="text-chart-4 mb-1">// Pseudo-código do loop</div>
+                    {loopMode === 'while_condition' && loopData.condition ? (
+                      <>
+                        <div>i = 0</div>
+                        <div><span className="text-chart-4 font-bold">while</span> ({loopData.condition}) {'{'}</div>
+                        {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
+                          <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
+                        ))}
+                        <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                        {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
+                          <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
+                        )}
+                        <div className="pl-4">i++</div>
+                        <div className="pl-4"><span className="text-destructive font-bold">if</span> (i &gt;= {loopData.max_iterations || '?'}) <span className="text-destructive font-bold">break</span></div>
+                        <div>{'}'}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div><span className="text-chart-4 font-bold">for</span> (i = 0; i &lt; {loopData.max_iterations || '?'}; i++) {'{'}</div>
+                        {((loopData.reopen_tasks || []) as string[]).filter((t: string) => t !== node.id).map((t: string) => (
+                          <div key={t} className="pl-4">reopen(<span className="text-chart-2">{t}</span>)</div>
+                        ))}
+                        <div className="pl-4">executar(<span className="text-chart-2">{node.id}</span>)</div>
+                        {(loopDelaySeconds !== '' || loopDelayMs !== '') && (
+                          <div className="pl-4 text-muted-foreground">sleep({loopDelaySeconds !== '' ? `${loopDelaySeconds}s` : `${loopDelayMs}ms`})</div>
+                        )}
+                        <div>{'}'}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ---- FOR EACH ---- */}
+          <div className="space-y-4 border-t border-border pt-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-muted">
+                  <Repeat className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">for_each</Label>
+                  <p className="text-[10px] text-muted-foreground">Iterar sobre uma lista de itens</p>
+                </div>
+              </div>
+              <Switch checked={forEachEnabled} onCheckedChange={toggleForEach} />
+            </div>
+
+            {forEachEnabled && (
+              <div className="space-y-4 pl-1 border-l-2 border-muted-foreground/20 ml-3">
+                <div className="pl-4 space-y-4">
+                  {/* Items */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">items <span className="text-destructive">*</span></Label>
+                    <div className="flex gap-1">
+                      <Input
+                        value={forEach?.items || ''}
+                        onChange={(e) => updateForEach('items', e.target.value)}
+                        placeholder="{{node-x.output.items}}"
+                        className="h-9 text-sm font-mono flex-1"
+                      />
+                      <RefDropdown
+                        allNodes={allNodes}
+                        currentNodeId={node.id}
+                        definitions={definitions}
+                        apiDefinitions={apiDefinitions}
+                        onSelect={(ref) => updateForEach('items', (forEach?.items || '') + `{{${ref}}}`)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stream toggle */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3.5 w-3.5 text-chart-3" />
+                        <Label className="text-xs font-semibold text-chart-3">Stream (fan-out)</Label>
+                      </div>
+                      <Switch
+                        checked={!!forEach?.stream}
+                        onCheckedChange={(v) => updateForEach('stream', v ? 'true' : 'false')}
+                      />
+                    </div>
+                    {forEach?.stream && (
+                      <div className="p-2.5 rounded-lg bg-chart-3/10 border border-chart-3/20">
+                        <p className="text-[10px] text-foreground">
+                          <strong>Stream ativo:</strong> cada item será despachado individualmente para os nós filhos.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">item_var</Label>
+                      <Input
+                        value={forEach?.item_var || 'item'}
+                        onChange={(e) => updateForEach('item_var', e.target.value)}
+                        className="h-9 text-sm font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">index_var</Label>
+                      <Input
+                        value={forEach?.index_var || 'index'}
+                        onChange={(e) => updateForEach('index_var', e.target.value)}
+                        className="h-9 text-sm font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {forEach?.item_var && forEach?.index_var && forEach.item_var === forEach.index_var && (
+                    <p className="text-xs text-destructive">⚠ item_var e index_var não podem ser iguais</p>
+                  )}
+
+                  {/* Reopen Tasks for for_each */}
+                  <div className="space-y-3 border-t border-border pt-3">
+                    <div className="flex items-center gap-2">
+                      <ListChecks className="h-3.5 w-3.5 text-chart-2" />
+                      <Label className="text-xs font-semibold text-chart-2">Reexecutar Tasks</Label>
+                    </div>
+                    <div className="space-y-1 max-h-40 overflow-y-auto rounded-md border border-border p-2">
+                      {allNodes.map((n) => {
+                        const nd = n.data as Record<string, any>;
+                        const reopenTasks: string[] = forEach?.reopen_tasks || [];
+                        const isCurrentNode = n.id === node.id;
+                        const isChecked = isCurrentNode || reopenTasks.includes(n.id);
+                        return (
+                          <label
+                            key={n.id}
+                            className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer hover:bg-muted/50 transition-colors ${isCurrentNode ? 'opacity-70' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={isCurrentNode}
+                              onChange={(e) => {
+                                let updated = [...reopenTasks];
+                                if (e.target.checked) {
+                                  if (!updated.includes(n.id)) updated.push(n.id);
+                                } else {
+                                  updated = updated.filter(id => id !== n.id);
+                                }
+                                if (!updated.includes(node.id)) updated.push(node.id);
+                                updateForEach('reopen_tasks', JSON.stringify(updated));
+                              }}
+                              className="rounded border-border"
+                            />
+                            <span className="font-mono text-foreground">{n.id}</span>
+                            <span className="text-muted-foreground truncate">({nd.label || nd.definition_id})</span>
+                            {isCurrentNode && <span className="text-chart-2 text-[10px]">(auto)</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ===== TAB: TESTE ===== */}
+        <TabsContent value="test" className="flex-1 overflow-y-auto mt-0 p-5">
+          {hasDefinition ? (
+            <NodeExecutionPanelWithSchema
+              nodeId={node.id}
+              definitionId={d.definition_id}
+              inputs={inputs}
+              apiDefinitions={apiDefinitions}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Play className="h-8 w-8 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">Selecione um tipo de bloco na aba <strong>Geral</strong> para executar testes.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </>
   );
 
   if (isMobile) {
     return (
       <Sheet open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <SheetContent side="right" className="w-[90vw] max-w-md p-0 overflow-y-auto">
-          <SheetHeader className="p-4 border-b border-border">
-            <SheetTitle className="text-sm">Configuração do Nó</SheetTitle>
+        <SheetContent side="right" className="w-[90vw] max-w-lg p-0 overflow-hidden">
+          <SheetHeader className="px-5 py-3.5 border-b border-border">
+            <SheetTitle className="text-sm">{d.label || 'Configuração do Nó'}</SheetTitle>
           </SheetHeader>
-          <div className="flex flex-col">{panelContent}</div>
+          <div className="flex flex-col h-[calc(100%-60px)]">{panelContent}</div>
         </SheetContent>
       </Sheet>
     );
   }
 
   return (
-    <div className="w-80 shrink-0 border rounded-lg bg-card overflow-y-auto flex flex-col">
+    <div className="w-[420px] shrink-0 border rounded-lg bg-card overflow-hidden flex flex-col">
       {panelContent}
     </div>
   );
