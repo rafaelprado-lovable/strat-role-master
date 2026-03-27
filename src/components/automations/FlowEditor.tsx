@@ -17,9 +17,11 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Globe,
+  ArrowLeft, Save, Clock, Globe, History,
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
+import { workflowVersionService } from '@/services/workflowVersionService';
+import { VersionHistoryDialog } from './VersionHistoryDialog';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
@@ -318,6 +320,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [validationDialogOpen, setValidationDialogOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) || null : null;
@@ -531,9 +534,24 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
     setNodeInputs((prev) => ({ ...prev, [nodeId]: inputs }));
   }, []);
 
+  const createAutoVersion = useCallback(async (wf: Workflow) => {
+    if (!wf.id || wf.id.startsWith('wf-')) return; // skip unsaved workflows
+    try {
+      await workflowVersionService.create(wf.id, exportWorkflowJson(wf) as Record<string, unknown>);
+    } catch (err) {
+      console.warn('Falha ao criar versão automática:', err);
+    }
+  }, []);
+
+  const handleRestoreVersion = useCallback((snapshot: Record<string, unknown>) => {
+    // Reload page with restored data — parent will re-render with updated workflow
+    window.location.reload();
+  }, []);
+
   const handleSave = () => {
     const wf = buildWorkflow();
     onSave(wf);
+    createAutoVersion(wf);
     toast.success('Rascunho salvo');
   };
 
@@ -562,6 +580,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         await workflowService.create(exportData);
         toast.success('Workflow cadastrado com sucesso');
       }
+      await createAutoVersion(wf);
       onSave(wf);
       onBack();
     } catch (err: any) {
@@ -642,6 +661,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               </span>
             )}
           </Button>
+          {workflow?.id && !workflow.id.startsWith('wf-') && (
+            <Button variant="outline" size="sm" onClick={() => setVersionHistoryOpen(true)}>
+              <History className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Versões</span>
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Salvar Rascunho</span>
@@ -837,6 +862,16 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Version History */}
+      {workflow?.id && (
+        <VersionHistoryDialog
+          open={versionHistoryOpen}
+          onOpenChange={setVersionHistoryOpen}
+          workflowId={workflow.id}
+          onRestore={handleRestoreVersion}
+        />
+      )}
     </div>
   );
 }
