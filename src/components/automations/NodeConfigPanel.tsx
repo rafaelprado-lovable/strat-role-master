@@ -204,7 +204,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
         </div>
       )}
 
-      <Tabs defaultValue="general" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-2 pt-1 pb-0 h-auto gap-0 shrink-0">
           <TabsTrigger value="general" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
             <Settings2 className="h-3.5 w-3.5" />
@@ -782,7 +782,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
   }
 
   return (
-    <div className="w-[420px] shrink-0 border rounded-lg bg-card overflow-hidden flex flex-col">
+    <div className={`${panelWidth} shrink-0 border rounded-lg bg-card overflow-hidden flex flex-col transition-all duration-200`}>
       {panelContent}
     </div>
   );

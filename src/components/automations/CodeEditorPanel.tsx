@@ -154,7 +154,7 @@ export function CodeEditorPanel({ code, language, onCodeChange, onLanguageChange
       </div>
 
       {/* Editor */}
-      <div className="flex-1 min-h-0 rounded-lg overflow-hidden border border-border">
+      <div className="flex-1 min-h-[400px] rounded-lg overflow-hidden border border-border">
         <CodeMirror
           value={code}
           onChange={onCodeChange}
