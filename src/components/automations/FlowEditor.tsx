@@ -339,7 +339,9 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       const node: any = {
         id: n.id,
         definition_id: d.definition_id || '',
-        config: {},
+        config: {
+          ...(d.switchCases ? { switchCases: d.switchCases } : {}),
+        },
         position: n.position,
       };
       if (d.for_each) node.for_each = d.for_each;
