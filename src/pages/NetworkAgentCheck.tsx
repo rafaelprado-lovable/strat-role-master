@@ -788,6 +788,7 @@ const NetworkAgentCheck = () => {
             </Card>
           )}
 
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Resumo por Endpoint</CardTitle>
             </CardHeader>
