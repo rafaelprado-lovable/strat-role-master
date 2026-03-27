@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { type Node, type Edge } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, ArrowRight, ChevronDown, ChevronRight, Import, Share2, Settings2, GitBranch, Database, Play } from 'lucide-react';
+import { X, Repeat, Eye, ShieldAlert, Info, Timer, ListChecks, Zap, Code, Code2, ArrowRight, ChevronDown, ChevronRight, Import, Share2, Settings2, GitBranch, Database, Play } from 'lucide-react';
+import { CodeEditorPanel } from './CodeEditorPanel';
 import { type WorkflowForEach } from '@/types/automations';
 import type { BlockDef } from './FlowEditor';
 import { PLUGIN_SCHEMAS, type PluginField } from '@/types/pluginSchemas';
@@ -219,6 +220,12 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
             <Play className="h-3.5 w-3.5" />
             Teste
           </TabsTrigger>
+          {d.definition_id === 'code_execution_v1' && (
+            <TabsTrigger value="code" className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs px-3 py-2 gap-1.5">
+              <Code2 className="h-3.5 w-3.5" />
+              Código
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ===== TAB: GERAL ===== */}
@@ -742,6 +749,18 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
             </div>
           )}
         </TabsContent>
+
+        {/* ===== TAB: CÓDIGO ===== */}
+        {d.definition_id === 'code_execution_v1' && (
+          <TabsContent value="code" className="flex-1 overflow-hidden mt-0 p-4 flex flex-col">
+            <CodeEditorPanel
+              code={(d.code as string) || ''}
+              language={(d.code_language as 'python' | 'javascript' | 'shell' | 'json') || 'python'}
+              onCodeChange={(code) => update({ code })}
+              onLanguageChange={(lang) => update({ code_language: lang })}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );
