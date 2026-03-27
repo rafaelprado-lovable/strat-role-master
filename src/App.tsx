@@ -197,6 +197,14 @@ const App = () => (
               }
             />
             <Route
+              path="/network-agent-check"
+              element={
+                <AppLayout>
+                  <NetworkAgentCheck />
+                </AppLayout>
+              }
+            />
+            <Route
               path="/post/change"
               element={
                 <AppLayout>
