@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { icons, Globe, Repeat } from 'lucide-react';
+import { icons, Globe, Repeat, Zap } from 'lucide-react';
 
 function resolveIcon(iconName?: string): React.ElementType {
   if (!iconName) return Globe;
@@ -43,14 +43,13 @@ const colorMap: Record<string, string> = {
 
 const defaultHsl = '220 10% 50%';
 
-// Colors for switch case handles
 const switchCaseColors = [
-  '210 100% 50%', // blue
-  '142 70% 45%',  // green
-  '35 95% 55%',   // orange
-  '280 80% 55%',  // violet
-  '350 80% 55%',  // red
-  '190 100% 45%', // cyan
+  '210 100% 50%',
+  '142 70% 45%',
+  '35 95% 55%',
+  '280 80% 55%',
+  '350 80% 55%',
+  '190 100% 45%',
 ];
 
 function TaskNodeComponent({ data, selected }: NodeProps) {
@@ -70,13 +69,13 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
   const isSwitch = d.definition_id === 'switch_v1';
   const cases = isSwitch ? (d.switchCases || ['Case 1', 'Default']) : [];
 
-  // Calculate node height based on number of cases
-  const nodeHeight = isSwitch ? Math.max(52, 20 + cases.length * 22) : 52;
+  const nodeHeight = isSwitch ? Math.max(64, 28 + cases.length * 22) : 64;
+  const nodeWidth = isSwitch ? 110 : 90;
 
   return (
     <div
-      className="relative flex flex-col items-center gap-1.5 group"
-      style={{ width: isSwitch ? 100 : 80 }}
+      className="relative flex flex-col items-center gap-1 group"
+      style={{ width: nodeWidth + 20 }}
     >
       {/* Left (target) handle */}
       {!isTrigger && (
@@ -84,44 +83,81 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
           type="target"
           position={Position.Left}
           id="left"
-          className="!w-2.5 !h-2.5 !border-2 !border-background !-left-1"
+          className="!w-3 !h-3 !rounded-full !border-2 !border-background !-left-1.5 !shadow-sm"
           style={{ background: `hsl(${hsl})`, top: nodeHeight / 2 }}
         />
       )}
 
-      {/* Main icon box */}
+      {/* Outer glow on selection */}
+      <div
+        className="absolute rounded-2xl transition-all duration-200 pointer-events-none"
+        style={{
+          inset: -4,
+          top: -4,
+          height: nodeHeight + 8,
+          background: selected ? `hsl(${hsl} / 0.08)` : 'transparent',
+          boxShadow: selected ? `0 0 20px 2px hsl(${hsl} / 0.2)` : 'none',
+          borderRadius: 18,
+        }}
+      />
+
+      {/* Main card */}
       <div
         className={`
-          rounded-xl flex items-center justify-center
-          border-2 shadow-md transition-all duration-150
-          bg-card
+          relative rounded-2xl flex flex-col items-center justify-center
+          border shadow-md transition-all duration-200
+          bg-card overflow-hidden
           ${selected
-            ? 'ring-2 ring-ring ring-offset-1 ring-offset-background scale-105 shadow-lg'
-            : 'group-hover:shadow-lg group-hover:scale-[1.03]'
+            ? 'shadow-lg scale-[1.04]'
+            : 'group-hover:shadow-lg group-hover:scale-[1.02]'
           }
         `}
         style={{
-          borderColor: `hsl(${hsl} / 0.5)`,
-          width: isSwitch ? 72 : 52,
+          borderColor: selected ? `hsl(${hsl} / 0.7)` : `hsl(${hsl} / 0.3)`,
+          borderWidth: selected ? 2 : 1.5,
+          width: nodeWidth,
           height: nodeHeight,
         }}
       >
-        <div className="flex flex-col items-center gap-1">
+        {/* Top color accent bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{
+            background: `linear-gradient(90deg, hsl(${hsl} / 0.7), hsl(${hsl} / 0.3))`,
+          }}
+        />
+
+        {/* Trigger lightning badge */}
+        {isTrigger && (
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: `hsl(${hsl} / 0.15)` }}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center border-2 border-background shadow-sm"
+            style={{ background: `hsl(${hsl})` }}
+          >
+            <Zap size={10} className="text-white fill-white" />
+          </div>
+        )}
+
+        <div className="flex flex-col items-center gap-1.5 py-2">
+          {/* Icon container */}
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+            style={{
+              background: `linear-gradient(135deg, hsl(${hsl} / 0.18), hsl(${hsl} / 0.08))`,
+              boxShadow: `0 2px 8px hsl(${hsl} / 0.15)`,
+            }}
           >
             <Icon
               size={20}
-              strokeWidth={2.4}
+              strokeWidth={2.2}
               absoluteStrokeWidth
               className="shrink-0"
               style={{ color: `hsl(${hsl})` }}
             />
           </div>
-          {/* Switch case labels inside the box */}
+
+          {/* Switch case labels */}
           {isSwitch && cases.length > 0 && (
-            <div className="flex flex-col gap-0.5 w-full px-1">
+            <div className="flex flex-col gap-0.5 w-full px-2">
               {cases.map((c, i) => (
                 <div key={i} className="flex items-center gap-1">
                   <div
@@ -137,40 +173,60 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
       </div>
 
       {/* Label */}
-      <span className="text-[10px] font-medium text-foreground text-center leading-tight max-w-[90px] truncate">
+      <span
+        className="text-[10px] font-semibold text-foreground text-center leading-tight max-w-[100px] truncate mt-0.5"
+        title={d.label}
+      >
         {d.label}
+      </span>
+
+      {/* Definition ID subtitle */}
+      <span className="text-[8px] text-muted-foreground/60 font-mono truncate max-w-[100px]">
+        {d.definition_id}
       </span>
 
       {/* Badges */}
       {(d.hasForEach || d.hasLoop) && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 mt-0.5">
           {d.hasForEach && (
-            <div className="flex items-center gap-0.5 px-1 py-px rounded bg-chart-4/10 border border-chart-4/20">
-              <Repeat className="h-2 w-2 text-chart-4" />
-              <span className="text-[8px] text-chart-4 font-medium">each</span>
+            <div
+              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border"
+              style={{
+                background: `hsl(${hsl} / 0.08)`,
+                borderColor: `hsl(${hsl} / 0.2)`,
+              }}
+            >
+              <Repeat className="h-2 w-2" style={{ color: `hsl(${hsl})` }} />
+              <span className="text-[7px] font-semibold" style={{ color: `hsl(${hsl})` }}>each</span>
             </div>
           )}
           {d.hasLoop && (
-            <div className="flex items-center gap-0.5 px-1 py-px rounded bg-chart-4/10 border border-chart-4/20">
-              <Repeat className="h-2 w-2 text-chart-4" />
-              <span className="text-[8px] text-chart-4 font-medium">loop</span>
+            <div
+              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border"
+              style={{
+                background: `hsl(${hsl} / 0.08)`,
+                borderColor: `hsl(${hsl} / 0.2)`,
+              }}
+            >
+              <Repeat className="h-2 w-2" style={{ color: `hsl(${hsl})` }} />
+              <span className="text-[7px] font-semibold" style={{ color: `hsl(${hsl})` }}>loop</span>
             </div>
           )}
         </div>
       )}
 
-      {/* Right (source) handles — multiple for switch, single for others */}
+      {/* Right (source) handles */}
       {isSwitch ? (
-        cases.map((c, i) => (
+        cases.map((_, i) => (
           <Handle
             key={`switch-${i}`}
             type="source"
             position={Position.Right}
             id={`switch-${i}`}
-            className="!w-2.5 !h-2.5 !border-2 !border-background !-right-1"
+            className="!w-3 !h-3 !rounded-full !border-2 !border-background !-right-1.5 !shadow-sm"
             style={{
               background: `hsl(${switchCaseColors[i % switchCaseColors.length]})`,
-              top: 16 + ((nodeHeight - 16) / (cases.length + 1)) * (i + 1),
+              top: 20 + ((nodeHeight - 20) / (cases.length + 1)) * (i + 1),
             }}
           />
         ))
@@ -179,14 +235,14 @@ function TaskNodeComponent({ data, selected }: NodeProps) {
           type="source"
           position={Position.Right}
           id="right"
-          className="!w-2.5 !h-2.5 !border-2 !border-background !-right-1"
+          className="!w-3 !h-3 !rounded-full !border-2 !border-background !-right-1.5 !shadow-sm"
           style={{ background: `hsl(${hsl})`, top: nodeHeight / 2 }}
         />
       )}
 
       {/* Loop handles */}
-      <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2 !h-2 !border-2 !border-background" />
-      <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2 !h-2 !border-2 !border-background" />
+      <Handle type="source" position={Position.Bottom} id="loop-out" className="!bg-chart-4 !w-2.5 !h-2.5 !rounded-full !border-2 !border-background !shadow-sm" />
+      <Handle type="target" position={Position.Top} id="loop-in" className="!bg-chart-4 !w-2.5 !h-2.5 !rounded-full !border-2 !border-background !shadow-sm" />
     </div>
   );
 }
