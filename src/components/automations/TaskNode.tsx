@@ -21,6 +21,7 @@ const colorMap: Record<string, string> = {
   condition_v1: '160 60% 45%',
   switch_v1: '160 60% 45%',
   filter_v1: '160 60% 45%',
+  code_execution_v1: '45 100% 50%',
 };
 
 const defaultHsl = '220 10% 50%';

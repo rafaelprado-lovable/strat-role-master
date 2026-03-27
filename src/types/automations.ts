@@ -73,6 +73,7 @@ export const DEFINITION_IDS = [
   { value: 'http_agent_v1', label: 'API Call', icon: 'globe', description: 'Chamada HTTP/API', category: 'action' },
   { value: 'delay_v1', label: 'Delay', icon: 'timer', description: 'Aguarda um tempo antes de continuar', category: 'action' },
   { value: 'llm_agent_v1', label: 'LLM Analyse', icon: 'brain', description: 'Análise inteligente via LLM', category: 'action' },
+  { value: 'code_execution_v1', label: 'Code', icon: 'code-2', description: 'Executa código personalizado (Python, JS, Shell, JSON)', category: 'action' },
 ] as const;
 
 export type DefinitionId = typeof DEFINITION_IDS[number]['value'];
