@@ -38,22 +38,14 @@ export interface EndpointResult {
 }
 
 
-// ─── Real API calls ───────────────────────────────────────────────
+// ─── API calls ────────────────────────────────────────────────────
 export async function fetchEndpoints(): Promise<EndpointConfig[]> {
-  if (USE_MOCK) {
-    await delay(300);
-    return MOCK_ENDPOINTS;
-  }
   const res = await fetch(`${BASE_URL}/v1/network-sanity/endpoints`);
   if (!res.ok) throw new Error(`Failed: ${res.status}`);
   return res.json();
 }
 
 export async function runAllTests(endpoints: EndpointConfig[]): Promise<EndpointResult[]> {
-  if (USE_MOCK) {
-    await delay(1200);
-    return mockRunAllTests();
-  }
   const results = await Promise.all(
     endpoints.map(async (ep) => {
       const [pingRes, traceRes] = await Promise.all([
@@ -64,8 +56,4 @@ export async function runAllTests(endpoints: EndpointConfig[]): Promise<Endpoint
     })
   );
   return results;
-}
-
-function delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }
