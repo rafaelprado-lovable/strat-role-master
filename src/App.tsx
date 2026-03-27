@@ -37,6 +37,7 @@ import Runbooks from "./pages/Runbooks";
 import ChangeExecutionPmid from "./pages/ChangeExecutionPmid";
 import HeimdallCli from "./pages/HeimdallCli";
 import NetworkAgentCheck from "./pages/NetworkAgentCheck";
+import HeimdallInfra from "./pages/HeimdallInfra";
 
 const queryClient = new QueryClient();
 
@@ -300,6 +301,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <HeimdallCli />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/heimdall-infra"
+              element={
+                <AppLayout>
+                  <HeimdallInfra />
                 </AppLayout>
               }
             />
