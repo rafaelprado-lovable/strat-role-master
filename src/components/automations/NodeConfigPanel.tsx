@@ -51,6 +51,9 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
   const [inputsJson, setInputsJson] = useState(JSON.stringify(inputs || {}, null, 2));
   const [jsonError, setJsonError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  const isCodeNode = d.definition_id === 'code_execution_v1';
+  const panelWidth = isCodeNode && activeTab === 'code' ? 'w-[700px]' : 'w-[420px]';
 
   // Loop delay state (from inputs)
   const currentInputs = inputs || {};
