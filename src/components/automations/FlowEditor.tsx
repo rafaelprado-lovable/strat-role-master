@@ -259,6 +259,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       hasForEach: !!n.for_each,
       hasLoop: selfLoopNodeIds.has(n.id),
       isTrigger: blockLibrary.find(d => d.value === n.definition_id)?.category === 'trigger',
+      ...(n.definition_id === 'switch_v1' ? { switchCases: (n.config as any)?.switchCases || ['Case 1', 'Case 2', 'Default'] } : {}),
     },
   })) || [];
 
