@@ -317,7 +317,7 @@ const NetworkAgentCheck = () => {
 
     const minX = d3.min(uniqueNodes, (node) => node.x ?? 0) ?? 0;
     const maxX = d3.max(uniqueNodes, (node) => node.x ?? 0) ?? 0;
-    const minY = d3.min(uniqueNodes, (node) => node.y ?? 0) ?? 0) ?? 0;
+    const minY = d3.min(uniqueNodes, (node) => node.y ?? 0) ?? 0;
     const maxY = d3.max(uniqueNodes, (node) => node.y ?? 0) ?? 0;
     const graphWidth = Math.max(maxX - minX, 1);
     const graphHeight = Math.max(maxY - minY, 1);
