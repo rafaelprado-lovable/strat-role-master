@@ -222,8 +222,22 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
-  // Hardcoded block library — always available
-  const blockLibrary = STATIC_BLOCKS;
+  // Start with hardcoded blocks, merge API definitions on top
+  const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>(STATIC_BLOCKS);
+
+  useEffect(() => {
+    definitionService.list().then(defs => {
+      if (Array.isArray(defs) && defs.length > 0) {
+        const apiBlocks = definitionsToBlocks(defs);
+        // Merge: API blocks + static blocks not already in API
+        const apiValues = new Set(apiBlocks.map(b => b.value));
+        const merged = [...apiBlocks, ...STATIC_BLOCKS.filter(b => !apiValues.has(b.value))];
+        setBlockLibrary(merged);
+      }
+    }).catch(err => {
+      console.warn('Falha ao carregar definições da API, usando fallback estático:', err);
+    });
+  }, []);
 
   const triggers = useMemo(() => blockLibrary.filter(b => b.category === 'trigger'), [blockLibrary]);
   const filters = useMemo(() => blockLibrary.filter(b => b.category === 'filter'), [blockLibrary]);
