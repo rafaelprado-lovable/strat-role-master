@@ -45,6 +45,12 @@ export async function fetchEndpoints(): Promise<EndpointConfig[]> {
   return res.json();
 }
 
+export async function pingHost(host: string): Promise<PingResult> {
+  const res = await fetch(`${BASE_URL}/v1/network-sanity/ping/${encodeURIComponent(host)}`);
+  if (!res.ok) throw new Error(`Ping failed: ${res.status}`);
+  return res.json();
+}
+
 export async function runAllTests(endpoints: EndpointConfig[]): Promise<EndpointResult[]> {
   const results = await Promise.all(
     endpoints.map(async (ep) => {
