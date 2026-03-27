@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Activity, CheckCircle, AlertTriangle, RefreshCw, Clock, Network, Loader2, X } from 'lucide-react';
 import {
   fetchEndpoints,
