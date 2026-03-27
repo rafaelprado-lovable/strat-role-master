@@ -12,16 +12,33 @@ function resolveIcon(iconName?: string): React.ElementType {
 }
 
 const colorMap: Record<string, string> = {
-  ssh_execution: '270 75% 60%',
-  send_whatsapp_message_v1: '142 70% 45%',
-  api_call_v1: '190 100% 45%',
+  // Triggers
   get_specific_incident_v1: '35 95% 55%',
-  delay_v1: '210 100% 50%',
-  llm_analyse_v1: '280 80% 55%',
+  webhook_trigger_v1: '25 90% 55%',
+  schedule_trigger_v1: '40 85% 50%',
+  // Filters / Flow control
   condition_v1: '160 60% 45%',
   switch_v1: '160 60% 45%',
   filter_v1: '160 60% 45%',
+  merge_v1: '200 75% 50%',
+  split_v1: '175 65% 45%',
+  aggregate_v1: '230 60% 55%',
+  sort_v1: '185 55% 50%',
+  limit_v1: '170 50% 48%',
+  deduplicate_v1: '195 60% 50%',
+  noop_v1: '220 15% 55%',
+  // Actions
+  ssh_agent_v1: '270 75% 60%',
+  send_whatsapp_message_v1: '142 70% 45%',
+  http_agent_v1: '190 100% 45%',
+  delay_v1: '210 100% 50%',
+  llm_agent_v1: '280 80% 55%',
   code_execution_v1: '45 100% 50%',
+  set_v1: '310 65% 55%',
+  rename_keys_v1: '320 55% 50%',
+  summarize_v1: '350 70% 55%',
+  split_batches_v1: '150 55% 48%',
+  wait_v1: '215 70% 55%',
 };
 
 const defaultHsl = '220 10% 50%';
