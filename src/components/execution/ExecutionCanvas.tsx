@@ -103,7 +103,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
         setAnimClass('exec-node-enter-running');
       } else if (state === 'finished' && (prev === 'running')) {
         setAnimClass('exec-node-enter-finished');
-      } else if (state === 'error' || state === 'failed') {
+      } else if (state === 'error') {
         setAnimClass('exec-node-enter-error');
       } else {
         setAnimClass('');
@@ -127,7 +127,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
     ? `0 0 16px hsl(var(--primary) / 0.4), 0 0 6px hsl(var(--primary) / 0.2)`
     : state === 'finished'
       ? `0 0 12px hsl(var(--chart-2) / 0.3)`
-      : state === 'error' || state === 'failed'
+      : state === 'error'
         ? `0 0 12px hsl(var(--destructive) / 0.3)`
         : undefined;
 
@@ -172,7 +172,7 @@ function ExecutionNodeComponent({ data, selected }: NodeProps) {
                 <CheckCircle2 className="h-3.5 w-3.5 text-chart-2" />
               </div>
             )}
-            {(state === 'error' || state === 'failed') && (
+            {state === 'error' && (
               <div className="relative bg-background rounded-full p-px">
                 <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
               </div>
