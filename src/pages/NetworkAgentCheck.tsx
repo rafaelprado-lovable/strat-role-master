@@ -734,7 +734,60 @@ const NetworkAgentCheck = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Node Detail Panel */}
+          {selectedNode && (
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Detalhe do Nó</CardTitle>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedNode(null)}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-3">
+                {nodePingLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : nodePing ? (
+                  <div className="space-y-1.5 text-xs font-mono">
+                    {[
+                      ['Destino', selectedNode.name],
+                      ['Host', selectedNode.host],
+                      ['Nome resolvido', nodePing.resolved_name || '-'],
+                      ['Status', '__status__'],
+                      ['Pacotes (T/R)', `${nodePing.transmitted}/${nodePing.received}`],
+                      ['Perda', `${nodePing.loss}%`],
+                      ['Alerta', nodePing.alert?.reason || (nodePing.alert?.sent ? 'enviado' : '-')],
+                      ['RTT medio', nodePing.rtt_avg != null ? `${nodePing.rtt_avg.toFixed(2)} ms` : '-'],
+                      ['RTT min/max', nodePing.rtt_min != null && nodePing.rtt_max != null ? `${nodePing.rtt_min.toFixed(2)} / ${nodePing.rtt_max.toFixed(2)} ms` : '-'],
+                    ].map(([label, value]) => {
+                      if (value === '__status__') {
+                        const sev = getSeverity(nodePing);
+                        const st = toStatusLabel(sev);
+                        return (
+                          <div key={label} className="flex justify-between">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className={sev === 'success' ? 'text-emerald-400 font-semibold' : sev === 'warning' ? 'text-amber-400 font-semibold' : 'text-destructive font-semibold'}>
+                              {nodePing.error || st.text}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={label as string} className="flex justify-between">
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className="text-foreground">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">Erro ao obter dados de ping</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Resumo por Endpoint</CardTitle>
             </CardHeader>
