@@ -793,38 +793,65 @@ const NetworkAgentCheck = () => {
               <CardTitle className="text-sm">Resumo por Endpoint</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[280px]">
+              <ScrollArea className="h-[320px]">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Host</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Resolved</th>
                       <th className="text-left p-2 text-muted-foreground font-medium">Status</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium">Perda</th>
-                      <th className="text-left p-2 text-muted-foreground font-medium">RTT médio</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium">T/R</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium">Perda</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium">RTT avg</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium">RTT min</th>
+                      <th className="text-right p-2 text-muted-foreground font-medium">RTT max</th>
+                      <th className="text-left p-2 text-muted-foreground font-medium">Alerta</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map((r) => {
                       const severity = getSeverity(r.ping);
                       const status = toStatusLabel(severity);
+                      const alertSent = r.ping?.alert?.sent;
                       return (
-                        <tr key={r.name} className="border-b border-border/50">
+                        <tr
+                          key={r.name}
+                          className="border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => handleNodeClick(r.name, r.host)}
+                        >
                           <td className="p-2 font-mono">{r.name}</td>
+                          <td className="p-2 font-mono text-muted-foreground">{r.host}</td>
+                          <td className="p-2 font-mono text-muted-foreground">{r.ping?.resolved_name || '--'}</td>
                           <td className="p-2">
                             <Badge variant={status.variant} className="text-xs">
                               {status.text}
                             </Badge>
                           </td>
-                          <td className="p-2">{r.ping?.loss ?? '--'}%</td>
-                          <td className="p-2">
+                          <td className="p-2 text-right">{r.ping?.transmitted ?? '--'}/{r.ping?.received ?? '--'}</td>
+                          <td className="p-2 text-right">{r.ping?.loss ?? '--'}%</td>
+                          <td className="p-2 text-right">
                             {r.ping?.rtt_avg != null ? `${r.ping.rtt_avg.toFixed(2)} ms` : '--'}
+                          </td>
+                          <td className="p-2 text-right">
+                            {r.ping?.rtt_min != null ? `${r.ping.rtt_min.toFixed(2)} ms` : '--'}
+                          </td>
+                          <td className="p-2 text-right">
+                            {r.ping?.rtt_max != null ? `${r.ping.rtt_max.toFixed(2)} ms` : '--'}
+                          </td>
+                          <td className="p-2">
+                            {alertSent != null ? (
+                              <Badge variant={alertSent ? 'destructive' : 'secondary'} className="text-xs">
+                                {alertSent ? 'Enviado' : 'Não'}
+                              </Badge>
+                            ) : '--'}
                           </td>
                         </tr>
                       );
                     })}
                     {!results.length && (
                       <tr>
-                        <td colSpan={4} className="p-4 text-center text-muted-foreground">
+                        <td colSpan={10} className="p-4 text-center text-muted-foreground">
                           Execute o diagnóstico para ver resultados
                         </td>
                       </tr>
