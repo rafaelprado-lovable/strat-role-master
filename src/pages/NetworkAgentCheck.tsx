@@ -301,62 +301,164 @@ const NetworkAgentCheck = () => {
       .attr('transform', (d) => `translate(${d.x},${d.y})`)
       .style('cursor', 'pointer');
 
+    // Define glow filter
+    const defs = svg.select('defs').size() ? svg.select('defs') : svg.append('defs');
+    ['success', 'warning', 'failure'].forEach((sev) => {
+      const filter = defs.append('filter').attr('id', `glow-${sev}`).attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+      filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+      filter.append('feFlood').attr('flood-color', COLOR_MAP[sev as Severity]).attr('flood-opacity', '0.35').attr('result', 'color');
+      filter.append('feComposite').attr('in', 'color').attr('in2', 'blur').attr('operator', 'in').attr('result', 'shadow');
+      const merge = filter.append('feMerge');
+      merge.append('feMergeNode').attr('in', 'shadow');
+      merge.append('feMergeNode').attr('in', 'SourceGraphic');
+    });
+
     nodes.each(function (nodeData) {
       const group = d3.select(this);
-      const radius = nodeData.type === 'source' ? 28 : 18;
 
       if (nodeData.type === 'source') {
-        group.insert('circle', ':first-child')
-          .attr('r', 34)
+        // Source node — large rounded card
+        const w = 80, h = 80, r = 16;
+        group.insert('rect', ':first-child')
+          .attr('x', -w / 2 - 6).attr('y', -h / 2 - 6)
+          .attr('width', w + 12).attr('height', h + 12)
+          .attr('rx', r + 4)
+          .attr('fill', 'none')
           .attr('stroke', 'hsl(var(--primary))')
-          .attr('stroke-width', 1.4)
-          .attr('fill', 'hsl(var(--primary) / 0.2)')
-          .style('animation', 'pulse 1.9s ease-out infinite');
-      }
-
-      group.append('circle')
-        .attr('r', radius)
-        .attr('fill', nodeData.type === 'source' ? 'hsl(210, 50%, 20%)' : 'hsl(210, 40%, 15%)')
-        .attr('stroke', COLOR_MAP[nodeData.severity] || 'hsl(var(--primary))')
-        .attr('stroke-width', 1.4);
-
-      if (nodeData.imageUrl) {
-        const size = nodeData.type === 'source' ? 42 : 30;
+          .attr('stroke-width', 1.2)
+          .attr('stroke-opacity', 0.4)
+          .style('animation', 'pulse 2s ease-out infinite');
+        group.append('rect')
+          .attr('x', -w / 2).attr('y', -h / 2)
+          .attr('width', w).attr('height', h)
+          .attr('rx', r)
+          .attr('fill', 'hsl(210, 50%, 12%)')
+          .attr('stroke', 'hsl(var(--primary))')
+          .attr('stroke-width', 1.6);
         group.append('image')
-          .attr('href', nodeData.imageUrl)
-          .attr('x', -size / 2)
-          .attr('y', -size / 2)
-          .attr('width', size)
-          .attr('height', size);
-      } else {
+          .attr('href', COMPANY_LOGO_URL)
+          .attr('x', -22).attr('y', -28)
+          .attr('width', 44).attr('height', 36)
+          .attr('preserveAspectRatio', 'xMidYMid meet');
+        group.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('y', 28)
+          .attr('fill', 'hsl(var(--muted-foreground))')
+          .style('font-size', '8px')
+          .style('font-weight', '600')
+          .style('letter-spacing', '0.08em')
+          .text('ORIGIN');
+
+      } else if (nodeData.type === 'destination') {
+        // Destination — rounded card with status indicator
+        const w = 64, h = 64, r = 14;
+        const color = COLOR_MAP[nodeData.severity];
+        group.append('rect')
+          .attr('x', -w / 2).attr('y', -h / 2)
+          .attr('width', w).attr('height', h)
+          .attr('rx', r)
+          .attr('fill', 'hsl(210, 40%, 10%)')
+          .attr('stroke', color)
+          .attr('stroke-width', 1.6)
+          .attr('filter', `url(#glow-${nodeData.severity})`);
+        // Globe icon
         group.append('text')
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'central')
-          .style('font-size', '27px')
-          .text(nodeData.icon || '●');
+          .attr('y', -6)
+          .style('font-size', '22px')
+          .text('🌐');
+        // Status dot
+        group.append('circle')
+          .attr('cx', w / 2 - 4).attr('cy', -h / 2 + 4)
+          .attr('r', 5)
+          .attr('fill', color)
+          .attr('stroke', 'hsl(210, 40%, 10%)')
+          .attr('stroke-width', 2);
+        // Latency inside card
+        group.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('y', 18)
+          .attr('fill', color)
+          .style('font-size', '9px')
+          .style('font-weight', '700')
+          .style('font-family', 'monospace')
+          .text(nodeData.rtt_avg != null ? `${nodeData.rtt_avg.toFixed(1)}ms` : nodeData.error ? 'ERR' : '--');
+
+      } else {
+        // Hop node — small circle with subtle glow
+        const hopColor = COLOR_MAP[nodeData.severity];
+        group.append('circle')
+          .attr('r', 12)
+          .attr('fill', 'hsl(210, 40%, 13%)')
+          .attr('stroke', hopColor)
+          .attr('stroke-width', 1.2)
+          .attr('filter', `url(#glow-${nodeData.severity})`);
+        if (nodeData.ip === '*') {
+          group.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .style('font-size', '11px')
+            .attr('fill', hopColor)
+            .style('font-weight', '700')
+            .text('✖');
+        } else {
+          group.append('circle')
+            .attr('r', 4)
+            .attr('fill', hopColor)
+            .attr('fill-opacity', 0.6);
+        }
       }
     });
 
-    // Node labels
-    nodes.append('text')
-      .attr('fill', 'hsl(var(--foreground))')
-      .attr('font-size', '11px')
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d) => (d.type === 'source' ? '3.8em' : '3em'))
-      .text((d) => {
-        if (d.type === 'source') return d.name || '';
-        if (d.type === 'destination') return d.name || d.ip || '-';
-        if (d.type === 'hop' && d.ip === '*') return `HOP ${d.hop ?? '-'}`;
-        return '';
-      });
-
-    nodes.filter((d) => d.type === 'source')
-      .append('text')
-      .attr('fill', 'hsl(var(--muted-foreground))')
-      .attr('font-size', '10px')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '5.2em')
-      .text((d) => d.host || '');
+    // Node labels (below nodes)
+    nodes.each(function (nodeData) {
+      const group = d3.select(this);
+      if (nodeData.type === 'source') {
+        // Name below
+        group.append('text')
+          .attr('fill', 'hsl(var(--foreground))')
+          .attr('font-size', '12px')
+          .attr('font-weight', '600')
+          .attr('text-anchor', 'middle')
+          .attr('dy', 58)
+          .text(nodeData.name || '');
+        group.append('text')
+          .attr('fill', 'hsl(var(--muted-foreground))')
+          .attr('font-size', '10px')
+          .attr('text-anchor', 'middle')
+          .attr('dy', 72)
+          .text(nodeData.host || '');
+      } else if (nodeData.type === 'destination') {
+        // Label with bg pill
+        const label = nodeData.name || nodeData.ip || '-';
+        const labelG = group.append('g').attr('transform', 'translate(0, 48)');
+        const tempText = labelG.append('text').style('font-size', '10px').text(label);
+        const bbox = (tempText.node() as SVGTextElement).getBBox();
+        tempText.remove();
+        labelG.append('rect')
+          .attr('x', -bbox.width / 2 - 6).attr('y', -bbox.height / 2 - 3)
+          .attr('width', bbox.width + 12).attr('height', bbox.height + 6)
+          .attr('rx', 6)
+          .attr('fill', 'hsl(var(--muted) / 0.6)')
+          .attr('stroke', 'hsl(var(--border))')
+          .attr('stroke-width', 0.5);
+        labelG.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .attr('fill', 'hsl(var(--foreground))')
+          .style('font-size', '10px')
+          .style('font-weight', '500')
+          .text(label);
+      } else if (nodeData.type === 'hop' && nodeData.ip === '*') {
+        group.append('text')
+          .attr('fill', 'hsl(var(--muted-foreground))')
+          .attr('font-size', '8px')
+          .attr('text-anchor', 'middle')
+          .attr('dy', 22)
+          .text(`HOP ${nodeData.hop ?? '-'}`);
+      }
+    });
 
     // Tooltip
     const tooltipDiv = d3.select(container)
