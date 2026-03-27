@@ -786,7 +786,8 @@ const NetworkAgentCheck = () => {
             </CardHeader>
             <CardContent className="p-0">
               <ScrollArea className="max-h-[calc(100vh-480px)] min-h-[200px]">
-                <table className="w-full text-xs">
+                <div className="overflow-x-auto">
+                <table className="min-w-[400px] w-full text-xs">
                   <thead className="sticky top-0 bg-card z-10">
                     <tr className="border-b border-border">
                       <th className="text-left p-2 text-muted-foreground font-medium">Endpoint</th>
