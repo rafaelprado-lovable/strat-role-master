@@ -79,17 +79,24 @@ export function AutomationsTable({
     return matchesSearch && matchesTags;
   });
 
-  // Split into active and draft groups, stable sort by name within each
+  // Execuções em andamento (separate list, no reordering)
+  const runningWorkflows = useMemo(() => {
+    if (!runningReady) return [];
+    return filtered
+      .filter(w => runningMap[w.id])
+      .sort((a, b) => {
+        const aTime = runningMap[a.id]?.created_at || '';
+        const bTime = runningMap[b.id]?.created_at || '';
+        return bTime.localeCompare(aTime); // most recent first
+      });
+  }, [filtered, runningMap, runningReady]);
+
+  // Split into active and draft groups, stable sort by name (no execution reordering)
   const activeWorkflows = useMemo(() => {
     return [...filtered]
       .filter(w => w.status === 'active')
-      .sort((a, b) => {
-        const aRunning = runningMap[a.id] ? 1 : 0;
-        const bRunning = runningMap[b.id] ? 1 : 0;
-        if (bRunning !== aRunning) return bRunning - aRunning;
-        return a.name.localeCompare(b.name);
-      });
-  }, [filtered, runningMap]);
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
 
   const draftWorkflows = useMemo(() => {
     return [...filtered]
