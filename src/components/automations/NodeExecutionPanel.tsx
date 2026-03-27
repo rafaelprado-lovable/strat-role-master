@@ -74,7 +74,6 @@ interface ExecutionResult {
 }
 
 export function NodeExecutionPanel({ nodeId, definitionId, inputs, schemaFields }: NodeExecutionPanelProps) {
-  const [expanded, setExpanded] = useState(false);
   const [running, setRunning] = useState(false);
   const [resolveTemplates, setResolveTemplates] = useState(false);
   const [result, setResult] = useState<ExecutionResult | null>(null);
