@@ -894,7 +894,7 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
   }
 
   return (
-    <div className="border-t border-border pt-3 space-y-3">
+    <div className="space-y-4">
       {/* Plugin header */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
