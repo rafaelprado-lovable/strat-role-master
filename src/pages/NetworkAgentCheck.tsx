@@ -564,7 +564,7 @@ const NetworkAgentCheck = () => {
       </div>
 
       {/* Main Grid: sidebar + canvas */}
-      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-4" style={{ minHeight: 500 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-4" style={{ minHeight: 'calc(100vh - 320px)' }}>
         {/* Sidebar */}
         <div className="space-y-4">
           <Card>
@@ -676,7 +676,8 @@ const NetworkAgentCheck = () => {
               ref={canvasRef}
               className="w-full border-t border-border relative"
               style={{
-                height: 500,
+                height: 'calc(100vh - 380px)',
+                minHeight: 500,
                 background: 'radial-gradient(circle at 50% 50%, hsl(var(--muted) / 0.05), transparent 70%), hsl(var(--card))',
                 backgroundSize: '28px 28px',
               }}
