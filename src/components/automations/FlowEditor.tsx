@@ -20,9 +20,7 @@ import {
   ArrowLeft, Save, Clock, Globe, History,
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
-import { VersionHistoryDialog } from './VersionHistoryDialog';
 import { workflowVersionService } from '@/services/workflowVersionService';
-import { exportWorkflowJson } from '@/types/automations';
 import { TaskNode } from './TaskNode';
 import { WaypointEdge } from './WaypointEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
