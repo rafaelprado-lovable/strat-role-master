@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+const AGENT_URL = 'http://127.0.0.1:18081/instances/agente-gemini-sa/messages';
 
 export interface ChatMessage {
   id: string;
@@ -7,27 +7,21 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-/**
- * Envia mensagem para a IA e recebe resposta via SSE (streaming).
- * Caso o backend não suporte SSE, faz fallback para POST normal.
- */
 export const chatService = {
   async sendMessage(
     message: string,
-    history: { role: string; content: string }[],
+    _history: { role: string; content: string }[],
     onDelta: (chunk: string) => void,
     onDone: () => void,
     onError: (err: string) => void,
     signal?: AbortSignal,
   ) {
     try {
-      const response = await apiClient.rawFetch('/ai/chat', {
+      const response = await fetch(AGENT_URL, {
         method: 'POST',
-        body: JSON.stringify({ message, history }),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream, application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+        signal,
       });
 
       if (!response.ok) {
@@ -36,63 +30,30 @@ export const chatService = {
         return;
       }
 
-      const contentType = response.headers.get('content-type') || '';
+      const data = await response.json();
 
-      // SSE streaming
-      if (contentType.includes('text/event-stream') && response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+      // Extrai resposta do agente
+      const content =
+        data.event?.content?.body?.message ??
+        data.event?.content?.message ??
+        data.event?.content ??
+        data.mcp_body?.body?.message ??
+        data.message ??
+        JSON.stringify(data);
 
-        while (true) {
-          if (signal?.aborted) {
-            reader.cancel();
-            break;
-          }
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          let newlineIdx: number;
-          while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-            let line = buffer.slice(0, newlineIdx);
-            buffer = buffer.slice(newlineIdx + 1);
-            if (line.endsWith('\r')) line = line.slice(0, -1);
-            if (line.startsWith(':') || line.trim() === '') continue;
-            if (!line.startsWith('data: ')) continue;
-
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') {
-              onDone();
-              return;
-            }
-
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content
-                ?? parsed.choices?.[0]?.message?.content
-                ?? parsed.content
-                ?? parsed.text
-                ?? parsed.message;
-              if (content) onDelta(content);
-            } catch {
-              // pode ser texto puro direto do SSE
-              if (jsonStr) onDelta(jsonStr);
-            }
-          }
-        }
-        onDone();
+      // Verifica se houve erro no MCP
+      if (data.mcp_status && data.mcp_status >= 400) {
+        const errorMsg = typeof content === 'string' ? content : JSON.stringify(content);
+        onError(`Erro do agente (${data.mcp_status}): ${errorMsg}`);
         return;
       }
 
-      // Fallback: resposta JSON normal
-      const data = await response.json();
-      const reply = data.content ?? data.message ?? data.text ?? JSON.stringify(data);
+      const reply = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
       onDelta(reply);
       onDone();
     } catch (err: any) {
       if (err.name === 'AbortError') return;
-      onError(err.message || 'Erro ao conectar com a IA');
+      onError(err.message || 'Erro ao conectar com o agente');
     }
   },
 };
