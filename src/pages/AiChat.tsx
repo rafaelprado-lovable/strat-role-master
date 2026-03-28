@@ -180,7 +180,7 @@ export default function AiChat() {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {conversations.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-8">Nenhuma conversa ainda</p>
+                <p className="text-xs text-sidebar-foreground/50 text-center py-8">Nenhuma conversa ainda</p>
               )}
               {conversations.map(c => (
                 <button
@@ -189,8 +189,8 @@ export default function AiChat() {
                   className={cn(
                     'w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors group flex items-start gap-2',
                     activeId === c.id
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-muted text-foreground'
+                      ? 'bg-sidebar-accent text-sidebar-primary'
+                      : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
                   )}
                 >
                   <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
