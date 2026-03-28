@@ -184,7 +184,7 @@ export default function AiChat() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 p-0">
-              <SheetHeader className="px-4 py-3 border-b border-border">
+              <SheetHeader className="px-4 pr-12 py-3 border-b border-border">
                 <div className="flex items-center justify-between">
                   <SheetTitle className="text-sm">Conversas</SheetTitle>
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={startNewConversation}>
