@@ -163,7 +163,7 @@ export default function AiChat() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden -m-6">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ export default function AiChat() {
             <Bot className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-foreground">Odin AI</h1>
+            <h1 className="text-sm font-semibold text-foreground">Heimdall AI</h1>
             <p className="text-[11px] text-muted-foreground">Suporte à operação</p>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function AiChat() {
               </div>
               <h2 className="text-xl font-semibold text-foreground mb-2">Olá! Como posso ajudar?</h2>
               <p className="text-muted-foreground text-sm max-w-md">
-                Sou o Odin AI, assistente de IA da operação. Pergunte sobre incidentes, mudanças, procedimentos ou qualquer dúvida operacional.
+                Sou o Heimdall AI, assistente de IA da operação. Pergunte sobre incidentes, mudanças, procedimentos ou qualquer dúvida operacional.
               </p>
             </div>
           )}
