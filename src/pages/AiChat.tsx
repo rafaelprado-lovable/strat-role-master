@@ -165,14 +165,14 @@ export default function AiChat() {
     <div className="flex h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]">
       {/* History sidebar */}
       {historyOpen && (
-        <div className="w-72 border-r border-border bg-card flex flex-col">
+        <div className="w-64 border-r border-border bg-sidebar flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
+            <h2 className="text-sm font-semibold text-sidebar-foreground">Conversas</h2>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={startNewConversation}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent" onClick={startNewConversation}>
                 <Plus className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setHistoryOpen(false)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent" onClick={() => setHistoryOpen(false)}>
                 <PanelLeftClose className="w-4 h-4" />
               </Button>
             </div>
