@@ -34,6 +34,7 @@ export const chatService = {
 
       // Extrai resposta do agente
       const content =
+        data.answer ??
         data.event?.content?.body?.message ??
         data.event?.content?.message ??
         data.event?.content ??

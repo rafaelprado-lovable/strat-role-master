@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { chatService, ChatMessage } from '@/services/chatService';
+import ReactMarkdown from 'react-markdown';
 
 export default function AiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -150,7 +151,13 @@ export default function AiChat() {
                     : 'bg-muted text-foreground rounded-bl-md'
                 )}
               >
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                )}
                 <span
                   className={cn(
                     'block text-[10px] mt-1.5',
