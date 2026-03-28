@@ -7,6 +7,7 @@ import {
   ChartAreaIcon,
   LogOut,
   ChevronDown,
+  BotMessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "./Logo";
@@ -99,7 +100,16 @@ export function AppSidebar() {
         // Se quiser exibir APIs como menus diretos
         // items = [...items, ...apiItems];
 
-        // 4️⃣ Admin (se for admin)
+        // 4️⃣ Chat IA
+        items.push({
+          title: "Chat IA",
+          url: "/ai-chat",
+          icon: BotMessageSquare,
+          hasSubmenu: false,
+          submenu: []
+        });
+
+        // 5️⃣ Admin (se for admin)
         if (isAdmin) {
           items.push({
             title: "Administração",
