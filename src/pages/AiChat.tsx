@@ -165,12 +165,22 @@ export default function AiChat() {
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+            <Bot className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-foreground">Assistente IA</h1>
+            <p className="text-[11px] text-muted-foreground">Suporte à operação</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
           <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <History className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5">
+                <History className="w-3.5 h-3.5" />
+                Histórico
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 p-0">
@@ -220,18 +230,11 @@ export default function AiChat() {
               </ScrollArea>
             </SheetContent>
           </Sheet>
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
-            <Bot className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Assistente IA</h1>
-            <p className="text-xs text-muted-foreground">Suporte à operação</p>
-          </div>
+          <Button variant="ghost" size="sm" onClick={startNewConversation} className="text-muted-foreground gap-1.5">
+            <Plus className="w-3.5 h-3.5" />
+            Nova conversa
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={startNewConversation} className="text-muted-foreground">
-          <Plus className="w-4 h-4 mr-1" />
-          Nova conversa
-        </Button>
       </div>
 
       {/* Messages */}
