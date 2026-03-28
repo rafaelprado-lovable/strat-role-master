@@ -7,7 +7,6 @@ import {
   ChartAreaIcon,
   LogOut,
   ChevronDown,
-  BotMessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Logo } from "./Logo";
