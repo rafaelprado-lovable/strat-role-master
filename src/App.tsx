@@ -38,6 +38,7 @@ import ChangeExecutionPmid from "./pages/ChangeExecutionPmid";
 import HeimdallCli from "./pages/HeimdallCli";
 import NetworkAgentCheck from "./pages/NetworkAgentCheck";
 import HeimdallInfra from "./pages/HeimdallInfra";
+import AiChat from "./pages/AiChat";
 
 const queryClient = new QueryClient();
 
@@ -309,6 +310,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <HeimdallInfra />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/ai-chat"
+              element={
+                <AppLayout>
+                  <AiChat />
                 </AppLayout>
               }
             />
