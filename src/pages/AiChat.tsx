@@ -163,7 +163,7 @@ export default function AiChat() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden -m-6">
+    <div className="flex flex-col overflow-hidden -m-6" style={{ height: 'calc(100vh - 3.5rem)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-3">
