@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, Bot, User, Loader2, Trash2, Plus, MessageSquare, PanelLeftClose, PanelLeft, Clock } from 'lucide-react';
+import { Send, Square, Bot, User, Loader2, Trash2, Plus, MessageSquare, History, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { chatService, ChatMessage } from '@/services/chatService';
 import ReactMarkdown from 'react-markdown';
@@ -162,171 +163,163 @@ export default function AiChat() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]">
-      {/* History sidebar */}
-      {historyOpen && (
-        <div className="w-64 border-r border-border bg-sidebar flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-sm font-semibold text-sidebar-foreground">Conversas</h2>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent" onClick={startNewConversation}>
-                <Plus className="w-4 h-4" />
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)]">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
+        <div className="flex items-center gap-3">
+          <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <History className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent" onClick={() => setHistoryOpen(false)}>
-                <PanelLeftClose className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {conversations.length === 0 && (
-                <p className="text-xs text-sidebar-foreground/50 text-center py-8">Nenhuma conversa ainda</p>
-              )}
-              {conversations.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => selectConversation(c.id)}
-                  className={cn(
-                    'w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors group flex items-start gap-2',
-                    activeId === c.id
-                      ? 'bg-sidebar-accent text-sidebar-primary'
-                      : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
-                  )}
-                >
-                  <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium">{c.title}</p>
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(c.updatedAt)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                    onClick={(e) => deleteConversation(c.id, e)}
-                  >
-                    <Trash2 className="w-3 h-3 text-destructive" />
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0">
+              <SheetHeader className="px-4 py-3 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-sm">Conversas</SheetTitle>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={startNewConversation}>
+                    <Plus className="w-4 h-4" />
                   </Button>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
-
-      {/* Chat area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            {!historyOpen && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 mr-1" onClick={() => setHistoryOpen(true)}>
-                <PanelLeft className="w-4 h-4" />
-              </Button>
-            )}
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
-              <Bot className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Assistente IA</h1>
-              <p className="text-xs text-muted-foreground">Suporte à operação</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={startNewConversation} className="text-muted-foreground">
-            <Plus className="w-4 h-4 mr-1" />
-            Nova conversa
-          </Button>
-        </div>
-
-        {/* Messages */}
-        <ScrollArea className="flex-1 px-4">
-          <div className="max-w-3xl mx-auto py-6 space-y-6">
-            {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                  <Bot className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">Olá! Como posso ajudar?</h2>
-                <p className="text-muted-foreground text-sm max-w-md">
-                  Sou o assistente de IA da operação. Pergunte sobre incidentes, mudanças, procedimentos ou qualquer dúvida operacional.
-                </p>
-              </div>
-            )}
-
-            {messages.map((msg) => (
-              <div key={msg.id} className={cn('flex gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                {msg.role === 'assistant' && (
-                  <div className="flex-shrink-0 flex items-start">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-primary" />
-                    </div>
-                  </div>
-                )}
-                <div className={cn(
-                  'max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
-                  msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
-                )}>
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100vh-4rem)]">
+                <div className="p-2 space-y-1">
+                  {conversations.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-8">Nenhuma conversa ainda</p>
                   )}
-                  <span className={cn('block text-[10px] mt-1.5', msg.role === 'user' ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-                    {formatTime(msg.timestamp)}
-                  </span>
+                  {conversations.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => { selectConversation(c.id); setHistoryOpen(false); }}
+                      className={cn(
+                        'w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors group flex items-start gap-2',
+                        activeId === c.id
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-muted text-foreground'
+                      )}
+                    >
+                      <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate font-medium">{c.title}</p>
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(c.updatedAt)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                        onClick={(e) => deleteConversation(c.id, e)}
+                      >
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </Button>
+                    </button>
+                  ))}
                 </div>
-                {msg.role === 'user' && (
-                  <div className="flex-shrink-0 flex items-start">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                      <User className="w-4 h-4 text-secondary-foreground" />
-                    </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
+            <Bot className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Assistente IA</h1>
+            <p className="text-xs text-muted-foreground">Suporte à operação</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={startNewConversation} className="text-muted-foreground">
+          <Plus className="w-4 h-4 mr-1" />
+          Nova conversa
+        </Button>
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="max-w-3xl mx-auto py-6 space-y-6">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-[50vh] text-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <Bot className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Olá! Como posso ajudar?</h2>
+              <p className="text-muted-foreground text-sm max-w-md">
+                Sou o assistente de IA da operação. Pergunte sobre incidentes, mudanças, procedimentos ou qualquer dúvida operacional.
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg) => (
+            <div key={msg.id} className={cn('flex gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+              {msg.role === 'assistant' && (
+                <div className="flex-shrink-0 flex items-start">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-primary" />
                   </div>
+                </div>
+              )}
+              <div className={cn(
+                'max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+                msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
+              )}>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                 )}
+                <span className={cn('block text-[10px] mt-1.5', msg.role === 'user' ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
+                  {formatTime(msg.timestamp)}
+                </span>
               </div>
-            ))}
+              {msg.role === 'user' && (
+                <div className="flex-shrink-0 flex items-start">
+                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                    <User className="w-4 h-4 text-secondary-foreground" />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
 
-            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-              <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-primary" />
-                </div>
-                <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                </div>
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+            <div className="flex gap-3 justify-start">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-primary" />
               </div>
-            )}
+              <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            </div>
+          )}
 
-            <div ref={bottomRef} />
-          </div>
-        </ScrollArea>
+          <div ref={bottomRef} />
+        </div>
+      </ScrollArea>
 
-        {/* Input area */}
-        <div className="border-t border-border bg-card px-4 py-3">
-          <div className="max-w-3xl mx-auto flex gap-2 items-end">
-            <Textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite sua mensagem..."
-              className="min-h-[44px] max-h-[160px] resize-none bg-background"
-              autoResize
-              rows={1}
-            />
-            {isLoading ? (
-              <Button variant="destructive" size="icon" className="h-11 w-11 flex-shrink-0 rounded-xl" onClick={handleStop}>
-                <Square className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button size="icon" className="h-11 w-11 flex-shrink-0 rounded-xl" onClick={handleSend} disabled={!input.trim()}>
-                <Send className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+      {/* Input area */}
+      <div className="border-t border-border bg-card px-4 py-3">
+        <div className="max-w-3xl mx-auto flex gap-2 items-end">
+          <Textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Digite sua mensagem..."
+            className="min-h-[44px] max-h-[160px] resize-none bg-background"
+            autoResize
+            rows={1}
+          />
+          {isLoading ? (
+            <Button variant="destructive" size="icon" className="h-11 w-11 flex-shrink-0 rounded-xl" onClick={handleStop}>
+              <Square className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button size="icon" className="h-11 w-11 flex-shrink-0 rounded-xl" onClick={handleSend} disabled={!input.trim()}>
+              <Send className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
