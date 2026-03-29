@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User, Scope, Department, Insight, Changes, Plantao, CallResolution, CallResolutionCreate } from '@/types';
+import { Organization, Permission, Role, User, Scope, Department, Insight, Changes, Plantao, CallResolution, CallResolutionCreate, Machine } from '@/types';
 
 // API service functions - To be replaced with actual API calls
 export const organizationApi = {
@@ -1564,4 +1564,112 @@ export const incidentResolutionApi = {
     }
   },
 
+};
+
+export const machineApi = {
+  getAll: async (): Promise<Machine[]> => {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
+
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({ userId });
+
+    const requestOptions: RequestInit = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/read/machine", requestOptions);
+      if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao buscar máquinas:", error);
+      throw error;
+    }
+  },
+
+  create: async (data: Omit<Machine, '_id'>): Promise<Machine> => {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
+
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({ ...data, userId });
+
+    const requestOptions: RequestInit = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/create/machine", requestOptions);
+      if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao criar máquina:", error);
+      throw error;
+    }
+  },
+
+  update: async (id: string, data: Partial<Machine>): Promise<Machine> => {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
+
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({ id, ...data, userId });
+
+    const requestOptions: RequestInit = {
+      method: "PUT",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow"
+    };
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/update/machine", requestOptions);
+      if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao atualizar máquina:", error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const userToken = localStorage.getItem("userToken");
+    const userId = localStorage.getItem("userId");
+
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${userToken}`);
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({ id, userId });
+
+    const requestOptions: RequestInit = {
+      method: "DELETE",
+      headers: myHeaders,
+      body: raw,
+    };
+
+    try {
+      const response = await fetch("http://10.151.1.54:8000/v1/delete/machine", requestOptions);
+      if (!response.ok) throw new Error(`Erro na API: ${response.status}`);
+    } catch (error) {
+      console.error("Erro ao excluir máquina:", error);
+      throw error;
+    }
+  },
 };

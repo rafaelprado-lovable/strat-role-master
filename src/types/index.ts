@@ -269,3 +269,13 @@ export interface CallResolutionCreate {
   sub_cause: string,
   resolution_notes: string,
 }
+
+export interface Machine {
+  _id: string;
+  name: string;
+  host: string;
+  port: number;
+  description: string;
+  organization: string;
+  department: string;
+}
