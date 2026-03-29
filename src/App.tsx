@@ -39,6 +39,7 @@ import HeimdallCli from "./pages/HeimdallCli";
 import NetworkAgentCheck from "./pages/NetworkAgentCheck";
 import HeimdallInfra from "./pages/HeimdallInfra";
 import AiChat from "./pages/AiChat";
+import AnalystProductivity from "./pages/AnalystProductivity";
 
 const queryClient = new QueryClient();
 
@@ -318,6 +319,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <AiChat />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/analyst-productivity"
+              element={
+                <AppLayout>
+                  <AnalystProductivity />
                 </AppLayout>
               }
             />
