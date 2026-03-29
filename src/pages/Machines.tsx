@@ -23,7 +23,7 @@ export default function Machines() {
   const [selectedMachine, setSelectedMachine] = useState<Machine | undefined>(undefined);
   const [machineToDelete, setMachineToDelete] = useState<Machine | null>(null);
 
-  const { data: machines, isLoading } = useQuery({
+  const { data: machines = [], isLoading } = useQuery<Machine[]>({
     queryKey: ['machines'],
     queryFn: machineApi.getAll,
   });
