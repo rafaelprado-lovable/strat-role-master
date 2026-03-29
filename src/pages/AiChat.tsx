@@ -31,7 +31,7 @@ function apiToLocal(c: ApiConversation): Conversation {
       id: `${c.id}-${i}`,
       role: m.role === 'agent' ? 'assistant' as const : 'user' as const,
       content: m.content,
-      timestamp: new Date(m.timestamp),
+      timestamp: new Date(m.timestamp || (m as any).createdAt),
     })),
     updatedAt: c.updatedAt || new Date().toISOString(),
   };
