@@ -1,86 +1,80 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { incidentApi } from '@/services/mockApi';
 
 interface Tramitation {
-  user_id: string;
   user_name: string;
-  oldvalue: string;
-  oldvalue_name: string;
-  newvalue: string;
-  newvalue_name: string;
-  sys_created_on: string;
+  oldname: string;
+  newname: string;
+  datetime: string;
+  incident_number: string;
 }
 
-// Mock data
-const mockData: Tramitation[] = [
-  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'dfd7828ddb17a11c53f2e233149619b3', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'bca0f9d61b69b810e9162170f54bcb4d', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '19/12/2025 18:25:25' },
-  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'a1', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'b1', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 19:10:00' },
-  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'a2', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'b2', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 08:30:00' },
-  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '19/12/2025 14:20:00' },
-  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c2', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'd2', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 16:45:00' },
-  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c3', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd3', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 09:15:00' },
-  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c4', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd4', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 11:00:00' },
-  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c5', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'd5', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '20/12/2025 14:30:00' },
-  { user_id: 'T5523871', user_name: 'Carlos Eduardo Pereira', oldvalue: 'e1', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'f1', newvalue_name: 'CTIO IT - SERVICE DESK - N1', sys_created_on: '19/12/2025 10:00:00' },
-  { user_id: 'T5523871', user_name: 'Carlos Eduardo Pereira', oldvalue: 'e2', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'f2', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 15:20:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '19/12/2025 09:30:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g2', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'h2', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 11:45:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g3', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'h3', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '19/12/2025 15:10:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g4', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h4', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 08:00:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g5', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'h5', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '20/12/2025 10:30:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g6', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'h6', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 13:00:00' },
-  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g7', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h7', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 16:00:00' },
-  { user_id: 'T7712345', user_name: 'Ricardo Almeida Costa', oldvalue: 'i1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'j1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 07:45:00' },
-];
-
-function parseDate(dateStr: string): Date {
-  const [datePart, timePart] = dateStr.split(' ');
-  const [day, month, year] = datePart.split('/').map(Number);
-  const [hours, minutes, seconds] = timePart.split(':').map(Number);
-  return new Date(year, month - 1, day, hours, minutes, seconds);
+function parseDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  // Try DD/MM/YYYY HH:mm:ss
+  const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+  if (match) {
+    const [, day, month, year, hours, minutes, seconds] = match.map(Number);
+    return new Date(year, month - 1, day, hours, minutes, seconds);
+  }
+  // Try ISO or other parseable format
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
 }
 
-const CHART_COLORS = [
+const PIE_COLORS = [
   'hsl(var(--primary))',
   'hsl(var(--chart-2))',
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  '#ec4899',
+  '#06b6d4',
 ];
-
-const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
 
+  const { data: tramitations = [], isLoading } = useQuery({
+    queryKey: ['analyst-tramitations'],
+    queryFn: incidentApi.getAllTramitations,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const filteredData = useMemo(() => {
-    let data = mockData;
+    let data: Tramitation[] = tramitations;
     if (periodFilter !== 'all') {
-      const now = new Date(2025, 11, 20, 23, 59, 59); // mock "now"
+      const now = new Date();
       const hours = parseInt(periodFilter);
       const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
-      data = data.filter(d => parseDate(d.sys_created_on) >= cutoff);
+      data = data.filter(d => {
+        const dt = parseDate(d.datetime);
+        return dt && dt >= cutoff;
+      });
     }
     return data;
-  }, [periodFilter]);
+  }, [tramitations, periodFilter]);
 
   const analystStats = useMemo(() => {
-    const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
+    const map = new Map<string, { user_name: string; count: number; timestamps: Date[] }>();
     filteredData.forEach(t => {
-      const existing = map.get(t.user_id);
-      const ts = parseDate(t.sys_created_on);
+      const key = t.user_name;
+      const ts = parseDate(t.datetime);
+      const existing = map.get(key);
       if (existing) {
         existing.count++;
-        existing.timestamps.push(ts);
+        if (ts) existing.timestamps.push(ts);
       } else {
-        map.set(t.user_id, { user_id: t.user_id, user_name: t.user_name, count: 1, timestamps: [ts] });
+        map.set(key, { user_name: key, count: 1, timestamps: ts ? [ts] : [] });
       }
     });
 
@@ -103,7 +97,7 @@ export default function AnalystProductivity() {
   const displayedAnalysts = useMemo(() => {
     if (!search) return analystStats;
     const lower = search.toLowerCase();
-    return analystStats.filter(a => a.user_name.toLowerCase().includes(lower) || a.user_id.toLowerCase().includes(lower));
+    return analystStats.filter(a => a.user_name.toLowerCase().includes(lower));
   }, [analystStats, search]);
 
   const totalTramitations = filteredData.length;
@@ -112,25 +106,41 @@ export default function AnalystProductivity() {
     ? analystStats.reduce((acc, a) => acc + a.avgTime, 0) / analystStats.length
     : 0;
 
-  const barData = analystStats.map(a => ({
+  const barData = analystStats.slice(0, 10).map(a => ({
     name: a.user_name.split(' ').slice(0, 2).join(' '),
     tramitações: a.count,
   }));
 
   const teamMap = new Map<string, number>();
   filteredData.forEach(t => {
-    teamMap.set(t.newvalue_name, (teamMap.get(t.newvalue_name) || 0) + 1);
+    if (t.newname) {
+      teamMap.set(t.newname, (teamMap.get(t.newname) || 0) + 1);
+    }
   });
-  const pieData = Array.from(teamMap.entries()).map(([name, value]) => ({
-    name: name.replace('CTIO IT - ', ''),
-    value,
-  }));
+  const pieData = Array.from(teamMap.entries())
+    .map(([name, value]) => ({
+      name: name.replace('CTIO IT - ', ''),
+      value,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 7);
 
   function formatTime(minutes: number) {
     if (minutes < 60) return `${Math.round(minutes)}min`;
     const h = Math.floor(minutes / 60);
     const m = Math.round(minutes % 60);
     return `${h}h ${m}min`;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando tramitações dos incidentes...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -187,8 +197,8 @@ export default function AnalystProductivity() {
                 <p className="text-sm text-muted-foreground">Analistas Ativos</p>
                 <p className="text-3xl font-bold text-foreground">{totalAnalysts}</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-chart-2/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-chart-2" />
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -200,8 +210,8 @@ export default function AnalystProductivity() {
                 <p className="text-sm text-muted-foreground">Tempo Médio entre Ações</p>
                 <p className="text-3xl font-bold text-foreground">{formatTime(globalAvgTime)}</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-chart-3/10 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-chart-3" />
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -216,8 +226,8 @@ export default function AnalystProductivity() {
                 </p>
                 <p className="text-xs text-muted-foreground">{analystStats[0]?.count || 0} tramitações</p>
               </div>
-              <div className="h-12 w-12 rounded-xl bg-chart-4/10 flex items-center justify-center">
-                <Trophy className="h-6 w-6 text-chart-4" />
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -231,22 +241,26 @@ export default function AnalystProductivity() {
             <CardTitle className="text-base">Tramitações por Analista</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis type="number" className="text-xs fill-muted-foreground" />
-                <YAxis type="category" dataKey="name" width={120} className="text-xs fill-muted-foreground" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--popover-foreground))',
-                  }}
-                />
-                <Bar dataKey="tramitações" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {barData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis type="number" className="text-xs fill-muted-foreground" />
+                  <YAxis type="category" dataKey="name" width={120} className="text-xs fill-muted-foreground" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--popover-foreground))',
+                    }}
+                  />
+                  <Bar dataKey="tramitações" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -255,32 +269,36 @@ export default function AnalystProductivity() {
             <CardTitle className="text-base">Destino das Tramitações (Times)</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name.split(' - ')[0]} (${(percent * 100).toFixed(0)}%)`}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--popover-foreground))',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name.split(' - ')[0]} (${(percent * 100).toFixed(0)}%)`}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--popover-foreground))',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -296,18 +314,17 @@ export default function AnalystProductivity() {
               <TableRow>
                 <TableHead className="w-[60px]">#</TableHead>
                 <TableHead>Analista</TableHead>
-                <TableHead>ID</TableHead>
                 <TableHead className="text-center">Tramitações</TableHead>
                 <TableHead className="text-center">Tempo Médio</TableHead>
                 <TableHead className="text-center">Performance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayedAnalysts.map((analyst, index) => {
+              {displayedAnalysts.map((analyst) => {
                 const rank = analystStats.indexOf(analyst) + 1;
                 const isTop = rank <= 3;
                 return (
-                  <TableRow key={analyst.user_id}>
+                  <TableRow key={analyst.user_name}>
                     <TableCell>
                       {isTop ? (
                         <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground ${
@@ -320,9 +337,6 @@ export default function AnalystProductivity() {
                       )}
                     </TableCell>
                     <TableCell className="font-medium text-foreground">{analyst.user_name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs">{analyst.user_id}</Badge>
-                    </TableCell>
                     <TableCell className="text-center">
                       <span className="font-semibold text-foreground">{analyst.count}</span>
                     </TableCell>
@@ -349,7 +363,7 @@ export default function AnalystProductivity() {
               })}
               {displayedAnalysts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     Nenhum analista encontrado.
                   </TableCell>
                 </TableRow>
