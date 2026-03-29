@@ -10,22 +10,21 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { incidentApi } from '@/services/mockApi';
 
 interface Tramitation {
+  user_id: string;
   user_name: string;
-  oldname: string;
-  newname: string;
-  datetime: string;
+  oldvalue_name: string;
+  newvalue_name: string;
+  sys_created_on: string;
   incident_number: string;
 }
 
 function parseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
-  // Try DD/MM/YYYY HH:mm:ss
   const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
   if (match) {
     const [, day, month, year, hours, minutes, seconds] = match.map(Number);
     return new Date(year, month - 1, day, hours, minutes, seconds);
   }
-  // Try ISO or other parseable format
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -51,13 +50,13 @@ export default function AnalystProductivity() {
   });
 
   const filteredData = useMemo(() => {
-    let data: Tramitation[] = tramitations;
+    let data: Tramitation[] = tramitations as Tramitation[];
     if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
       const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
       data = data.filter(d => {
-        const dt = parseDate(d.datetime);
+        const dt = parseDate(d.sys_created_on);
         return dt && dt >= cutoff;
       });
     }
@@ -65,16 +64,16 @@ export default function AnalystProductivity() {
   }, [tramitations, periodFilter]);
 
   const analystStats = useMemo(() => {
-    const map = new Map<string, { user_name: string; count: number; timestamps: Date[] }>();
+    const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
     filteredData.forEach(t => {
-      const key = t.user_name;
-      const ts = parseDate(t.datetime);
+      const key = t.user_id;
+      const ts = parseDate(t.sys_created_on);
       const existing = map.get(key);
       if (existing) {
         existing.count++;
         if (ts) existing.timestamps.push(ts);
       } else {
-        map.set(key, { user_name: key, count: 1, timestamps: ts ? [ts] : [] });
+        map.set(key, { user_id: t.user_id, user_name: t.user_name, count: 1, timestamps: ts ? [ts] : [] });
       }
     });
 
@@ -97,7 +96,9 @@ export default function AnalystProductivity() {
   const displayedAnalysts = useMemo(() => {
     if (!search) return analystStats;
     const lower = search.toLowerCase();
-    return analystStats.filter(a => a.user_name.toLowerCase().includes(lower));
+    return analystStats.filter(a =>
+      a.user_name.toLowerCase().includes(lower) || a.user_id.toLowerCase().includes(lower)
+    );
   }, [analystStats, search]);
 
   const totalTramitations = filteredData.length;
@@ -113,13 +114,13 @@ export default function AnalystProductivity() {
 
   const teamMap = new Map<string, number>();
   filteredData.forEach(t => {
-    if (t.newname) {
-      teamMap.set(t.newname, (teamMap.get(t.newname) || 0) + 1);
+    if (t.newvalue_name) {
+      teamMap.set(t.newvalue_name, (teamMap.get(t.newvalue_name) || 0) + 1);
     }
   });
   const pieData = Array.from(teamMap.entries())
     .map(([name, value]) => ({
-      name: name.replace('CTIO IT - ', ''),
+      name: name.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', ''),
       value,
     }))
     .sort((a, b) => b.value - a.value)
@@ -314,6 +315,7 @@ export default function AnalystProductivity() {
               <TableRow>
                 <TableHead className="w-[60px]">#</TableHead>
                 <TableHead>Analista</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead className="text-center">Tramitações</TableHead>
                 <TableHead className="text-center">Tempo Médio</TableHead>
                 <TableHead className="text-center">Performance</TableHead>
@@ -324,7 +326,7 @@ export default function AnalystProductivity() {
                 const rank = analystStats.indexOf(analyst) + 1;
                 const isTop = rank <= 3;
                 return (
-                  <TableRow key={analyst.user_name}>
+                  <TableRow key={analyst.user_id}>
                     <TableCell>
                       {isTop ? (
                         <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground ${
@@ -337,6 +339,9 @@ export default function AnalystProductivity() {
                       )}
                     </TableCell>
                     <TableCell className="font-medium text-foreground">{analyst.user_name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-xs">{analyst.user_id}</Badge>
+                    </TableCell>
                     <TableCell className="text-center">
                       <span className="font-semibold text-foreground">{analyst.count}</span>
                     </TableCell>
@@ -363,7 +368,7 @@ export default function AnalystProductivity() {
               })}
               {displayedAnalysts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     Nenhum analista encontrado.
                   </TableCell>
                 </TableRow>
