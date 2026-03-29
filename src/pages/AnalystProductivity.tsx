@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { incidentApi, userApi } from '@/services/mockApi';
+import { incidentApi, userApi, departmentApi } from '@/services/mockApi';
 
 interface Tramitation {
   user_id: string;
@@ -42,6 +42,7 @@ const PIE_COLORS = [
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [queueFilter, setQueueFilter] = useState<string>('all');
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
     queryKey: ['analyst-tramitations'],
@@ -54,6 +55,11 @@ export default function AnalystProductivity() {
     queryFn: userApi.getAll,
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll,
+  });
+
   const isLoading = loadingTramitations || loadingUsers;
 
   // Match tramitation users against registered users by name (case-insensitive)
@@ -61,10 +67,25 @@ export default function AnalystProductivity() {
     return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
   }, [users]);
 
+  // All unique queue names from tramitations for the filter dropdown
+  const availableQueues = useMemo(() => {
+    const queues = new Set<string>();
+    (tramitations as Tramitation[]).forEach(t => {
+      if (t.oldvalue_name) queues.add(t.oldvalue_name);
+      if (t.newvalue_name) queues.add(t.newvalue_name);
+    });
+    return Array.from(queues).sort();
+  }, [tramitations]);
+
   const filteredData = useMemo(() => {
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       registeredUserNames.has(t.user_name?.toLowerCase().trim())
     );
+    if (queueFilter !== 'all') {
+      data = data.filter(d =>
+        d.oldvalue_name === queueFilter || d.newvalue_name === queueFilter
+      );
+    }
     if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
@@ -75,7 +96,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter, registeredUserNames]);
+  }, [tramitations, periodFilter, queueFilter, registeredUserNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
@@ -185,6 +206,19 @@ export default function AnalystProductivity() {
               <SelectItem value="24">Últimas 24h</SelectItem>
               <SelectItem value="48">Últimas 48h</SelectItem>
               <SelectItem value="168">Última semana</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={queueFilter} onValueChange={setQueueFilter}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Filtrar por fila" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as filas</SelectItem>
+              {availableQueues.map(q => (
+                <SelectItem key={q} value={q}>
+                  {q.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', '')}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
