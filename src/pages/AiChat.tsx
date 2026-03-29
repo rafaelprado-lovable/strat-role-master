@@ -6,7 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { chatService, ChatMessage } from '@/services/chatService';
+import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
 
 interface Conversation {
   id: string;
@@ -15,51 +17,56 @@ interface Conversation {
   updatedAt: string;
 }
 
-const STORAGE_KEY = 'ai-chat-conversations';
-
-function loadConversations(): Conversation[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveConversations(convos: Conversation[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(convos));
-}
-
 function deriveTitle(messages: ChatMessage[]): string {
   const first = messages.find(m => m.role === 'user');
   if (!first) return 'Nova conversa';
   return first.content.length > 50 ? first.content.slice(0, 50) + '…' : first.content;
 }
 
+function apiToLocal(c: ApiConversation): Conversation {
+  return {
+    id: c.id,
+    title: c.title || 'Nova conversa',
+    messages: (c.messages || []).map((m, i) => ({
+      id: `${c.id}-${i}`,
+      role: m.role === 'agent' ? 'assistant' as const : 'user' as const,
+      content: m.content,
+      timestamp: new Date(m.timestamp),
+    })),
+    updatedAt: c.updatedAt || new Date().toISOString(),
+  };
+}
+
 export default function AiChat() {
-  const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(true);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Persist messages whenever they change
+  // Load conversations from API on mount
   useEffect(() => {
-    if (!activeId || messages.length === 0) return;
-    setConversations(prev => {
-      const updated = prev.map(c =>
-        c.id === activeId
-          ? { ...c, messages, title: deriveTitle(messages), updatedAt: new Date().toISOString() }
-          : c
-      );
-      saveConversations(updated);
-      return updated;
-    });
-  }, [messages, activeId]);
+    const load = async () => {
+      setLoadingConversations(true);
+      try {
+        const data = await conversationService.listAll();
+        const convos = data.map(apiToLocal).sort((a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+        setConversations(convos);
+      } catch {
+        toast.error('Erro ao carregar conversas');
+      } finally {
+        setLoadingConversations(false);
+      }
+    };
+    load();
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,22 +74,34 @@ export default function AiChat() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  const startNewConversation = () => {
-    const id = crypto.randomUUID();
-    const convo: Conversation = { id, title: 'Nova conversa', messages: [], updatedAt: new Date().toISOString() };
-    const updated = [convo, ...conversations];
-    setConversations(updated);
-    saveConversations(updated);
-    setActiveId(id);
-    setMessages([]);
-    setInput('');
+  const startNewConversation = async () => {
+    const id = `conv-${Date.now()}`;
+    try {
+      await conversationService.create(id, 'Nova conversa');
+      const convo: Conversation = { id, title: 'Nova conversa', messages: [], updatedAt: new Date().toISOString() };
+      setConversations(prev => [convo, ...prev]);
+      setActiveId(id);
+      setMessages([]);
+      setInput('');
+    } catch {
+      toast.error('Erro ao criar conversa');
+    }
   };
 
-  const selectConversation = (id: string) => {
-    const convo = conversations.find(c => c.id === id);
-    if (convo) {
+  const selectConversation = async (id: string) => {
+    // Try local first
+    const local = conversations.find(c => c.id === id);
+    if (local) {
       setActiveId(id);
-      setMessages(convo.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+      setMessages(local.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+      return;
+    }
+    // Fetch from API
+    const data = await conversationService.getById(id);
+    if (data) {
+      const convo = apiToLocal(data);
+      setActiveId(id);
+      setMessages(convo.messages);
     }
   };
 
@@ -90,7 +109,6 @@ export default function AiChat() {
     e.stopPropagation();
     const updated = conversations.filter(c => c.id !== id);
     setConversations(updated);
-    saveConversations(updated);
     if (activeId === id) {
       setActiveId(null);
       setMessages([]);
@@ -101,28 +119,41 @@ export default function AiChat() {
     const text = input.trim();
     if (!text || isLoading) return;
 
-    // Auto-create conversation if none active
     let currentId = activeId;
     if (!currentId) {
-      const id = crypto.randomUUID();
-      const convo: Conversation = { id, title: 'Nova conversa', messages: [], updatedAt: new Date().toISOString() };
-      const updated = [convo, ...conversations];
-      setConversations(updated);
-      saveConversations(updated);
-      setActiveId(id);
-      currentId = id;
+      const id = `conv-${Date.now()}`;
+      try {
+        await conversationService.create(id, text.slice(0, 50));
+        const convo: Conversation = { id, title: text.slice(0, 50), messages: [], updatedAt: new Date().toISOString() };
+        setConversations(prev => [convo, ...prev]);
+        setActiveId(id);
+        currentId = id;
+      } catch {
+        toast.error('Erro ao criar conversa');
+        return;
+      }
     }
 
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: text, timestamp: new Date() };
+    const now = new Date();
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: text, timestamp: now };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+
+    // Send user message to API
+    conversationService.addMessages(currentId, [{
+      role: 'user',
+      content: text,
+      timestamp: now.toISOString(),
+    }]).catch(() => {});
 
     const history = messages.map(m => ({ role: m.role, content: m.content }));
     let assistantContent = '';
     const assistantId = crypto.randomUUID();
     const controller = new AbortController();
     abortRef.current = controller;
+
+    const convId = currentId;
 
     const upsertAssistant = (nextChunk: string) => {
       assistantContent += nextChunk;
@@ -139,7 +170,23 @@ export default function AiChat() {
     await chatService.sendMessage(
       text, history,
       (chunk) => upsertAssistant(chunk),
-      () => setIsLoading(false),
+      () => {
+        setIsLoading(false);
+        // Persist assistant response to API
+        if (assistantContent) {
+          conversationService.addMessages(convId, [{
+            role: 'agent',
+            content: assistantContent,
+            timestamp: new Date().toISOString(),
+          }]).catch(() => {});
+          // Update local conversation list
+          setConversations(prev => prev.map(c =>
+            c.id === convId
+              ? { ...c, title: deriveTitle([...messages, { id: '', role: 'user', content: text, timestamp: new Date() }]), updatedAt: new Date().toISOString() }
+              : c
+          ));
+        }
+      },
       (err) => { upsertAssistant(`\n\n⚠️ ${err}`); setIsLoading(false); },
       controller.signal,
     );
@@ -163,7 +210,7 @@ export default function AiChat() {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden " style={{ height: 'calc(100vh - 6.5rem)' }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 6.5rem)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-40 py-2.5 border-b border-border">
         <div className="flex items-center gap-3">
@@ -194,7 +241,12 @@ export default function AiChat() {
               </SheetHeader>
               <ScrollArea className="h-[calc(100vh-4rem)]">
                 <div className="p-2 space-y-1">
-                  {conversations.length === 0 && (
+                  {loadingConversations && (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {!loadingConversations && conversations.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-8">Nenhuma conversa ainda</p>
                   )}
                   {conversations.map(c => (
