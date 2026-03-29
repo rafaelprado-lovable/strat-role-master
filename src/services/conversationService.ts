@@ -41,8 +41,9 @@ export const conversationService = {
 
   async listAll(): Promise<Conversation[]> {
     try {
-      const data = await apiClient.get<Conversation[]>(`${BASE}/read/conversation?view=full`);
-      return Array.isArray(data) ? data : [];
+      const data = await apiClient.get<any>(`${BASE}/read/conversation?view=full`);
+      const list = data?.conversations ?? data;
+      return Array.isArray(list) ? list : [];
     } catch {
       return [];
     }
@@ -50,8 +51,9 @@ export const conversationService = {
 
   async listNames(): Promise<Conversation[]> {
     try {
-      const data = await apiClient.get<Conversation[]>(`${BASE}/read/conversation?view=names`);
-      return Array.isArray(data) ? data : [];
+      const data = await apiClient.get<any>(`${BASE}/read/conversation?view=names`);
+      const list = data?.conversations ?? data;
+      return Array.isArray(list) ? list : [];
     } catch {
       return [];
     }
@@ -59,8 +61,10 @@ export const conversationService = {
 
   async getById(id: string): Promise<Conversation | null> {
     try {
-      const data = await apiClient.get<Conversation>(`${BASE}/read/conversation?id=${encodeURIComponent(id)}&view=full`);
-      return data || null;
+      const data = await apiClient.get<any>(`${BASE}/read/conversation?id=${encodeURIComponent(id)}&view=full`);
+      const list = data?.conversations ?? data;
+      if (Array.isArray(list) && list.length > 0) return list[0];
+      return list && !Array.isArray(list) ? list : null;
     } catch {
       return null;
     }
