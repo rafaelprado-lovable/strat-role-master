@@ -40,6 +40,7 @@ import NetworkAgentCheck from "./pages/NetworkAgentCheck";
 import HeimdallInfra from "./pages/HeimdallInfra";
 import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
+import Machines from "./pages/Machines";
 
 const queryClient = new QueryClient();
 
@@ -328,6 +329,16 @@ const App = () => (
                 <AppLayout>
                   <AnalystProductivity />
                 </AppLayout>
+              }
+            />
+            <Route
+              path="/machines"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Machines />
+                  </AppLayout>
+                </ProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
