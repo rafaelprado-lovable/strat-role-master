@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { incidentApi } from '@/services/mockApi';
+import { incidentApi, userApi } from '@/services/mockApi';
 
 interface Tramitation {
   user_id: string;
@@ -43,14 +43,28 @@ export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
 
-  const { data: tramitations = [], isLoading } = useQuery({
+  const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
     queryKey: ['analyst-tramitations'],
     queryFn: incidentApi.getAllTramitations,
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: users = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: userApi.getAll,
+  });
+
+  const isLoading = loadingTramitations || loadingUsers;
+
+  // Match tramitation users against registered users by name (case-insensitive)
+  const registeredUserNames = useMemo(() => {
+    return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
+  }, [users]);
+
   const filteredData = useMemo(() => {
-    let data: Tramitation[] = tramitations as Tramitation[];
+    let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
+      registeredUserNames.has(t.user_name?.toLowerCase().trim())
+    );
     if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
@@ -61,7 +75,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter]);
+  }, [tramitations, periodFilter, registeredUserNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
