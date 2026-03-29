@@ -18,7 +18,7 @@ interface JobStatus {
 }
 
 export async function executeCommand(payload: ExecutePayload): Promise<ExecuteResponse> {
-  const res = await fetch(`${BASE_URL}/execute`, {
+  const res = await fetch(`${BASE_URL}/exec`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

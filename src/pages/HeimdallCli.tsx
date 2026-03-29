@@ -17,16 +17,14 @@ import { cn } from "@/lib/utils";
 import { executeCommand as apiExecute, pollJobStatus } from "@/services/heimdallCliService";
 
 // ---------- mock data ----------
-type Environment = "production" | "staging" | "development";
+type Environment = "middleware";
 
 const ENV_LABELS: Record<Environment, string> = {
-  production: "Produção",
-  staging: "Homologação",
-  development: "Desenvolvimento",
+  middleware: "Produção",
 };
 
 const ENV_COLORS: Record<Environment, string> = {
-  production: "hsl(0,70%,50%)",
+  middleware: "hsl(0,70%,50%)",
   staging: "hsl(45,90%,45%)",
   development: "hsl(210,70%,50%)",
 };
@@ -38,10 +36,10 @@ interface Cluster {
 }
 
 const MOCK_CLUSTERS: Cluster[] = [
-  { id: "c1", name: "cluster-a", environment: "production" },
-  { id: "c2", name: "cluster-b", environment: "production" },
-  { id: "c3", name: "cluster-stg", environment: "staging" },
-  { id: "c4", name: "cluster-dev", environment: "development" },
+  { id: "beta", name: "beta", environment: "middleware" },
+  { id: "c2", name: "cluster-b", environment: "middleware" },
+  { id: "c3", name: "cluster-stg", environment: "middleware" },
+  { id: "c4", name: "cluster-dev", environment: "middleware" },
 ];
 
 interface Machine {
@@ -55,13 +53,13 @@ interface Machine {
 }
 
 const MOCK_MACHINES: Machine[] = [
-  { id: "m1", name: "prod-app-01", host: "10.0.1.10", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
-  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "production", clusterId: "c1", sshUser: "nmws_app" },
-  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "production", clusterId: "c2", sshUser: "nmws_app" },
-  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
-  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "staging", clusterId: "c3", sshUser: "nmws_app" },
-  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
-  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "development", clusterId: "c4", sshUser: "nmws_app" },
+  { id: "m1", name: "snelnxb967", host: "snelnxb967", status: "online", environment: "middleware", clusterId: "beta", sshUser: "nmws_app" },
+  { id: "m2", name: "prod-db-01", host: "10.0.1.20", status: "online", environment: "middleware", clusterId: "c1", sshUser: "nmws_app" },
+  { id: "m3", name: "prod-worker-01", host: "10.0.1.30", status: "online", environment: "middleware", clusterId: "c2", sshUser: "nmws_app" },
+  { id: "m4", name: "stg-app-01", host: "10.0.2.10", status: "online", environment: "middleware", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m5", name: "stg-db-01", host: "10.0.2.20", status: "online", environment: "middleware", clusterId: "c3", sshUser: "nmws_app" },
+  { id: "m6", name: "dev-app-01", host: "10.0.3.5", status: "online", environment: "middleware", clusterId: "c4", sshUser: "nmws_app" },
+  { id: "m7", name: "dev-worker-01", host: "10.0.3.6", status: "offline", environment: "middleware", clusterId: "c4", sshUser: "nmws_app" },
 ];
 
 // ---------- types ----------

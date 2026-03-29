@@ -56,6 +56,7 @@ const mockClusters: Cluster[] = [
         name: "Instalação do pacote",
         type: "install_packages",
         items: [
+          { id: "install_package_1", name: "installPackage NMWS.P02972.list", status: "não executado", command: 'printf \'%s\ny\nn\n\' "olbpkiwowiyr3ufxqzuqrcfdr2fjit2iak3pyfafntdhndocufza" | /nmws_app/cmd/installPackage.sh NMWS.P02972.list' }
         ]
       },
       {
@@ -101,7 +102,7 @@ const mockClusters: Cluster[] = [
       {
         id: "sync_2",
         name: "Sync Servers",
-        type: "sync_services",
+        type: "sync_servers",
         items: [
           { id: "sy2", name: "kong_pmid2_uats", status: "não executado" }
         ]
@@ -140,7 +141,7 @@ const mockClusters: Cluster[] = [
       {
         id: "sync_3",
         name: "Sync Servers",
-        type: "sync_services",
+        type: "sync_servers",
         items: [
           { id: "sy5", name: "kong_pmid2_preprod", status: "não executado" }
         ]

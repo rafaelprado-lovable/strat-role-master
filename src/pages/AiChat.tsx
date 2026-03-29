@@ -163,9 +163,9 @@ export default function AiChat() {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden -m-6" style={{ height: 'calc(100vh - 3.5rem)' }}>
+    <div className="flex flex-col overflow-hidden " style={{ height: 'calc(100vh - 6.5rem)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+      <div className="flex items-center justify-between px-40 py-2.5 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
             <Bot className="w-4 h-4 text-primary" />

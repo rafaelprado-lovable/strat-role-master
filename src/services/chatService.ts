@@ -1,4 +1,4 @@
-const AGENT_URL = 'http://127.0.0.1:18081/instances/agente-gemini-sa/messages';
+const AGENT_URL = 'http://10.151.1.54:8000/agent/ask';
 
 export interface ChatMessage {
   id: string;
