@@ -208,6 +208,19 @@ export default function AnalystProductivity() {
               <SelectItem value="168">Última semana</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={queueFilter} onValueChange={setQueueFilter}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Filtrar por fila" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as filas</SelectItem>
+              {availableQueues.map(q => (
+                <SelectItem key={q} value={q}>
+                  {q.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', '')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
