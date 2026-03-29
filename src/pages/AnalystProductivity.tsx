@@ -1,0 +1,363 @@
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+interface Tramitation {
+  user_id: string;
+  user_name: string;
+  oldvalue: string;
+  oldvalue_name: string;
+  newvalue: string;
+  newvalue_name: string;
+  sys_created_on: string;
+}
+
+// Mock data
+const mockData: Tramitation[] = [
+  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'dfd7828ddb17a11c53f2e233149619b3', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'bca0f9d61b69b810e9162170f54bcb4d', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '19/12/2025 18:25:25' },
+  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'a1', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'b1', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 19:10:00' },
+  { user_id: 'T3660682', user_name: 'Joao Henrique Garcia Conte', oldvalue: 'a2', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'b2', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 08:30:00' },
+  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '19/12/2025 14:20:00' },
+  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c2', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'd2', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 16:45:00' },
+  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c3', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd3', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 09:15:00' },
+  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c4', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'd4', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 11:00:00' },
+  { user_id: 'T4451290', user_name: 'Maria Silva Santos', oldvalue: 'c5', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'd5', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '20/12/2025 14:30:00' },
+  { user_id: 'T5523871', user_name: 'Carlos Eduardo Pereira', oldvalue: 'e1', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'f1', newvalue_name: 'CTIO IT - SERVICE DESK - N1', sys_created_on: '19/12/2025 10:00:00' },
+  { user_id: 'T5523871', user_name: 'Carlos Eduardo Pereira', oldvalue: 'e2', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'f2', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 15:20:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '19/12/2025 09:30:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g2', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'h2', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '19/12/2025 11:45:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g3', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'h3', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '19/12/2025 15:10:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g4', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h4', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 08:00:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g5', oldvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', newvalue: 'h5', newvalue_name: 'CTIO IT - NETWORK OPS - N2', sys_created_on: '20/12/2025 10:30:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g6', oldvalue_name: 'CTIO IT - NETWORK OPS - N2', newvalue: 'h6', newvalue_name: 'CTIO IT - BILLING OPERATIONS - BILLING - N3', sys_created_on: '20/12/2025 13:00:00' },
+  { user_id: 'T6689432', user_name: 'Ana Paula Ferreira', oldvalue: 'g7', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'h7', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 16:00:00' },
+  { user_id: 'T7712345', user_name: 'Ricardo Almeida Costa', oldvalue: 'i1', oldvalue_name: 'CTIO IT - SERVICE DESK - N1', newvalue: 'j1', newvalue_name: 'CTIO IT - OPS BILLING MOBILE - ECM - N3', sys_created_on: '20/12/2025 07:45:00' },
+];
+
+function parseDate(dateStr: string): Date {
+  const [datePart, timePart] = dateStr.split(' ');
+  const [day, month, year] = datePart.split('/').map(Number);
+  const [hours, minutes, seconds] = timePart.split(':').map(Number);
+  return new Date(year, month - 1, day, hours, minutes, seconds);
+}
+
+const CHART_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+];
+
+const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+export default function AnalystProductivity() {
+  const [search, setSearch] = useState('');
+  const [periodFilter, setPeriodFilter] = useState<string>('all');
+
+  const filteredData = useMemo(() => {
+    let data = mockData;
+    if (periodFilter !== 'all') {
+      const now = new Date(2025, 11, 20, 23, 59, 59); // mock "now"
+      const hours = parseInt(periodFilter);
+      const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+      data = data.filter(d => parseDate(d.sys_created_on) >= cutoff);
+    }
+    return data;
+  }, [periodFilter]);
+
+  const analystStats = useMemo(() => {
+    const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
+    filteredData.forEach(t => {
+      const existing = map.get(t.user_id);
+      const ts = parseDate(t.sys_created_on);
+      if (existing) {
+        existing.count++;
+        existing.timestamps.push(ts);
+      } else {
+        map.set(t.user_id, { user_id: t.user_id, user_name: t.user_name, count: 1, timestamps: [ts] });
+      }
+    });
+
+    return Array.from(map.values())
+      .map(analyst => {
+        const sorted = analyst.timestamps.sort((a, b) => a.getTime() - b.getTime());
+        let avgTime = 0;
+        if (sorted.length > 1) {
+          const diffs: number[] = [];
+          for (let i = 1; i < sorted.length; i++) {
+            diffs.push((sorted[i].getTime() - sorted[i - 1].getTime()) / 60000);
+          }
+          avgTime = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+        }
+        return { ...analyst, avgTime };
+      })
+      .sort((a, b) => b.count - a.count);
+  }, [filteredData]);
+
+  const displayedAnalysts = useMemo(() => {
+    if (!search) return analystStats;
+    const lower = search.toLowerCase();
+    return analystStats.filter(a => a.user_name.toLowerCase().includes(lower) || a.user_id.toLowerCase().includes(lower));
+  }, [analystStats, search]);
+
+  const totalTramitations = filteredData.length;
+  const totalAnalysts = analystStats.length;
+  const globalAvgTime = analystStats.length
+    ? analystStats.reduce((acc, a) => acc + a.avgTime, 0) / analystStats.length
+    : 0;
+
+  const barData = analystStats.map(a => ({
+    name: a.user_name.split(' ').slice(0, 2).join(' '),
+    tramitações: a.count,
+  }));
+
+  const teamMap = new Map<string, number>();
+  filteredData.forEach(t => {
+    teamMap.set(t.newvalue_name, (teamMap.get(t.newvalue_name) || 0) + 1);
+  });
+  const pieData = Array.from(teamMap.entries()).map(([name, value]) => ({
+    name: name.replace('CTIO IT - ', ''),
+    value,
+  }));
+
+  function formatTime(minutes: number) {
+    if (minutes < 60) return `${Math.round(minutes)}min`;
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return `${h}h ${m}min`;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Produtividade dos Analistas</h1>
+          <p className="text-sm text-muted-foreground">Visão geral de tramitações e performance da equipe</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar analista..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 w-[220px]"
+            />
+          </div>
+          <Select value={periodFilter} onValueChange={setPeriodFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todo período</SelectItem>
+              <SelectItem value="24">Últimas 24h</SelectItem>
+              <SelectItem value="48">Últimas 48h</SelectItem>
+              <SelectItem value="168">Última semana</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Tramitações</p>
+                <p className="text-3xl font-bold text-foreground">{totalTramitations}</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ArrowRightLeft className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Analistas Ativos</p>
+                <p className="text-3xl font-bold text-foreground">{totalAnalysts}</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-chart-2/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-chart-2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Tempo Médio entre Ações</p>
+                <p className="text-3xl font-bold text-foreground">{formatTime(globalAvgTime)}</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-chart-3/10 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-chart-3" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Top Analista</p>
+                <p className="text-lg font-bold text-foreground truncate max-w-[160px]">
+                  {analystStats[0]?.user_name.split(' ').slice(0, 2).join(' ') || '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">{analystStats[0]?.count || 0} tramitações</p>
+              </div>
+              <div className="h-12 w-12 rounded-xl bg-chart-4/10 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-chart-4" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tramitações por Analista</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis type="number" className="text-xs fill-muted-foreground" />
+                <YAxis type="category" dataKey="name" width={120} className="text-xs fill-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--popover-foreground))',
+                  }}
+                />
+                <Bar dataKey="tramitações" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Destino das Tramitações (Times)</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name.split(' - ')[0]} (${(percent * 100).toFixed(0)}%)`}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--popover-foreground))',
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Ranking Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ranking de Produtividade</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[60px]">#</TableHead>
+                <TableHead>Analista</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead className="text-center">Tramitações</TableHead>
+                <TableHead className="text-center">Tempo Médio</TableHead>
+                <TableHead className="text-center">Performance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayedAnalysts.map((analyst, index) => {
+                const rank = analystStats.indexOf(analyst) + 1;
+                const isTop = rank <= 3;
+                return (
+                  <TableRow key={analyst.user_id}>
+                    <TableCell>
+                      {isTop ? (
+                        <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground ${
+                          rank === 1 ? 'bg-yellow-500' : rank === 2 ? 'bg-gray-400' : 'bg-amber-700'
+                        }`}>
+                          {rank}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground font-medium ml-1.5">{rank}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">{analyst.user_name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-xs">{analyst.user_id}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="font-semibold text-foreground">{analyst.count}</span>
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">
+                      {analyst.avgTime > 0 ? formatTime(analyst.avgTime) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {analyst.avgTime > 0 && analyst.avgTime < globalAvgTime ? (
+                        <div className="flex items-center justify-center gap-1 text-emerald-500">
+                          <TrendingUp className="h-4 w-4" />
+                          <span className="text-xs font-medium">Acima da média</span>
+                        </div>
+                      ) : analyst.avgTime > globalAvgTime ? (
+                        <div className="flex items-center justify-center gap-1 text-amber-500">
+                          <TrendingDown className="h-4 w-4" />
+                          <span className="text-xs font-medium">Abaixo da média</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {displayedAnalysts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    Nenhum analista encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
