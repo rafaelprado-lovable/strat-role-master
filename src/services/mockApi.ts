@@ -1,5 +1,5 @@
 // Mock API service - Replace with actual microservice calls
-import { Organization, Permission, Role, User, Scope, Department, Insight, Changes, Plantao, CallResolution, CallResolutionCreate } from '@/types';
+import { Organization, Permission, Role, User, Scope, Department, Insight, Changes, Plantao, CallResolution, CallResolutionCreate, Machine } from '@/types';
 
 // API service functions - To be replaced with actual API calls
 export const organizationApi = {
