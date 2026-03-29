@@ -41,7 +41,7 @@ const PIE_COLORS = [
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
-  const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [queueFilter, setQueueFilter] = useState<string>('all');
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
     queryKey: ['analyst-tramitations'],
@@ -54,6 +54,11 @@ export default function AnalystProductivity() {
     queryFn: userApi.getAll,
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentApi.getAll,
+  });
+
   const isLoading = loadingTramitations || loadingUsers;
 
   // Match tramitation users against registered users by name (case-insensitive)
@@ -61,10 +66,25 @@ export default function AnalystProductivity() {
     return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
   }, [users]);
 
+  // All unique queue names from tramitations for the filter dropdown
+  const availableQueues = useMemo(() => {
+    const queues = new Set<string>();
+    (tramitations as Tramitation[]).forEach(t => {
+      if (t.oldvalue_name) queues.add(t.oldvalue_name);
+      if (t.newvalue_name) queues.add(t.newvalue_name);
+    });
+    return Array.from(queues).sort();
+  }, [tramitations]);
+
   const filteredData = useMemo(() => {
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       registeredUserNames.has(t.user_name?.toLowerCase().trim())
     );
+    if (queueFilter !== 'all') {
+      data = data.filter(d =>
+        d.oldvalue_name === queueFilter || d.newvalue_name === queueFilter
+      );
+    }
     if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
@@ -75,7 +95,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter, registeredUserNames]);
+  }, [tramitations, periodFilter, queueFilter, registeredUserNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
