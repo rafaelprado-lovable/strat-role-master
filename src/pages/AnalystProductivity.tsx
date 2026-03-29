@@ -78,13 +78,13 @@ export default function AnalystProductivity() {
   }, [departmentNames]);
 
   const filteredData = useMemo(() => {
-    // Only tramitations where oldvalue_name is a registered department AND user is registered
+    // Only tramitations where newvalue_name is a registered department AND user is registered
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       registeredUserNames.has(t.user_name?.toLowerCase().trim()) &&
-      departmentNames.has(t.oldvalue_name?.trim())
+      departmentNames.has(t.newvalue_name?.trim())
     );
     if (queueFilter !== 'all') {
-      data = data.filter(d => d.oldvalue_name === queueFilter);
+      data = data.filter(d => d.newvalue_name === queueFilter);
     }
     if (periodFilter !== 'all') {
       const now = new Date();
@@ -96,7 +96,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter, queueFilter, registeredUserNames]);
+  }, [tramitations, periodFilter, queueFilter, registeredUserNames, departmentNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
