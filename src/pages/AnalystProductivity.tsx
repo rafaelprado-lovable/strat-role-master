@@ -41,6 +41,7 @@ const PIE_COLORS = [
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
+  const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [queueFilter, setQueueFilter] = useState<string>('all');
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
