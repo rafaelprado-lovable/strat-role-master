@@ -56,13 +56,15 @@ export default function AnalystProductivity() {
 
   const isLoading = loadingTramitations || loadingUsers;
 
-  // Set of registered user IDs (using the user_id field like "T3660682")
-  const registeredUserIds = useMemo(() => {
-    return new Set(users.map(u => u._id));
+  // Match tramitation users against registered users by name (case-insensitive)
+  const registeredUserNames = useMemo(() => {
+    return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
   }, [users]);
 
   const filteredData = useMemo(() => {
-    let data: Tramitation[] = tramitations as Tramitation[];
+    let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
+      registeredUserNames.has(t.user_name?.toLowerCase().trim())
+    );
     if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
@@ -73,7 +75,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter]);
+  }, [tramitations, periodFilter, registeredUserNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
