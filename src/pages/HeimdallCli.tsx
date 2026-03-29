@@ -17,16 +17,20 @@ import { cn } from "@/lib/utils";
 import { executeCommand as apiExecute, pollJobStatus } from "@/services/heimdallCliService";
 
 // ---------- mock data ----------
-type Environment = "middleware";
+type Environment = "middleware" | "staging" | "development" | "production";
 
 const ENV_LABELS: Record<Environment, string> = {
-  middleware: "Produção",
+  middleware: "Middleware",
+  staging: "Staging",
+  development: "Development",
+  production: "Produção",
 };
 
 const ENV_COLORS: Record<Environment, string> = {
   middleware: "hsl(0,70%,50%)",
   staging: "hsl(45,90%,45%)",
   development: "hsl(210,70%,50%)",
+  production: "hsl(140,70%,40%)",
 };
 
 interface Cluster {
