@@ -67,24 +67,24 @@ export default function AnalystProductivity() {
     return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
   }, [users]);
 
-  // All unique queue names from tramitations for the filter dropdown
+  // Department names from the API (valid queues)
+  const departmentNames = useMemo(() => {
+    return new Set(departments.map((d: any) => d.name?.trim()).filter(Boolean));
+  }, [departments]);
+
+  // Only show queues that exist in department list
   const availableQueues = useMemo(() => {
-    const queues = new Set<string>();
-    (tramitations as Tramitation[]).forEach(t => {
-      if (t.oldvalue_name) queues.add(t.oldvalue_name);
-      if (t.newvalue_name) queues.add(t.newvalue_name);
-    });
-    return Array.from(queues).sort();
-  }, [tramitations]);
+    return Array.from(departmentNames).sort();
+  }, [departmentNames]);
 
   const filteredData = useMemo(() => {
+    // Only tramitations where oldvalue_name is a registered department AND user is registered
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
-      registeredUserNames.has(t.user_name?.toLowerCase().trim())
+      registeredUserNames.has(t.user_name?.toLowerCase().trim()) &&
+      departmentNames.has(t.oldvalue_name?.trim())
     );
     if (queueFilter !== 'all') {
-      data = data.filter(d =>
-        d.oldvalue_name === queueFilter || d.newvalue_name === queueFilter
-      );
+      data = data.filter(d => d.oldvalue_name === queueFilter);
     }
     if (periodFilter !== 'all') {
       const now = new Date();
