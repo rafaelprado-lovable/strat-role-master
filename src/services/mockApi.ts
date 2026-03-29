@@ -1200,7 +1200,53 @@ export const incidentApi = {
       console.error('❌ Erro:', err);
       throw err;
     }
-  }
+  },
+
+  getAllTramitations: async (): Promise<Array<{
+    user_name: string;
+    oldname: string;
+    newname: string;
+    datetime: string;
+    incident_number: string;
+  }>> => {
+    try {
+      const incidents = await incidentApi.getAll();
+      const departments = await departmentApi.getAll();
+
+      const allTramitations: Array<{
+        user_name: string;
+        oldname: string;
+        newname: string;
+        datetime: string;
+        incident_number: string;
+      }> = [];
+
+      const historyPromises = incidents.map(async (incident) => {
+        try {
+          const merged = await incidentApi.getIncidentHistory(incident, departments);
+          if (merged.departamentTrammit && merged.departamentTrammit.length > 0) {
+            merged.departamentTrammit.forEach((t: any) => {
+              allTramitations.push({
+                user_name: t.userName || 'Desconhecido',
+                oldname: t.oldname || '',
+                newname: t.newname || '',
+                datetime: t.datetime || '',
+                incident_number: incident.incident_data?.number || '',
+              });
+            });
+          }
+        } catch {
+          // skip failed individual history calls
+        }
+      });
+
+      await Promise.all(historyPromises);
+      return allTramitations;
+    } catch (error) {
+      console.error('Erro ao buscar tramitações:', error);
+      return [];
+    }
+  },
 };
 
 
