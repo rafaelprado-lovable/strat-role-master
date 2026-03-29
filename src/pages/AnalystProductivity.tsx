@@ -43,11 +43,23 @@ export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
 
-  const { data: tramitations = [], isLoading } = useQuery({
+  const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
     queryKey: ['analyst-tramitations'],
     queryFn: incidentApi.getAllTramitations,
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: users = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: userApi.getAll,
+  });
+
+  const isLoading = loadingTramitations || loadingUsers;
+
+  // Set of registered user IDs (using the user_id field like "T3660682")
+  const registeredUserIds = useMemo(() => {
+    return new Set(users.map(u => u._id));
+  }, [users]);
 
   const filteredData = useMemo(() => {
     let data: Tramitation[] = tramitations as Tramitation[];
