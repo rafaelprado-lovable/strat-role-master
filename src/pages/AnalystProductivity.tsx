@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Users, ArrowRightLeft, Trophy, Search, Loader2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { incidentApi, userApi, departmentApi } from '@/services/mockApi';
 
 interface Tramitation {
@@ -29,16 +29,6 @@ function parseDate(dateStr: string): Date | null {
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
 }
-
-const PIE_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#ec4899',
-  '#06b6d4',
-];
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
@@ -63,23 +53,15 @@ export default function AnalystProductivity() {
 
   const isLoading = loadingTramitations || loadingUsers;
 
-  // Match tramitation users against registered users by name (case-insensitive)
-  const registeredUserNames = useMemo(() => {
-    return new Set(users.map(u => u.name?.toLowerCase().trim()).filter(Boolean));
-  }, [users]);
-
-  // Department names from the API (valid queues)
   const departmentNames = useMemo(() => {
     return new Set(departments.map((d: any) => d.name?.trim()).filter(Boolean));
   }, [departments]);
 
-  // Only show queues that exist in department list
   const availableQueues = useMemo(() => {
     return Array.from(departmentNames).sort();
   }, [departmentNames]);
 
   const filteredData = useMemo(() => {
-    // Only tramitations where newvalue_name is a registered department AND user is registered
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       departmentNames.has(t.oldvalue_name?.trim())
     );
@@ -99,33 +81,18 @@ export default function AnalystProductivity() {
   }, [tramitations, periodFilter, queueFilter, departmentNames]);
 
   const analystStats = useMemo(() => {
-    const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
+    const map = new Map<string, { user_id: string; user_name: string; count: number }>();
     filteredData.forEach(t => {
       const key = t.user_id;
-      const ts = parseDate(t.sys_created_on);
       const existing = map.get(key);
       if (existing) {
         existing.count++;
-        if (ts) existing.timestamps.push(ts);
       } else {
-        map.set(key, { user_id: t.user_id, user_name: t.user_name, count: 1, timestamps: ts ? [ts] : [] });
+        map.set(key, { user_id: t.user_id, user_name: t.user_name, count: 1 });
       }
     });
 
-    return Array.from(map.values())
-      .map(analyst => {
-        const sorted = analyst.timestamps.sort((a, b) => a.getTime() - b.getTime());
-        let avgTime = 0;
-        if (sorted.length > 1) {
-          const diffs: number[] = [];
-          for (let i = 1; i < sorted.length; i++) {
-            diffs.push((sorted[i].getTime() - sorted[i - 1].getTime()) / 60000);
-          }
-          avgTime = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-        }
-        return { ...analyst, avgTime };
-      })
-      .sort((a, b) => b.count - a.count);
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
   }, [filteredData]);
 
   const displayedAnalysts = useMemo(() => {
@@ -138,35 +105,11 @@ export default function AnalystProductivity() {
 
   const totalTramitations = filteredData.length;
   const totalAnalysts = analystStats.length;
-  const globalAvgTime = analystStats.length
-    ? analystStats.reduce((acc, a) => acc + a.avgTime, 0) / analystStats.length
-    : 0;
 
   const barData = analystStats.slice(0, 10).map(a => ({
     name: a.user_name.split(' ').slice(0, 2).join(' '),
     tramitações: a.count,
   }));
-
-  const teamMap = new Map<string, number>();
-  filteredData.forEach(t => {
-    if (t.oldvalue_name) {
-      teamMap.set(t.oldvalue_name, (teamMap.get(t.oldvalue_name) || 0) + 1);
-    }
-  });
-  const pieData = Array.from(teamMap.entries())
-    .map(([name, value]) => ({
-      name: name.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', ''),
-      value,
-    }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 7);
-
-  function formatTime(minutes: number) {
-    if (minutes < 60) return `${Math.round(minutes)}min`;
-    const h = Math.floor(minutes / 60);
-    const m = Math.round(minutes % 60);
-    return `${h}h ${m}min`;
-  }
 
   if (isLoading) {
     return (
@@ -257,7 +200,7 @@ export default function AnalystProductivity() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -288,19 +231,6 @@ export default function AnalystProductivity() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Tempo Médio entre Ações</p>
-                <p className="text-3xl font-bold text-foreground">{formatTime(globalAvgTime)}</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-sm text-muted-foreground">Top Analista</p>
                 <p className="text-lg font-bold text-foreground truncate max-w-[160px]">
                   {analystStats[0]?.user_name.split(' ').slice(0, 2).join(' ') || '-'}
@@ -315,74 +245,34 @@ export default function AnalystProductivity() {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Tramitações por Analista</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {barData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis type="number" className="text-xs fill-muted-foreground" />
-                  <YAxis type="category" dataKey="name" width={120} className="text-xs fill-muted-foreground" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--popover-foreground))',
-                    }}
-                  />
-                  <Bar dataKey="tramitações" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Destino das Tramitações (Times)</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center">
-            {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={3}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name.split(' - ')[0]} (${(percent * 100).toFixed(0)}%)`}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--popover-foreground))',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Tramitações por Analista</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {barData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={barData} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis type="number" className="text-xs fill-muted-foreground" />
+                <YAxis type="category" dataKey="name" width={120} className="text-xs fill-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--popover-foreground))',
+                  }}
+                />
+                <Bar dataKey="tramitações" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-10">Sem dados no período selecionado.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Ranking Table */}
       <Card>
@@ -397,8 +287,6 @@ export default function AnalystProductivity() {
                 <TableHead>Analista</TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead className="text-center">Tramitações</TableHead>
-                <TableHead className="text-center">Tempo Médio</TableHead>
-                <TableHead className="text-center">Performance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -425,30 +313,12 @@ export default function AnalystProductivity() {
                     <TableCell className="text-center">
                       <span className="font-semibold text-foreground">{analyst.count}</span>
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
-                      {analyst.avgTime > 0 ? formatTime(analyst.avgTime) : '-'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {analyst.avgTime > 0 && analyst.avgTime < globalAvgTime ? (
-                        <div className="flex items-center justify-center gap-1 text-emerald-500">
-                          <TrendingUp className="h-4 w-4" />
-                          <span className="text-xs font-medium">Acima da média</span>
-                        </div>
-                      ) : analyst.avgTime > globalAvgTime ? (
-                        <div className="flex items-center justify-center gap-1 text-amber-500">
-                          <TrendingDown className="h-4 w-4" />
-                          <span className="text-xs font-medium">Abaixo da média</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
                   </TableRow>
                 );
               })}
               {displayedAnalysts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                     Nenhum analista encontrado.
                   </TableCell>
                 </TableRow>
