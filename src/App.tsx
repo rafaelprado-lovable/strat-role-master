@@ -41,6 +41,7 @@ import HeimdallInfra from "./pages/HeimdallInfra";
 import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
 import Machines from "./pages/Machines";
+import Tools from "./pages/Tools";
 
 const queryClient = new QueryClient();
 
@@ -337,6 +338,16 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Machines />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tools"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Tools />
                   </AppLayout>
                 </ProtectedRoute>
               }
