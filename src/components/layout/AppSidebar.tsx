@@ -114,7 +114,8 @@ export function AppSidebar() {
               { title: "Departamentos", url: "/departments" },
               { title: "Usuários", url: "/users" },
               { title: "Máquinas", url: "/machines" },
-              { title: "Blocos", url: "/definitions" }
+              { title: "Blocos", url: "/definitions" },
+              { title: "Ferramentas IA", url: "/tools" }
             ]
           });
         }
