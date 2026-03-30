@@ -17,7 +17,7 @@ export interface Conversation {
   updatedAt?: string;
 }
 
-const BASE = '/heimdall-management-api/v1';
+const BASE = '/v1';
 
 export const conversationService = {
   async create(id: string, title: string): Promise<void> {
