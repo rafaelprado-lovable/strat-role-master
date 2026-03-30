@@ -81,10 +81,10 @@ export default function AnalystProductivity() {
     // Only tramitations where newvalue_name is a registered department AND user is registered
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       registeredUserNames.has(t.user_name?.toLowerCase().trim()) &&
-      departmentNames.has(t.newvalue_name?.trim())
+      departmentNames.has(t.oldvalue_name?.trim())
     );
     if (queueFilter !== 'all') {
-      data = data.filter(d => d.newvalue_name === queueFilter);
+      data = data.filter(d => d.oldvalue_name === queueFilter);
     }
     if (periodFilter !== 'all') {
       const now = new Date();
@@ -149,8 +149,8 @@ export default function AnalystProductivity() {
 
   const teamMap = new Map<string, number>();
   filteredData.forEach(t => {
-    if (t.newvalue_name) {
-      teamMap.set(t.newvalue_name, (teamMap.get(t.newvalue_name) || 0) + 1);
+    if (t.oldvalue_name) {
+      teamMap.set(t.oldvalue_name, (teamMap.get(t.oldvalue_name) || 0) + 1);
     }
   });
   const pieData = Array.from(teamMap.entries())
