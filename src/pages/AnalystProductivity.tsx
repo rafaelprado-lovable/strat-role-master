@@ -80,7 +80,6 @@ export default function AnalystProductivity() {
   const filteredData = useMemo(() => {
     // Only tramitations where newvalue_name is a registered department AND user is registered
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
-      registeredUserNames.has(t.user_name?.toLowerCase().trim()) &&
       departmentNames.has(t.oldvalue_name?.trim())
     );
     if (queueFilter !== 'all') {
