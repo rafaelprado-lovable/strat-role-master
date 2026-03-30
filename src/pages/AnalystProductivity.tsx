@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Users, ArrowRightLeft, Clock, Trophy, Search, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { incidentApi, userApi, departmentApi } from '@/services/mockApi';
@@ -42,7 +43,7 @@ const PIE_COLORS = [
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
-  const [queueFilter, setQueueFilter] = useState<string>('all');
+  const [queueFilter, setQueueFilter] = useState<string[]>([]);
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
     queryKey: ['analyst-tramitations'],
@@ -82,8 +83,8 @@ export default function AnalystProductivity() {
     let data: Tramitation[] = (tramitations as Tramitation[]).filter(t =>
       departmentNames.has(t.oldvalue_name?.trim())
     );
-    if (queueFilter !== 'all') {
-      data = data.filter(d => d.oldvalue_name === queueFilter);
+    if (queueFilter.length > 0) {
+      data = data.filter(d => queueFilter.includes(d.oldvalue_name?.trim()));
     }
     if (periodFilter !== 'all') {
       const now = new Date();
@@ -95,7 +96,7 @@ export default function AnalystProductivity() {
       });
     }
     return data;
-  }, [tramitations, periodFilter, queueFilter, registeredUserNames, departmentNames]);
+  }, [tramitations, periodFilter, queueFilter, departmentNames]);
 
   const analystStats = useMemo(() => {
     const map = new Map<string, { user_id: string; user_name: string; count: number; timestamps: Date[] }>();
@@ -207,19 +208,51 @@ export default function AnalystProductivity() {
               <SelectItem value="168">Última semana</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={queueFilter} onValueChange={setQueueFilter}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="Filtrar por fila" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as filas</SelectItem>
-              {availableQueues.map(q => (
-                <SelectItem key={q} value={q}>
-                  {q.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', '')}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="inline-flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[280px] h-10">
+                <span className="truncate text-foreground">
+                  {queueFilter.length === 0
+                    ? 'Todas as filas'
+                    : `${queueFilter.length} fila${queueFilter.length > 1 ? 's' : ''} selecionada${queueFilter.length > 1 ? 's' : ''}`}
+                </span>
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[320px] p-0" align="start">
+              <div className="p-2 border-b border-border">
+                <button
+                  onClick={() => setQueueFilter([])}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Limpar seleção
+                </button>
+              </div>
+              <div className="max-h-[240px] overflow-y-auto p-2 space-y-1">
+                {availableQueues.map(q => {
+                  const selected = queueFilter.includes(q);
+                  return (
+                    <label
+                      key={q}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer text-sm text-foreground"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() =>
+                          setQueueFilter(prev =>
+                            selected ? prev.filter(x => x !== q) : [...prev, q]
+                          )
+                        }
+                        className="rounded border-input"
+                      />
+                      {q.replace('CTIO IT - ', '').replace('CTIO OPS - ', '').replace('CTIO UX - ', '')}
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
