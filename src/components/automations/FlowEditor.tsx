@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   ReactFlow,
   Background,
