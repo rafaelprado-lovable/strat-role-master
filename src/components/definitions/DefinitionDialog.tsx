@@ -37,6 +37,7 @@ export function DefinitionDialog({ open, onOpenChange, definition, onSave, loadi
     icon: 'zap',
     description: '',
     category: 'action',
+    group: '',
     inputs: [],
     outputs: [],
     documentation: '',
