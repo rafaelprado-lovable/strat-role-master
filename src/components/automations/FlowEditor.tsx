@@ -59,6 +59,7 @@ export type BlockDef = {
   icon: string;
   description: string;
   category: 'trigger' | 'action' | 'filter';
+  group: string;
   Icon: React.ComponentType<any>;
 };
 
@@ -69,6 +70,7 @@ function definitionsToBlocks(defs: Definition[]): BlockDef[] {
     icon: d.icon,
     description: d.description || '',
     category: d.category,
+    group: d.group || 'Outros',
     Icon: iconResolver(d.icon),
   }));
 }
