@@ -135,7 +135,7 @@ export default function AiChat() {
     }
 
     const now = new Date();
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: text, timestamp: now };
+    const userMsg: ChatMessage = { id: `msg-${Date.now()}-u`, role: 'user', content: text, timestamp: now };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -149,7 +149,7 @@ export default function AiChat() {
 
     const history = messages.map(m => ({ role: m.role, content: m.content }));
     let assistantContent = '';
-    const assistantId = crypto.randomUUID();
+    const assistantId = `msg-${Date.now()}-a`;
     const controller = new AbortController();
     abortRef.current = controller;
 
