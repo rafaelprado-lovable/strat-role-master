@@ -149,7 +149,7 @@ export default function AiChat() {
 
     const history = messages.map(m => ({ role: m.role, content: m.content }));
     let assistantContent = '';
-    const assistantId = crypto.randomUUID();
+    const assistantId = `msg-${Date.now()}-a`;
     const controller = new AbortController();
     abortRef.current = controller;
 
