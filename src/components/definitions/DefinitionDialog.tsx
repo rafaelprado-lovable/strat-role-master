@@ -37,6 +37,7 @@ export function DefinitionDialog({ open, onOpenChange, definition, onSave, loadi
     icon: 'zap',
     description: '',
     category: 'action',
+    group: '',
     inputs: [],
     outputs: [],
     documentation: '',
@@ -52,6 +53,7 @@ export function DefinitionDialog({ open, onOpenChange, definition, onSave, loadi
         icon: 'zap',
         description: '',
         category: 'action',
+        group: '',
         inputs: [],
         outputs: [],
         documentation: '',
@@ -149,6 +151,16 @@ export function DefinitionDialog({ open, onOpenChange, definition, onSave, loadi
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Grupo</Label>
+                <Input
+                  value={form.group || ''}
+                  onChange={(e) => update({ group: e.target.value })}
+                  placeholder="Ex: ServiceNow, Teams, WhatsApp..."
+                />
+                <p className="text-[10px] text-muted-foreground">Agrupa blocos na sidebar do editor de workflows</p>
               </div>
 
               <div className="space-y-2">

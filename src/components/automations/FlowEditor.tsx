@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   ReactFlow,
   Background,
@@ -59,6 +60,7 @@ export type BlockDef = {
   icon: string;
   description: string;
   category: 'trigger' | 'action' | 'filter';
+  group: string;
   Icon: React.ComponentType<any>;
 };
 
@@ -69,6 +71,7 @@ function definitionsToBlocks(defs: Definition[]): BlockDef[] {
     icon: d.icon,
     description: d.description || '',
     category: d.category,
+    group: d.group || 'Outros',
     Icon: iconResolver(d.icon),
   }));
 }
@@ -78,6 +81,91 @@ function definitionsToBlocks(defs: Definition[]): BlockDef[] {
 const nodeTypes = { task: TaskNode };
 const edgeTypes = { waypoint: WaypointEdge };
 
+
+function BlockItem({ block, onDragStart, colorClass, bgClass }: {
+  block: BlockDef;
+  onDragStart: (e: React.DragEvent, block: BlockDef) => void;
+  colorClass: string;
+  bgClass: string;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, block)}
+      className={`flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:shadow-sm active:scale-[0.98] transition-all duration-200`}
+    >
+      <div className={`p-1.5 rounded-md shrink-0 ${bgClass}`}>
+        <block.Icon className={`h-3.5 w-3.5 ${colorClass}`} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
+        <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
+      </div>
+    </div>
+  );
+}
+
+function GroupedBlockList({ blocks, onDragStart, colorClass, bgClass, categoryLabel, CategoryIcon }: {
+  blocks: BlockDef[];
+  onDragStart: (e: React.DragEvent, block: BlockDef) => void;
+  colorClass: string;
+  bgClass: string;
+  categoryLabel: string;
+  CategoryIcon: React.ComponentType<{ className?: string }>;
+}) {
+  const groups = useMemo(() => {
+    const map = new Map<string, BlockDef[]>();
+    blocks.forEach(b => {
+      const list = map.get(b.group) || [];
+      list.push(b);
+      map.set(b.group, list);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === 'Outros') return 1;
+      if (b === 'Outros') return -1;
+      return a.localeCompare(b);
+    });
+  }, [blocks]);
+
+  if (blocks.length === 0) return null;
+
+  const hasMultipleGroups = groups.length > 1 || (groups.length === 1 && groups[0][0] !== 'Outros');
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5 px-1">
+        <CategoryIcon className={`h-3 w-3 ${colorClass}`} />
+        <span className={`text-[11px] font-semibold uppercase tracking-wider ${colorClass}`}>{categoryLabel}</span>
+        <span className="text-[10px] text-muted-foreground ml-auto">{blocks.length}</span>
+      </div>
+      {hasMultipleGroups ? (
+        <Accordion type="multiple" defaultValue={groups.map(([g]) => g)} className="space-y-0.5">
+          {groups.map(([groupName, groupBlocks]) => (
+            <AccordionItem key={groupName} value={groupName} className="border-none">
+              <AccordionTrigger className="py-1.5 px-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:no-underline rounded-md hover:bg-muted/50">
+                <span className="flex items-center gap-1.5">
+                  {groupName}
+                  <span className="text-[10px] text-muted-foreground/60">({groupBlocks.length})</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-1 pt-0.5 space-y-1">
+                {groupBlocks.map(block => (
+                  <BlockItem key={block.value} block={block} onDragStart={onDragStart} colorClass={colorClass} bgClass={bgClass} />
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : (
+        <div className="space-y-1">
+          {blocks.map(block => (
+            <BlockItem key={block.value} block={block} onDragStart={onDragStart} colorClass={colorClass} bgClass={bgClass} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function BlocksSidebarContent({ triggers, filters, actions, startDate, setStartDate, correlatedWorkflowIds, setCorrelatedWorkflowIds, availableWorkflows, currentWorkflowId, onDragStart }: {
   triggers: BlockDef[];
@@ -99,74 +187,34 @@ function BlocksSidebarContent({ triggers, filters, actions, startDate, setStartD
         </div>
         <h3 className="font-semibold text-sm text-foreground">Blocos Disponíveis</h3>
       </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5 px-1">
-          <Zap className="h-3 w-3 text-chart-4" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-4">Gatilhos</span>
-        </div>
-        {triggers.map((block) => (
-          <div
-            key={block.value}
-            draggable
-            onDragStart={(e) => onDragStart(e, block)}
-            className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-4/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-          >
-            <div className="p-1.5 rounded-md bg-chart-4/10 shrink-0">
-              <block.Icon className="h-3.5 w-3.5 text-chart-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      {filters.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 px-1">
-            <Filter className="h-3 w-3 text-chart-2" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-chart-2">Filtros</span>
-          </div>
-          {filters.map((block) => (
-            <div
-              key={block.value}
-              draggable
-              onDragStart={(e) => onDragStart(e, block)}
-              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-chart-2/30 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-            >
-              <div className="p-1.5 rounded-md bg-chart-2/10 shrink-0">
-                <block.Icon className="h-3.5 w-3.5 text-chart-2" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5 px-1">
-          <Cog className="h-3 w-3 text-primary" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Ações</span>
-        </div>
-        {actions.map((block) => (
-          <div
-            key={block.value}
-            draggable
-            onDragStart={(e) => onDragStart(e, block)}
-            className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-background/50 cursor-grab hover:bg-muted/80 hover:border-primary/20 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-          >
-            <div className="p-1.5 rounded-md bg-muted/80 shrink-0">
-              <block.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{block.label}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{block.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+
+      <GroupedBlockList
+        blocks={triggers}
+        onDragStart={onDragStart}
+        colorClass="text-chart-4"
+        bgClass="bg-chart-4/10"
+        categoryLabel="Gatilhos"
+        CategoryIcon={Zap}
+      />
+
+      <GroupedBlockList
+        blocks={filters}
+        onDragStart={onDragStart}
+        colorClass="text-chart-2"
+        bgClass="bg-chart-2/10"
+        categoryLabel="Filtros"
+        CategoryIcon={Filter}
+      />
+
+      <GroupedBlockList
+        blocks={actions}
+        onDragStart={onDragStart}
+        colorClass="text-primary"
+        bgClass="bg-muted/80"
+        categoryLabel="Ações"
+        CategoryIcon={Cog}
+      />
+
       <div className="border-t border-border mt-4 pt-3 space-y-1.5">
         <Label className="text-xs">start_date (DD/MM/YYYY HH:MM)</Label>
         <Input
