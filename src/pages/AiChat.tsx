@@ -135,7 +135,7 @@ export default function AiChat() {
     }
 
     const now = new Date();
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: text, timestamp: now };
+    const userMsg: ChatMessage = { id: `msg-${Date.now()}-u`, role: 'user', content: text, timestamp: now };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
