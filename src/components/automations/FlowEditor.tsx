@@ -787,7 +787,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             </Button>
           )}
           {workflow?.id && (
-            <Button variant="outline" size="sm" onClick={() => window.location.assign(`/automations/execute/${workflow.id}`)}>
+            <Button variant="outline" size="sm" onClick={() => nav(`/automations/execute/${workflow.id}`)}>
               <Play className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Executar</span>
             </Button>
