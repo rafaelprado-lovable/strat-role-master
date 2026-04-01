@@ -17,7 +17,8 @@ export interface ChatTool {
 
 export const toolService = {
   getAll: async (): Promise<ChatTool[]> => {
-    return apiClient.get<ChatTool[]>('/v1/read/tool');
+    const res = await apiClient.get<any>('/v1/read/tool');
+    return Array.isArray(res) ? res : Array.isArray(res?.tools) ? res.tools : Array.isArray(res?.data) ? res.data : [];
   },
 
   getById: async (id: string): Promise<ChatTool> => {
