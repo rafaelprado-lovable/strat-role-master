@@ -759,7 +759,7 @@ export function NodeConfigPanel({ node, inputs, loopEdge, allNodes, definitions,
             <CodeEditorPanel
               code={(d.code as string) || ''}
               language={(d.code_language as 'python' | 'javascript' | 'shell' | 'json') || 'python'}
-              onCodeChange={(code) => update({ code })}
+              onCodeChange={(code) => { update({ code }); onUpdateInputs(node.id, { ...inputs, code }); }}
               onLanguageChange={(lang) => update({ code_language: lang })}
             />
           </TabsContent>
