@@ -1,4 +1,5 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   ReactFlow,
@@ -18,7 +19,7 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Globe, History,
+  ArrowLeft, Save, Clock, Globe, History, Play,
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
 import { workflowVersionService } from '@/services/workflowVersionService';
@@ -266,6 +267,7 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
+  const nav = useNavigate();
   const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>([]);
   const [apiDefinitions, setApiDefinitions] = useState<Definition[]>([]);
 
@@ -784,10 +786,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               <span className="hidden md:inline">Versões</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Salvar Rascunho</span>
-          </Button>
+          {workflow?.id && (
+            <Button variant="outline" size="sm" onClick={() => nav(`/automations/execute/${workflow.id}`)}>
+              <Play className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Executar</span>
+            </Button>
+          )}
           <Button size="sm" onClick={handlePublish} disabled={isPublishing}>
             {isPublishing ? (
               <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />

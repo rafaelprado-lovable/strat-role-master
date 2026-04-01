@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ReactFlowProvider } from '@xyflow/react';
 import { AutomationsTable } from '@/components/automations/AutomationsTable';
 import { FlowEditor } from '@/components/automations/FlowEditor';
@@ -13,6 +13,7 @@ import { Workflow as WorkflowIcon, Loader2 } from 'lucide-react';
 
 export default function Automations() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalExecutions, setTotalExecutions] = useState(0);
@@ -63,6 +64,19 @@ export default function Automations() {
   useEffect(() => {
     fetchWorkflows();
   }, [fetchWorkflows]);
+
+  // Auto-open editor when navigating from execution page
+  useEffect(() => {
+    const editId = (location.state as any)?.editWorkflowId;
+    if (editId && workflows.length > 0 && !isEditorOpen) {
+      const wf = workflows.find(w => w.id === editId);
+      if (wf) {
+        setEditingWorkflow(wf);
+        setIsEditorOpen(true);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, workflows]);
 
   const handleCreate = () => {
     setEditingWorkflow(null);
