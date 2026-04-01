@@ -267,6 +267,7 @@ interface FlowEditorProps {
 }
 
 export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
+  const nav = useNavigate();
   const [blockLibrary, setBlockLibrary] = useState<BlockDef[]>([]);
   const [apiDefinitions, setApiDefinitions] = useState<Definition[]>([]);
 
