@@ -594,7 +594,7 @@ export default function WorkflowExecution() {
               <Square className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Parar execução</span><span className="sm:hidden">Parar</span>
             </Button>
           ) : null}
-          <Button size="sm" variant="outline" onClick={() => navigate(`/automations`)} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => navigate('/automations', { state: { editWorkflowId: workflow.id } })} className="gap-1.5">
             <Pencil className="h-3.5 w-3.5" /> <span className="hidden md:inline">Editar</span>
           </Button>
           {execution && (
