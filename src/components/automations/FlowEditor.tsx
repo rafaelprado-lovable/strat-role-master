@@ -784,10 +784,12 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
               <span className="hidden md:inline">Versões</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Salvar Rascunho</span>
-          </Button>
+          {workflow?.id && (
+            <Button variant="outline" size="sm" onClick={() => window.location.assign(`/automations/execute/${workflow.id}`)}>
+              <Play className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Executar</span>
+            </Button>
+          )}
           <Button size="sm" onClick={handlePublish} disabled={isPublishing}>
             {isPublishing ? (
               <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />

@@ -594,13 +594,13 @@ export default function WorkflowExecution() {
               <Square className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Parar execução</span><span className="sm:hidden">Parar</span>
             </Button>
           ) : null}
+          <Button size="sm" variant="outline" onClick={() => navigate(`/automations`)} className="gap-1.5">
+            <Pencil className="h-3.5 w-3.5" /> <span className="hidden md:inline">Editar</span>
+          </Button>
           {execution && (
             <>
               <Button size="sm" variant="outline" onClick={fetchExecutionStatus} className="gap-1.5" disabled={!executionIdRef.current}>
                 <RefreshCw className="h-3.5 w-3.5" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleRerun} className="gap-1.5">
-                <RotateCcw className="h-3.5 w-3.5" /> <span className="hidden md:inline">Reexecutar</span>
               </Button>
               <Button size="sm" variant="outline" onClick={handleExportExecution} className="gap-1.5">
                 <Download className="h-3.5 w-3.5" /> <span className="hidden md:inline">Exportar</span>
