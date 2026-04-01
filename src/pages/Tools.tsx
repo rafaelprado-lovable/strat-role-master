@@ -33,11 +33,16 @@ const Tools = () => {
   const [deletingTool, setDeletingTool] = useState<ChatTool | null>(null);
 
   // Form state
+  const [formId, setFormId] = useState('');
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formPluginKey, setFormPluginKey] = useState('');
   const [formInputs, setFormInputs] = useState<Record<string, string>>({});
   const [formEnabled, setFormEnabled] = useState(true);
+  const [formToolType, setFormToolType] = useState('node');
+  const [formWaitForCompletion, setFormWaitForCompletion] = useState(true);
+  const [formWaitTimeout, setFormWaitTimeout] = useState(20);
+  const [formPollInterval, setFormPollInterval] = useState(2);
 
   const availablePlugins = toolService.getAvailablePlugins();
 
@@ -51,11 +56,16 @@ const Tools = () => {
   }, []);
 
   const resetForm = () => {
+    setFormId('');
     setFormName('');
     setFormDescription('');
     setFormPluginKey('');
     setFormInputs({});
     setFormEnabled(true);
+    setFormToolType('node');
+    setFormWaitForCompletion(true);
+    setFormWaitTimeout(20);
+    setFormPollInterval(2);
     setEditingTool(null);
   };
 
@@ -66,11 +76,16 @@ const Tools = () => {
 
   const handleOpenEdit = (tool: ChatTool) => {
     setEditingTool(tool);
+    setFormId(tool.id);
     setFormName(tool.name);
     setFormDescription(tool.description);
     setFormPluginKey(tool.pluginKey);
     setFormInputs({ ...tool.inputs });
     setFormEnabled(tool.enabled);
+    setFormToolType(tool.toolType || 'node');
+    setFormWaitForCompletion(tool.waitForCompletion ?? true);
+    setFormWaitTimeout(tool.waitTimeoutSeconds ?? 20);
+    setFormPollInterval(tool.pollIntervalSeconds ?? 2);
     setDialogOpen(true);
   };
 
@@ -95,23 +110,25 @@ const Tools = () => {
     }
 
     try {
+      const toolData = {
+        id: formId || formName.toLowerCase().replace(/\s+/g, '_'),
+        name: formName,
+        description: formDescription,
+        toolType: formToolType,
+        pluginKey: formPluginKey,
+        inputs: formInputs,
+        outputs: {},
+        enabled: formEnabled,
+        waitForCompletion: formWaitForCompletion,
+        waitTimeoutSeconds: formWaitTimeout,
+        pollIntervalSeconds: formPollInterval,
+      };
+
       if (editingTool) {
-        await toolService.update(editingTool.id, {
-          name: formName,
-          description: formDescription,
-          pluginKey: formPluginKey,
-          inputs: formInputs,
-          enabled: formEnabled,
-        });
+        await toolService.update(toolData);
         toast({ title: 'Ferramenta atualizada com sucesso' });
       } else {
-        await toolService.create({
-          name: formName,
-          description: formDescription,
-          pluginKey: formPluginKey,
-          inputs: formInputs,
-          enabled: formEnabled,
-        });
+        await toolService.create(toolData);
         toast({ title: 'Ferramenta criada com sucesso' });
       }
       setDialogOpen(false);
@@ -132,7 +149,7 @@ const Tools = () => {
   };
 
   const handleToggleEnabled = async (tool: ChatTool) => {
-    await toolService.update(tool.id, { enabled: !tool.enabled });
+    await toolService.update({ id: tool.id, enabled: !tool.enabled });
     loadTools();
   };
 
@@ -254,8 +271,33 @@ const Tools = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label>ID da ferramenta</Label>
+                <Input
+                  value={formId}
+                  onChange={e => setFormId(e.target.value)}
+                  placeholder="Ex: whatsapp_send_message"
+                  disabled={!!editingTool}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Nome da ferramenta</Label>
                 <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Verificar servidor" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={formToolType} onValueChange={setFormToolType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="node">Node</SelectItem>
+                    <SelectItem value="function">Function</SelectItem>
+                    <SelectItem value="api">API</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2 flex items-end gap-3">
                 <div className="flex-1 space-y-2">
@@ -276,6 +318,23 @@ const Tools = () => {
                 placeholder="Descreva o que esta ferramenta faz..."
                 className="min-h-[60px]"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  Aguardar conclusão
+                  <Switch checked={formWaitForCompletion} onCheckedChange={setFormWaitForCompletion} />
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Timeout (s)</Label>
+                <Input type="number" value={formWaitTimeout} onChange={e => setFormWaitTimeout(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Poll Interval (s)</Label>
+                <Input type="number" value={formPollInterval} onChange={e => setFormPollInterval(Number(e.target.value))} />
+              </div>
             </div>
 
             {currentSchema && currentSchema.inputs.length > 0 && (
