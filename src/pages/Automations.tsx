@@ -13,6 +13,7 @@ import { Workflow as WorkflowIcon, Loader2 } from 'lucide-react';
 
 export default function Automations() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalExecutions, setTotalExecutions] = useState(0);
