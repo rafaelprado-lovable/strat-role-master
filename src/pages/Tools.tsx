@@ -33,11 +33,16 @@ const Tools = () => {
   const [deletingTool, setDeletingTool] = useState<ChatTool | null>(null);
 
   // Form state
+  const [formId, setFormId] = useState('');
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formPluginKey, setFormPluginKey] = useState('');
   const [formInputs, setFormInputs] = useState<Record<string, string>>({});
   const [formEnabled, setFormEnabled] = useState(true);
+  const [formToolType, setFormToolType] = useState('node');
+  const [formWaitForCompletion, setFormWaitForCompletion] = useState(true);
+  const [formWaitTimeout, setFormWaitTimeout] = useState(20);
+  const [formPollInterval, setFormPollInterval] = useState(2);
 
   const availablePlugins = toolService.getAvailablePlugins();
 
