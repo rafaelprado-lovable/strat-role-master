@@ -434,11 +434,6 @@ export function ExecutionPanel({ execution, selectedNodeId, selectedEdge, onReru
                     </div>
                   </div>
 
-                  {onRerunNode && (
-                    <Button variant="outline" size="sm" className="w-full text-[11px] md:text-xs h-8" onClick={() => onRerunNode(selectedNodeId)}>
-                      Reexecutar nó
-                    </Button>
-                  )}
 
                   <JsonSection title="Input Resolvido" data={selectedInputs} onCopy={() => copyJson(selectedInputs)} />
                   <JsonSection title="Output Real" data={selectedOutput?.output} onCopy={() => copyJson(selectedOutput?.output)} />

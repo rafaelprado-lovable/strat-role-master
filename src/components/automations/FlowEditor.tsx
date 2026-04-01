@@ -18,7 +18,7 @@ import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  ArrowLeft, Save, Clock, Globe, History,
+  ArrowLeft, Save, Clock, Globe, History, Play,
   FileJson, ShieldCheck, Upload, Zap, Cog, X, Loader2, Filter, icons,
 } from 'lucide-react';
 import { workflowVersionService } from '@/services/workflowVersionService';
