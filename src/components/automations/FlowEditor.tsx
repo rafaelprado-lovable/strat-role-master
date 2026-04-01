@@ -489,6 +489,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         const nodeId = existing.length === 0 ? base : `${base}-${nextIndex}`;
 
         const isSwitch = defId === 'switch_v1';
+        const isCode = defId === 'code_execution_v1';
         const newNode: Node = {
           id: nodeId,
           type: 'task',
@@ -501,6 +502,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             hasForEach: false,
             isTrigger: blockLibrary.find(d => d.value === defId)?.category === 'trigger',
             ...(isSwitch ? { switchCases: ['Case 1', 'Case 2', 'Default'] } : {}),
+            ...(isCode ? { code: '# Escreva seu código aqui\n', code_language: 'python' } : {}),
           },
         };
 
