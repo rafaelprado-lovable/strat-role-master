@@ -91,18 +91,24 @@ export function AutomationsTable({
       });
   }, [filtered, runningMap, runningReady]);
 
+  // Registered workflows exclude running ones to avoid duplication/reordering
+  const registeredWorkflows = useMemo(() => {
+    const runningIds = new Set(runningWorkflows.map(w => w.id));
+    return filtered.filter(w => !runningIds.has(w.id));
+  }, [filtered, runningWorkflows]);
+
   // Split into active and draft groups, stable sort by name (no execution reordering)
   const activeWorkflows = useMemo(() => {
-    return [...filtered]
+    return [...registeredWorkflows]
       .filter(w => w.status === 'active')
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [filtered]);
+  }, [registeredWorkflows]);
 
   const draftWorkflows = useMemo(() => {
-    return [...filtered]
+    return [...registeredWorkflows]
       .filter(w => w.status !== 'active')
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [filtered]);
+  }, [registeredWorkflows]);
 
   const formatSchedule = (schedule: Workflow['schedule']) => {
     if (!schedule) return 'Manual';
