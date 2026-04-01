@@ -149,7 +149,7 @@ const Tools = () => {
   };
 
   const handleToggleEnabled = async (tool: ChatTool) => {
-    await toolService.update(tool.id, { enabled: !tool.enabled });
+    await toolService.update({ id: tool.id, enabled: !tool.enabled });
     loadTools();
   };
 
