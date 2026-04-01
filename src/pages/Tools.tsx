@@ -56,11 +56,16 @@ const Tools = () => {
   }, []);
 
   const resetForm = () => {
+    setFormId('');
     setFormName('');
     setFormDescription('');
     setFormPluginKey('');
     setFormInputs({});
     setFormEnabled(true);
+    setFormToolType('node');
+    setFormWaitForCompletion(true);
+    setFormWaitTimeout(20);
+    setFormPollInterval(2);
     setEditingTool(null);
   };
 
