@@ -104,7 +104,7 @@ const Tools = () => {
 
   const handlePluginChange = (key: string) => {
     setFormPluginKey(key);
-    const schema = PLUGIN_SCHEMAS[key];
+    const schema = availablePlugins.find(p => p.key === key);
     if (schema) {
       const defaults: Record<string, string> = {};
       schema.inputs.forEach(input => {
