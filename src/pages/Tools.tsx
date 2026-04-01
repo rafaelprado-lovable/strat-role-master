@@ -76,11 +76,16 @@ const Tools = () => {
 
   const handleOpenEdit = (tool: ChatTool) => {
     setEditingTool(tool);
+    setFormId(tool.id);
     setFormName(tool.name);
     setFormDescription(tool.description);
     setFormPluginKey(tool.pluginKey);
     setFormInputs({ ...tool.inputs });
     setFormEnabled(tool.enabled);
+    setFormToolType(tool.toolType || 'node');
+    setFormWaitForCompletion(tool.waitForCompletion ?? true);
+    setFormWaitTimeout(tool.waitTimeoutSeconds ?? 20);
+    setFormPollInterval(tool.pollIntervalSeconds ?? 2);
     setDialogOpen(true);
   };
 
