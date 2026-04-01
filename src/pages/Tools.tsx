@@ -208,7 +208,7 @@ const Tools = () => {
               </TableHeader>
               <TableBody>
                 {tools.map(tool => {
-                  const schema = PLUGIN_SCHEMAS[tool.pluginKey];
+                  const schema = availablePlugins.find(p => p.key === tool.pluginKey);
                   return (
                     <TableRow key={tool.id}>
                       <TableCell className="font-medium">{tool.name}</TableCell>
