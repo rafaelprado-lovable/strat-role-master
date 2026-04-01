@@ -110,23 +110,25 @@ const Tools = () => {
     }
 
     try {
+      const toolData = {
+        id: formId || formName.toLowerCase().replace(/\s+/g, '_'),
+        name: formName,
+        description: formDescription,
+        toolType: formToolType,
+        pluginKey: formPluginKey,
+        inputs: formInputs,
+        outputs: {},
+        enabled: formEnabled,
+        waitForCompletion: formWaitForCompletion,
+        waitTimeoutSeconds: formWaitTimeout,
+        pollIntervalSeconds: formPollInterval,
+      };
+
       if (editingTool) {
-        await toolService.update(editingTool.id, {
-          name: formName,
-          description: formDescription,
-          pluginKey: formPluginKey,
-          inputs: formInputs,
-          enabled: formEnabled,
-        });
+        await toolService.update(toolData);
         toast({ title: 'Ferramenta atualizada com sucesso' });
       } else {
-        await toolService.create({
-          name: formName,
-          description: formDescription,
-          pluginKey: formPluginKey,
-          inputs: formInputs,
-          enabled: formEnabled,
-        });
+        await toolService.create(toolData);
         toast({ title: 'Ferramenta criada com sucesso' });
       }
       setDialogOpen(false);
