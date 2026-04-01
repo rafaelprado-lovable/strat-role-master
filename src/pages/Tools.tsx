@@ -271,8 +271,33 @@ const Tools = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label>ID da ferramenta</Label>
+                <Input
+                  value={formId}
+                  onChange={e => setFormId(e.target.value)}
+                  placeholder="Ex: whatsapp_send_message"
+                  disabled={!!editingTool}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Nome da ferramenta</Label>
                 <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Verificar servidor" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={formToolType} onValueChange={setFormToolType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="node">Node</SelectItem>
+                    <SelectItem value="function">Function</SelectItem>
+                    <SelectItem value="api">API</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2 flex items-end gap-3">
                 <div className="flex-1 space-y-2">
@@ -293,6 +318,23 @@ const Tools = () => {
                 placeholder="Descreva o que esta ferramenta faz..."
                 className="min-h-[60px]"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  Aguardar conclusão
+                  <Switch checked={formWaitForCompletion} onCheckedChange={setFormWaitForCompletion} />
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Timeout (s)</Label>
+                <Input type="number" value={formWaitTimeout} onChange={e => setFormWaitTimeout(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Poll Interval (s)</Label>
+                <Input type="number" value={formPollInterval} onChange={e => setFormPollInterval(Number(e.target.value))} />
+              </div>
             </div>
 
             {currentSchema && currentSchema.inputs.length > 0 && (
