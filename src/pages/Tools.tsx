@@ -22,11 +22,20 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { toolService, ChatTool } from '@/services/toolService';
-import { PLUGIN_SCHEMAS } from '@/types/pluginSchemas';
+import { DefinitionField } from '@/services/definitionService';
+
+interface PluginOption {
+  key: string;
+  name: string;
+  description: string;
+  inputs: DefinitionField[];
+  outputs: DefinitionField[];
+}
 
 const Tools = () => {
   const { toast } = useToast();
   const [tools, setTools] = useState<ChatTool[]>([]);
+  const [availablePlugins, setAvailablePlugins] = useState<PluginOption[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ChatTool | null>(null);
@@ -44,15 +53,19 @@ const Tools = () => {
   const [formWaitTimeout, setFormWaitTimeout] = useState(20);
   const [formPollInterval, setFormPollInterval] = useState(2);
 
-  const availablePlugins = toolService.getAvailablePlugins();
-
   const loadTools = async () => {
     const data = await toolService.getAll();
     setTools(data);
   };
 
+  const loadPlugins = async () => {
+    const data = await toolService.getAvailablePlugins();
+    setAvailablePlugins(data);
+  };
+
   useEffect(() => {
     loadTools();
+    loadPlugins();
   }, []);
 
   const resetForm = () => {
