@@ -65,6 +65,19 @@ export default function Automations() {
     fetchWorkflows();
   }, [fetchWorkflows]);
 
+  // Auto-open editor when navigating from execution page
+  useEffect(() => {
+    const editId = (location.state as any)?.editWorkflowId;
+    if (editId && workflows.length > 0 && !isEditorOpen) {
+      const wf = workflows.find(w => w.id === editId);
+      if (wf) {
+        setEditingWorkflow(wf);
+        setIsEditorOpen(true);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, workflows]);
+
   const handleCreate = () => {
     setEditingWorkflow(null);
     setIsEditorOpen(true);
