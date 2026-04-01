@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { PLUGIN_SCHEMAS } from '@/types/pluginSchemas';
+import { definitionService, Definition } from './definitionService';
 
 export interface ChatTool {
   id: string;
@@ -41,11 +41,15 @@ export const toolService = {
     return apiClient.delete(`/v1/delete/tool?id=${encodeURIComponent(id)}`);
   },
 
-  getAvailablePlugins: () => {
-    return Object.entries(PLUGIN_SCHEMAS).map(([key, schema]) => ({
-      key,
-      name: schema.name,
-      description: schema.description,
+  getAvailablePlugins: async (): Promise<{ key: string; name: string; description: string; inputs: Definition['inputs']; outputs: Definition['outputs'] }[]> => {
+    const definitions = await definitionService.list();
+    const defs = Array.isArray(definitions) ? definitions : [];
+    return defs.map(def => ({
+      key: def.definition_id,
+      name: def.label || def.definition_id,
+      description: def.description || '',
+      inputs: def.inputs || [],
+      outputs: def.outputs || [],
     }));
   },
 };
