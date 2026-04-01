@@ -166,7 +166,7 @@ const Tools = () => {
     loadTools();
   };
 
-  const currentSchema = formPluginKey ? PLUGIN_SCHEMAS[formPluginKey] : null;
+  const currentSchema = formPluginKey ? availablePlugins.find(p => p.key === formPluginKey) : null;
 
   return (
     <div className="space-y-6">
