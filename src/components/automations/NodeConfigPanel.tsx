@@ -924,8 +924,19 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
   // Upstream nodes for variable references
   const upstreamNodes = allNodes.filter(n => n.id !== currentNodeId);
 
-  const handleFieldChange = (fieldName: string, value: string) => {
-    const updated = { ...(inputs || {}), [fieldName]: value === '' ? undefined : value };
+  const handleFieldChange = (fieldName: string, value: string, fieldType?: PluginField['type']) => {
+    let parsedValue: unknown = value;
+    if (value === '') {
+      parsedValue = undefined;
+    } else if (fieldType === 'json' || fieldType === 'list') {
+      try { parsedValue = JSON.parse(value); } catch { parsedValue = value; }
+    } else if (fieldType === 'number') {
+      const n = Number(value);
+      parsedValue = isNaN(n) ? value : n;
+    } else if (fieldType === 'boolean') {
+      parsedValue = value === 'true' ? true : value === 'false' ? false : value;
+    }
+    const updated = { ...(inputs || {}), [fieldName]: parsedValue };
     Object.keys(updated).forEach(k => {
       if (updated[k] === undefined) delete updated[k];
     });
@@ -1055,8 +1066,10 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
             <PluginFieldInput
               key={field.name}
               field={field}
-              value={String((inputs as any)?.[field.name] ?? '')}
-              onChange={(v) => handleFieldChange(field.name, v)}
+              value={typeof (inputs as any)?.[field.name] === 'object' && (inputs as any)?.[field.name] !== null
+                ? JSON.stringify((inputs as any)[field.name], null, 2)
+                : String((inputs as any)?.[field.name] ?? '')}
+              onChange={(v) => handleFieldChange(field.name, v, field.type)}
               upstreamNodes={upstreamNodes}
               allNodes={allNodes}
               apiDefinitions={apiDefinitions}
