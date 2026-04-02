@@ -789,7 +789,29 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
             </Button>
           )}
           {workflow?.id && (
-            <Button variant="outline" size="sm" onClick={() => nav(`/automations/execute/${workflow.id}`)}>
+            <Button variant="outline" size="sm" onClick={async () => {
+              const wf = buildWorkflow();
+              const errors = validateWorkflow(wf);
+              const critical = errors.filter(e => e.severity === 'error');
+              if (critical.length > 0) {
+                toast.error(`${critical.length} erro(s) impedem a execução. Valide primeiro.`);
+                setValidationDialogOpen(true);
+                return;
+              }
+              try {
+                const exportData = exportWorkflowJson(wf);
+                if (isExisting) {
+                  await workflowService.update(wf.id, exportData);
+                } else {
+                  await workflowService.create(exportData);
+                }
+                onSave(wf);
+                toast.success('Workflow salvo');
+                nav(`/automations/execute/${workflow.id}`);
+              } catch (err: any) {
+                toast.error(`Erro ao salvar: ${err.message}`);
+              }
+            }}>
               <Play className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Executar</span>
             </Button>
