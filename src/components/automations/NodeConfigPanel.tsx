@@ -1066,8 +1066,10 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
             <PluginFieldInput
               key={field.name}
               field={field}
-              value={String((inputs as any)?.[field.name] ?? '')}
-              onChange={(v) => handleFieldChange(field.name, v)}
+              value={typeof (inputs as any)?.[field.name] === 'object' && (inputs as any)?.[field.name] !== null
+                ? JSON.stringify((inputs as any)[field.name], null, 2)
+                : String((inputs as any)?.[field.name] ?? '')}
+              onChange={(v) => handleFieldChange(field.name, v, field.type)}
               upstreamNodes={upstreamNodes}
               allNodes={allNodes}
               apiDefinitions={apiDefinitions}

@@ -52,7 +52,7 @@ function parseFieldValue(raw: string, type: FieldType): { value: unknown; error?
     case 'json': {
       if (!raw.trim()) return { value: null };
       try { return { value: JSON.parse(raw) }; }
-      catch { return { value: null, error: 'JSON inválido' }; }
+      catch { return { value: raw }; }
     }
     default:
       return { value: raw };
