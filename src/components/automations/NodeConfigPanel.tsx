@@ -1074,7 +1074,14 @@ function PluginInputsSection({ nodeId, definitionId, inputs, allNodes, definitio
               allNodes={allNodes}
               apiDefinitions={apiDefinitions}
               onInsertRef={(ref) => insertReference(field.name, ref)}
-              onChangeType={(t) => setTypeOverrides(prev => ({ ...prev, [field.name]: t }))}
+              onChangeType={(t) => {
+                setTypeOverrides(prev => ({ ...prev, [field.name]: t }));
+                const currentVal = (inputs as any)?.[field.name];
+                const currentStr = typeof currentVal === 'object' && currentVal !== null
+                  ? JSON.stringify(currentVal, null, 2)
+                  : String(currentVal ?? '');
+                handleFieldChange(field.name, currentStr, t);
+              }}
             />
           ))}
         </div>
