@@ -310,11 +310,30 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
 
   const initialEdges: Edge[] = workflow?.edges?.map((e, i) => {
     const isSelfLoop = e.from === e.to;
+
+    // Reconstruct switch sourceHandle from condition
+    let sourceHandle = isSelfLoop ? 'loop-out' : 'right';
+    let switchCase: string | undefined;
+    if (!isSelfLoop && e.condition) {
+      const switchMatch = e.condition.match(/\.output\.case\s*==\s*"([^"]+)"/);
+      if (switchMatch) {
+        switchCase = switchMatch[1];
+        const sourceNode = workflow?.nodes?.find(n => n.id === e.from);
+        if (sourceNode?.definition_id === 'switch_v1') {
+          const cases: string[] = (sourceNode.config as any)?.switchCases || ['Case 1', 'Case 2', 'Default'];
+          const caseIdx = cases.indexOf(switchCase);
+          if (caseIdx >= 0) {
+            sourceHandle = `switch-${caseIdx}`;
+          }
+        }
+      }
+    }
+
     return {
       id: e.id || `e-${i}`,
       source: e.from,
       target: e.to,
-      sourceHandle: isSelfLoop ? 'loop-out' : 'right',
+      sourceHandle,
       targetHandle: isSelfLoop ? 'loop-in' : 'left',
       type: 'waypoint',
       data: {
@@ -322,6 +341,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
         loop: e.loop || false,
         max_iterations: e.max_iterations,
         reopen_tasks: e.reopen_tasks || [],
+        ...(switchCase ? { switchCase } : {}),
       },
     };
   }) || [];
