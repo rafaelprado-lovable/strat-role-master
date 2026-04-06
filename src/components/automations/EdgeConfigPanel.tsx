@@ -2,8 +2,9 @@ import { type Edge } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { X, ArrowRight, Repeat } from 'lucide-react';
+import { X, ArrowRight, Repeat, ShieldAlert } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EdgeConfigPanelProps {
@@ -54,7 +55,25 @@ export function EdgeConfigPanel({ edge, onUpdate, onClose }: EdgeConfigPanelProp
           Formato: <code className="bg-muted px-1 rounded">left == | != | {'>'} | {'<'} right</code>
         </p>
       </div>
-      {!d.condition && (
+
+      {/* Continue on failure toggle */}
+      <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/30">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-3.5 w-3.5 text-destructive" />
+          <div>
+            <Label className="text-xs font-medium">Continue on Failure</Label>
+            <p className="text-[10px] text-muted-foreground">
+              Executa o nó destino mesmo se o nó origem falhar
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={!!d.continue_on_failure}
+          onCheckedChange={(v) => update('continue_on_failure', v)}
+        />
+      </div>
+
+      {!d.condition && !d.continue_on_failure && (
         <div className="p-2 rounded bg-muted text-[10px] text-muted-foreground">
           Conexão simples: o nó de destino será executado após o de origem. Adicione uma condição para criar um fluxo condicional.
         </div>

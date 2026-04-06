@@ -338,6 +338,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       type: 'waypoint',
       data: {
         condition: e.condition || '',
+        continue_on_failure: e.continue_on_failure || false,
         loop: e.loop || false,
         max_iterations: e.max_iterations,
         reopen_tasks: e.reopen_tasks || [],
@@ -417,6 +418,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       const edge: WfEdge = { from: e.source, to: e.target };
       if (e.id) edge.id = e.id;
       if (d.condition) edge.condition = d.condition;
+      if (d.continue_on_failure) edge.continue_on_failure = true;
       if (d.loop) {
         edge.loop = true;
         edge.max_iterations = d.max_iterations;

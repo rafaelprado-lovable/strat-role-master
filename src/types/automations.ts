@@ -23,6 +23,7 @@ export interface WorkflowEdge {
   from: string;
   to: string;
   condition?: string;   // "node-x.output.status == 200"
+  continue_on_failure?: boolean;  // CONTINUE_ON_TASK_FAILURE
   loop?: boolean;
   max_iterations?: number;
   reopen_tasks?: string[];  // node IDs to re-execute in loop iterations
@@ -317,6 +318,10 @@ export function exportWorkflowJson(workflow: Workflow): object {
     if (e.condition) {
       // Rule 1: sanitize condition templates
       edge.condition = sanitizeTemplate(e.condition) as string;
+    }
+
+    if (e.continue_on_failure) {
+      edge.continue_on_failure = true;
     }
 
     if (e.loop) {
