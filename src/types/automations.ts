@@ -320,6 +320,10 @@ export function exportWorkflowJson(workflow: Workflow): object {
       edge.condition = sanitizeTemplate(e.condition) as string;
     }
 
+    if (e.continue_on_failure) {
+      edge.continue_on_failure = true;
+    }
+
     if (e.loop) {
       edge.loop = true;
       edge.max_iterations = e.max_iterations;
