@@ -345,11 +345,9 @@ const App = () => (
             <Route
               path="/tools"
               element={
-                <ProtectedRoute>
                   <AppLayout>
                     <Tools />
                   </AppLayout>
-                </ProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
