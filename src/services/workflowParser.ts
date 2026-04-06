@@ -27,6 +27,7 @@ export function parseWorkflowResponse(raw: WorkflowApiResponse): Workflow {
           to: e.to,
           condition: e.condition,
           loop: e.loop,
+          continue_on_failure: e.continue_on_failure || false,
           max_iterations: e.max_iterations,
           reopen_tasks: e.reopen_tasks,
         }))
