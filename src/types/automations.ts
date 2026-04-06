@@ -23,6 +23,7 @@ export interface WorkflowEdge {
   from: string;
   to: string;
   condition?: string;   // "node-x.output.status == 200"
+  continue_on_failure?: boolean;  // CONTINUE_ON_TASK_FAILURE
   loop?: boolean;
   max_iterations?: number;
   reopen_tasks?: string[];  // node IDs to re-execute in loop iterations

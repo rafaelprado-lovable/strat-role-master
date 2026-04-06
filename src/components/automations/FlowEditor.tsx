@@ -417,6 +417,7 @@ export function FlowEditor({ workflow, onBack, onSave }: FlowEditorProps) {
       const edge: WfEdge = { from: e.source, to: e.target };
       if (e.id) edge.id = e.id;
       if (d.condition) edge.condition = d.condition;
+      if (d.continue_on_failure) edge.continue_on_failure = true;
       if (d.loop) {
         edge.loop = true;
         edge.max_iterations = d.max_iterations;
