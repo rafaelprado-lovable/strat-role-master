@@ -42,6 +42,7 @@ import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
 import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
+import PluginStudio from "./pages/PluginStudio";
 
 const queryClient = new QueryClient();
 
@@ -348,6 +349,14 @@ const App = () => (
                   <AppLayout>
                     <Tools />
                   </AppLayout>
+              }
+            />
+            <Route
+              path="/plugin-studio"
+              element={
+                <AppLayout>
+                  <PluginStudio />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
