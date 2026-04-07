@@ -33,6 +33,8 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -164,6 +166,206 @@ function DeploymentSelector({
         <p className="text-xs text-destructive">Selecione ao menos um deployment</p>
       )}
     </div>
+  );
+}
+
+// Inline per-deployment editor in the summary section
+function DeploymentSummaryEditor({
+  serviceNames,
+  configs,
+  setConfigs,
+  availableVariables,
+}: {
+  serviceNames: string[];
+  configs: Record<string, DeploymentConfig>;
+  setConfigs: React.Dispatch<React.SetStateAction<Record<string, DeploymentConfig>>>;
+  availableVariables: string[];
+}) {
+  const [editingDeployment, setEditingDeployment] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const updateConfig = (name: string, updater: (cfg: DeploymentConfig) => DeploymentConfig) => {
+    setConfigs((prev) => ({ ...prev, [name]: updater(prev[name]) }));
+  };
+
+  const resetDeploymentResources = (deployName: string) => {
+    updateConfig(deployName, (cfg) => ({ ...cfg, resources: { ...DEFAULT_RESOURCES } }));
+    toast({ title: "Recursos restaurados ao padrão" });
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold">Resumo por Deployment</CardTitle>
+        <p className="text-xs text-muted-foreground">Clique em um deployment para editar sua configuração individual</p>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {serviceNames.map((name) => {
+            const cfg = configs[name];
+            if (!cfg) return null;
+            const isEditing = editingDeployment === name;
+
+            return (
+              <div key={name} className={`border rounded-lg transition-all ${isEditing ? "ring-2 ring-primary border-primary/40" : "hover:border-primary/30 cursor-pointer"}`}>
+                {/* Summary row */}
+                <div
+                  className="p-3 flex items-center justify-between"
+                  onClick={() => setEditingDeployment(isEditing ? null : name)}
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium font-mono flex items-center gap-2">
+                      {isEditing ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      {name}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground ml-6">
+                      <span>{cfg.variables.length} variáveis</span>
+                      <span>{cfg.hostAliases.length} host aliases</span>
+                      <span>CPU: {cfg.resources.cpuMin}-{cfg.resources.cpuMax}</span>
+                      <span>Mem: {cfg.resources.memoryMin}-{cfg.resources.memoryMax}</span>
+                      <span>Pods: {cfg.resources.podsMin}-{cfg.resources.podsMax}</span>
+                      {cfg.resources.autoscalingEnabled && <Badge variant="outline" className="text-xs">HPA</Badge>}
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                {/* Expanded inline editor */}
+                {isEditing && (
+                  <div className="border-t px-4 py-4 space-y-5">
+                    {/* Variables */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium flex items-center gap-1.5">
+                        <Variable className="h-3.5 w-3.5" /> Variáveis
+                      </Label>
+                      <Select onValueChange={(v) => updateConfig(name, (c) => ({ ...c, variables: [...c.variables, { id: crypto.randomUUID(), name: v }] }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Adicionar variável..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableVariables.filter((v) => !cfg.variables.find((sv) => sv.name === v)).map((v) => (
+                            <SelectItem key={v} value={v}>{v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cfg.variables.map((v) => (
+                          <Badge key={v.id} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-mono text-xs">
+                            {v.name}
+                            <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-destructive/20" onClick={(e) => { e.stopPropagation(); updateConfig(name, (c) => ({ ...c, variables: c.variables.filter((x) => x.id !== v.id) })); }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Host Aliases */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium flex items-center gap-1.5">
+                          <Globe className="h-3.5 w-3.5" /> Host Aliases
+                        </Label>
+                        <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => updateConfig(name, (c) => ({ ...c, hostAliases: [...c.hostAliases, { id: crypto.randomUUID(), ip: "", hostnames: [""] }] }))}>
+                          <Plus className="h-3 w-3 mr-1" /> Adicionar
+                        </Button>
+                      </div>
+                      {cfg.hostAliases.map((alias) => (
+                        <div key={alias.id} className="border rounded-md p-2.5 space-y-2 bg-muted/20">
+                          <div className="flex items-center gap-2">
+                            <Input placeholder="IP" value={alias.ip} onChange={(e) => updateConfig(name, (c) => ({ ...c, hostAliases: c.hostAliases.map((h) => h.id === alias.id ? { ...h, ip: e.target.value } : h) }))} className="font-mono text-xs flex-1" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => updateConfig(name, (c) => ({ ...c, hostAliases: c.hostAliases.filter((h) => h.id !== alias.id) }))}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {alias.hostnames.map((hn, idx) => (
+                            <div key={idx} className="flex items-center gap-2 ml-4">
+                              <Input placeholder="hostname" value={hn} onChange={(e) => updateConfig(name, (c) => ({ ...c, hostAliases: c.hostAliases.map((h) => h.id === alias.id ? { ...h, hostnames: h.hostnames.map((x, i) => i === idx ? e.target.value : x) } : h) }))} className="font-mono text-xs" />
+                              {alias.hostnames.length > 1 && (
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => updateConfig(name, (c) => ({ ...c, hostAliases: c.hostAliases.map((h) => h.id === alias.id ? { ...h, hostnames: h.hostnames.filter((_, i) => i !== idx) } : h) }))}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <Button variant="ghost" size="sm" className="h-5 text-xs ml-4" onClick={() => updateConfig(name, (c) => ({ ...c, hostAliases: c.hostAliases.map((h) => h.id === alias.id ? { ...h, hostnames: [...h.hostnames, ""] } : h) }))}>
+                            <Plus className="h-3 w-3 mr-1" /> Hostname
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* Resources */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium flex items-center gap-1.5">
+                          <Server className="h-3.5 w-3.5" /> Recursos
+                        </Label>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => resetDeploymentResources(name)}>
+                          <RotateCcw className="h-3 w-3 mr-1" /> Padrão
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">CPU min</Label>
+                          <Input value={cfg.resources.cpuMin} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, cpuMin: e.target.value } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">CPU max</Label>
+                          <Input value={cfg.resources.cpuMax} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, cpuMax: e.target.value } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Mem min</Label>
+                          <Input value={cfg.resources.memoryMin} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, memoryMin: e.target.value } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Mem max</Label>
+                          <Input value={cfg.resources.memoryMax} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, memoryMax: e.target.value } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Pods min</Label>
+                          <Input type="number" min={1} value={cfg.resources.podsMin} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, podsMin: parseInt(e.target.value) || 1 } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Pods max</Label>
+                          <Input type="number" min={1} value={cfg.resources.podsMax} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, podsMax: parseInt(e.target.value) || 1 } }))} className="font-mono text-xs mt-0.5" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs flex items-center gap-1.5">
+                          <Scaling className="h-3.5 w-3.5" /> Autoscaling
+                        </Label>
+                        <Switch checked={cfg.resources.autoscalingEnabled} onCheckedChange={(checked) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, autoscalingEnabled: checked } }))} />
+                      </div>
+                      {cfg.resources.autoscalingEnabled && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Target CPU %</Label>
+                            <Input type="number" min={1} max={100} value={cfg.resources.autoscalingTargetCpu} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, autoscalingTargetCpu: parseInt(e.target.value) || 80 } }))} className="font-mono text-xs mt-0.5" />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Target Mem %</Label>
+                            <Input type="number" min={1} max={100} value={cfg.resources.autoscalingTargetMemory} onChange={(e) => updateConfig(name, (c) => ({ ...c, resources: { ...c.resources, autoscalingTargetMemory: parseInt(e.target.value) || 80 } }))} className="font-mono text-xs mt-0.5" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -689,34 +891,12 @@ export default function DeploymentConfigPanel({ serviceNames }: Props) {
         </div>
 
         {/* Per-deployment summary */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Resumo por Deployment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {serviceNames.map((name) => {
-                const cfg = configs[name];
-                if (!cfg) return null;
-                return (
-                  <div key={name} className="border rounded-md p-3 space-y-2">
-                    <p className="text-sm font-medium font-mono">{name}</p>
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      <span>{cfg.variables.length} variáveis</span>
-                      <span>{cfg.hostAliases.length} host aliases</span>
-                      <span>CPU: {cfg.resources.cpuMin}-{cfg.resources.cpuMax}</span>
-                      <span>Mem: {cfg.resources.memoryMin}-{cfg.resources.memoryMax}</span>
-                      <span>Pods: {cfg.resources.podsMin}-{cfg.resources.podsMax}</span>
-                      {cfg.resources.autoscalingEnabled && (
-                        <Badge variant="outline" className="text-xs">HPA</Badge>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <DeploymentSummaryEditor
+          serviceNames={serviceNames}
+          configs={configs}
+          setConfigs={setConfigs}
+          availableVariables={AVAILABLE_VARIABLES}
+        />
       </div>
     </ScrollArea>
   );
