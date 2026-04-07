@@ -25,7 +25,9 @@ import {
   Circle,
   Rocket,
   Package,
+  Settings2,
 } from "lucide-react";
+import DeploymentConfigPanel from "@/components/pmid/DeploymentConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 
 type DeployStatus = "Pending" | "Deploying" | "Deployed" | "Failed" | "Rollback";
@@ -312,6 +314,20 @@ export default function ChangeExecutionPmid() {
           </Button>
         </div>
       </div>
+
+      <Tabs defaultValue="deploy" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="deploy">
+            <Rocket className="h-4 w-4 mr-1.5" />
+            Deploy
+          </TabsTrigger>
+          <TabsTrigger value="config">
+            <Settings2 className="h-4 w-4 mr-1.5" />
+            Configuração
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="deploy" className="space-y-6">
 
       {/* Overall Progress */}
       <Card>
@@ -618,6 +634,12 @@ export default function ChangeExecutionPmid() {
           )}
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="config">
+          <DeploymentConfigPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
