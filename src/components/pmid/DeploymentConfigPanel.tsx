@@ -33,6 +33,8 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
