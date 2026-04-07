@@ -634,6 +634,12 @@ export default function ChangeExecutionPmid() {
           )}
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="config">
+          <DeploymentConfigPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
