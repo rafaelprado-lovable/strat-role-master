@@ -25,7 +25,9 @@ import {
   Circle,
   Rocket,
   Package,
+  Settings2,
 } from "lucide-react";
+import DeploymentConfigPanel from "@/components/pmid/DeploymentConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 
 type DeployStatus = "Pending" | "Deploying" | "Deployed" | "Failed" | "Rollback";
