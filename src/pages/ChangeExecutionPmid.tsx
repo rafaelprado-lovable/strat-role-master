@@ -637,7 +637,7 @@ export default function ChangeExecutionPmid() {
         </TabsContent>
 
         <TabsContent value="config">
-          <DeploymentConfigPanel />
+          <DeploymentConfigPanel serviceNames={services.map(s => s.name)} />
         </TabsContent>
       </Tabs>
     </div>
