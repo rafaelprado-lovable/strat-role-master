@@ -691,34 +691,12 @@ export default function DeploymentConfigPanel({ serviceNames }: Props) {
         </div>
 
         {/* Per-deployment summary */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Resumo por Deployment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {serviceNames.map((name) => {
-                const cfg = configs[name];
-                if (!cfg) return null;
-                return (
-                  <div key={name} className="border rounded-md p-3 space-y-2">
-                    <p className="text-sm font-medium font-mono">{name}</p>
-                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      <span>{cfg.variables.length} variáveis</span>
-                      <span>{cfg.hostAliases.length} host aliases</span>
-                      <span>CPU: {cfg.resources.cpuMin}-{cfg.resources.cpuMax}</span>
-                      <span>Mem: {cfg.resources.memoryMin}-{cfg.resources.memoryMax}</span>
-                      <span>Pods: {cfg.resources.podsMin}-{cfg.resources.podsMax}</span>
-                      {cfg.resources.autoscalingEnabled && (
-                        <Badge variant="outline" className="text-xs">HPA</Badge>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <DeploymentSummaryEditor
+          serviceNames={serviceNames}
+          configs={configs}
+          setConfigs={setConfigs}
+          availableVariables={AVAILABLE_VARIABLES}
+        />
       </div>
     </ScrollArea>
   );
