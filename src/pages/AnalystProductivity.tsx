@@ -150,6 +150,7 @@ export default function AnalystProductivity() {
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="abril">Abril 2025</SelectItem>
               <SelectItem value="all">Todo período</SelectItem>
               <SelectItem value="24">Últimas 24h</SelectItem>
               <SelectItem value="48">Últimas 48h</SelectItem>
