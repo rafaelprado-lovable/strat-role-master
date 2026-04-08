@@ -368,7 +368,10 @@ export default function ChangeExecutionPmid() {
     [changesData, changeNumber]
   );
 
-  const changeServicesList: ChangeServiceItem[] = changeData?.changeServicesList || [];
+  const changeServicesList: ChangeServiceItem[] = (changeData?.changeServicesList || []).map((s: any) => ({
+    ...s,
+    pipeline_service_link: s.pipeline_service_link || s.pipeline_link || '',
+  }));
   const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '' };
 
   const initialServices = useMemo(() => buildServicesFromChange(changeServicesList), [changeServicesList]);
