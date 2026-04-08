@@ -654,19 +654,7 @@ export default function ChangeExecutionPmid() {
         </div>
       </div>
 
-      <Tabs defaultValue="deploy" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="deploy">
-            <Rocket className="h-4 w-4 mr-1.5" />
-            Deploy
-          </TabsTrigger>
-          <TabsTrigger value="config">
-            <Settings2 className="h-4 w-4 mr-1.5" />
-            Configuração
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="deploy" className="space-y-6">
+      <div className="space-y-6">
           {/* Overall Progress */}
           <Card>
             <CardContent className="p-4">
