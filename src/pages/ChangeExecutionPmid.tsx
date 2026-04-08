@@ -795,7 +795,6 @@ export default function ChangeExecutionPmid() {
                           className={`h-2 ${svc.deployStatus === "Failed" ? "[&>div]:bg-destructive" : svc.deployStatus === "Deployed" ? "[&>div]:bg-green-500" : ""}`}
                         />
                       </div>
-
                       {svc.deployStartedAt && (
                         <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
