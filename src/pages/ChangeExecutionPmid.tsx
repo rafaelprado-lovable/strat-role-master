@@ -770,26 +770,13 @@ export default function ChangeExecutionPmid() {
                         <Badge variant="outline" className="text-xs">{svc.size}</Badge>
                       </div>
 
-                      {/* Release selector */}
-                      {svc.availableReleases.length > 0 && (svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
-                        <div className="flex items-center gap-2 mb-3" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-xs text-muted-foreground">Release:</span>
-                          <Select
-                            value={selectedReleaseMap[svc.id] || svc.targetVersion}
-                            onValueChange={(v) => setSelectedReleaseMap((prev) => ({ ...prev, [svc.id]: v }))}
-                          >
-                            <SelectTrigger className="h-7 w-48 text-xs font-mono">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {svc.availableReleases.map((r) => (
-                                <SelectItem key={r.id} value={r.name} className="text-xs font-mono">
-                                  {r.name} ({r.majorVersion})
-                                  {r.name === svc.currentVersion && " ← atual"}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      {/* Target release info */}
+                      {svc.targetVersion && (svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xs text-muted-foreground">Release alvo:</span>
+                          <Badge variant="outline" className="text-xs font-mono bg-primary/10 text-primary border-primary/30">
+                            {svc.targetVersion}
+                          </Badge>
                         </div>
                       )}
 
@@ -859,7 +846,7 @@ export default function ChangeExecutionPmid() {
                       <TabsList className="w-full">
                         <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
                         <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
-                        <TabsTrigger value="releases" className="flex-1">Releases</TabsTrigger>
+                        <TabsTrigger value="releases" className="flex-1">Release Alvo</TabsTrigger>
                       </TabsList>
 
                       <TabsContent value="resources">
@@ -975,43 +962,27 @@ export default function ChangeExecutionPmid() {
                       </TabsContent>
 
                       <TabsContent value="releases">
-                        <ScrollArea className="h-[500px] pr-2">
-                          <div className="space-y-2 mt-3">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              {selectedService.availableReleases.length} releases disponíveis
-                            </p>
-                            {selectedService.availableReleases.map((r) => {
-                              const isCurrent = r.name === selectedService.currentVersion;
-                              const isTarget = r.name === selectedService.targetVersion;
-                              return (
-                                <div
-                                  key={r.id}
-                                  className={`flex items-center justify-between p-2.5 rounded-md border transition-colors ${
-                                    isCurrent ? "border-green-500/40 bg-green-500/5" : isTarget ? "border-primary/40 bg-primary/5" : "border-border hover:bg-accent/50"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-mono font-medium">{r.name}</span>
-                                    <span className="text-xs text-muted-foreground">{r.majorVersion}</span>
-                                    {isCurrent && <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">atual</Badge>}
-                                    {isTarget && <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">target</Badge>}
-                                  </div>
-                                  {selectedService.rollbackEnabled && !isCurrent && selectedService.deployStatus !== "Deploying" && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 text-xs"
-                                      onClick={() => handleRollback(selectedService.id, r.name)}
-                                    >
-                                      <History className="h-3 w-3 mr-1" />
-                                      Rollback
-                                    </Button>
-                                  )}
-                                </div>
-                              );
-                            })}
+                        <div className="space-y-4 mt-3">
+                          <p className="text-xs text-muted-foreground">Versão que será implantada nesta change</p>
+
+                          {/* Current version */}
+                          <div className="p-3 rounded-md border border-border bg-accent/30">
+                            <p className="text-xs text-muted-foreground mb-1">Versão atual em produção</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono font-medium">{selectedService.currentVersion}</span>
+                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">atual</Badge>
+                            </div>
                           </div>
-                        </ScrollArea>
+
+                          {/* Target version */}
+                          <div className="p-3 rounded-md border border-primary/40 bg-primary/5">
+                            <p className="text-xs text-muted-foreground mb-1">Versão alvo</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono font-medium">{selectedService.targetVersion}</span>
+                              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">target</Badge>
+                            </div>
+                          </div>
+                        </div>
                       </TabsContent>
                     </Tabs>
                   </CardContent>
