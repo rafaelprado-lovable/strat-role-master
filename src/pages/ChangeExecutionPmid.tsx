@@ -8,13 +8,6 @@ import ServiceConfigEditor, { DeploymentConfig, DEFAULT_RESOURCES } from "@/comp
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   CheckCircle2,
   XCircle,
   Loader2,
