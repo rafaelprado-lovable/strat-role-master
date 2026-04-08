@@ -353,36 +353,59 @@ const getHealthBadge = (health: HealthStatus) => {
 // ─── Component ──────────────────────────────────────────────────
 
 export default function ChangeExecutionPmid() {
-  const initialServices = useMemo(() => buildServicesFromChange(mockChangeData.changeServicesList), []);
-  const initialConfigs = useMemo(() => buildInitialConfigs(mockChangeData.changeServicesList), []);
+  const { id: changeNumber } = useParams<{ id: string }>();
+  const { toast } = useToast();
 
-  const [services, setServices] = useState<PmidService[]>(initialServices);
-  const [selectedService, setSelectedService] = useState<PmidService | null>(null);
-  const [selectedReleaseMap, setSelectedReleaseMap] = useState<Record<string, string>>(() => {
-    const map: Record<string, string> = {};
-    services.forEach((s) => {
-      map[s.id] = s.targetVersion;
-    });
-    return map;
+  // Fetch change data from /v1/changes API
+  const { data: changesData = [], isLoading, isError } = useQuery({
+    queryKey: ['execution-changes'],
+    queryFn: changesApi.getExecutionChanges,
   });
+
+  // Find the specific change by number
+  const changeData = useMemo(
+    () => changesData.find((c: any) => c.changeSystemData?.number === changeNumber),
+    [changesData, changeNumber]
+  );
+
+  const changeServicesList: ChangeServiceItem[] = changeData?.changeServicesList || [];
+  const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '' };
+
+  const initialServices = useMemo(() => buildServicesFromChange(changeServicesList), [changeServicesList]);
+  const initialConfigs = useMemo(() => buildInitialConfigs(changeServicesList), [changeServicesList]);
+
+  const [services, setServices] = useState<PmidService[]>([]);
+  const [selectedService, setSelectedService] = useState<PmidService | null>(null);
+  const [selectedReleaseMap, setSelectedReleaseMap] = useState<Record<string, string>>({});
+
+  // Initialize services when data loads
+  useEffect(() => {
+    if (initialServices.length > 0 && services.length === 0) {
+      setServices(initialServices);
+      const map: Record<string, string> = {};
+      initialServices.forEach((s) => { map[s.id] = s.targetVersion; });
+      setSelectedReleaseMap(map);
+    }
+  }, [initialServices]);
 
   // Per-service deployment configs
   const allVariables = useMemo(() => Array.from(new Set(initialConfigs?.flatMap((c) => c.variables) || [])).sort(), [initialConfigs]);
-  const [serviceConfigs, setServiceConfigs] = useState<Record<string, DeploymentConfig>>(() => {
-    const cfgs: Record<string, DeploymentConfig> = {};
-    initialConfigs.forEach((ic) => {
-      cfgs[ic.serviceName] = {
-        variables: ic.variables.map((v) => ({ id: crypto.randomUUID(), name: v })),
-        secrets: ic.secrets || [],
-        hostAliases: ic.hostAliases.map((h: any) => ({ id: crypto.randomUUID(), ip: h.ip || "", hostnames: h.hostnames || [""] })),
-        resources: { ...ic.resources },
-      };
-    });
-    return cfgs;
-  });
-  const { toast } = useToast();
+  const [serviceConfigs, setServiceConfigs] = useState<Record<string, DeploymentConfig>>({});
 
-  const changeInfo = mockChangeData.changeSystemData;
+  useEffect(() => {
+    if (initialConfigs.length > 0 && Object.keys(serviceConfigs).length === 0) {
+      const cfgs: Record<string, DeploymentConfig> = {};
+      initialConfigs.forEach((ic) => {
+        cfgs[ic.serviceName] = {
+          variables: ic.variables.map((v) => ({ id: crypto.randomUUID(), name: v })),
+          secrets: ic.secrets || [],
+          hostAliases: ic.hostAliases.map((h: any) => ({ id: crypto.randomUUID(), ip: h.ip || "", hostnames: h.hostnames || [""] })),
+          resources: { ...ic.resources },
+        };
+      });
+      setServiceConfigs(cfgs);
+    }
+  }, [initialConfigs]);
 
   // Simulate deploy progress
   useEffect(() => {
