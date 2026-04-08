@@ -626,12 +626,37 @@ export default function ChangeExecutionPmid() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Service Cards */}
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Serviços para Deploy
-              </h3>
-              <div className="space-y-3">
-                {services.map((svc) => (
+              {/* New Services */}
+              {services.filter((s) => s.currentRelease === "N/A").length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <ArrowUpCircle className="h-5 w-5 text-primary" />
+                    Novos Serviços
+                    <Badge variant="secondary" className="text-xs">{services.filter((s) => s.currentRelease === "N/A").length}</Badge>
+                  </h3>
+                  <div className="space-y-3">
+                    {services.filter((s) => s.currentRelease === "N/A").map((svc) => (
+                      <ServiceCard key={svc.id} svc={svc} selectedService={selectedService} setSelectedService={setSelectedService} handleDeploy={handleDeploy} getDeployBadge={getDeployBadge} getHealthBadge={getHealthBadge} serviceConfigs={serviceConfigs} allVariables={allVariables} setServiceConfigs={setServiceConfigs} isNew />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Existing Services */}
+              {services.filter((s) => s.currentRelease !== "N/A").length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Serviços Existentes
+                    <Badge variant="secondary" className="text-xs">{services.filter((s) => s.currentRelease !== "N/A").length}</Badge>
+                  </h3>
+                  <div className="space-y-3">
+                    {services.filter((s) => s.currentRelease !== "N/A").map((svc) => (
+                      <ServiceCard key={svc.id} svc={svc} selectedService={selectedService} setSelectedService={setSelectedService} handleDeploy={handleDeploy} getDeployBadge={getDeployBadge} getHealthBadge={getHealthBadge} serviceConfigs={serviceConfigs} allVariables={allVariables} setServiceConfigs={setServiceConfigs} />
+                    ))}
+                  </div>
+                </>
+              )}
                   <Card
                     key={svc.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${selectedService?.id === svc.id ? "ring-2 ring-primary" : ""}`}
