@@ -502,6 +502,21 @@ export default function ChangeExecutionPmid() {
     });
     return map;
   });
+
+  // Per-service deployment configs
+  const allVariables = useMemo(() => Array.from(new Set(initialConfigs?.flatMap((c) => c.variables) || [])).sort(), [initialConfigs]);
+  const [serviceConfigs, setServiceConfigs] = useState<Record<string, DeploymentConfig>>(() => {
+    const cfgs: Record<string, DeploymentConfig> = {};
+    initialConfigs.forEach((ic) => {
+      cfgs[ic.serviceName] = {
+        variables: ic.variables.map((v) => ({ id: crypto.randomUUID(), name: v })),
+        secrets: ic.secrets || [],
+        hostAliases: ic.hostAliases.map((h: any) => ({ id: crypto.randomUUID(), ip: h.ip || "", hostnames: h.hostnames || [""] })),
+        resources: { ...ic.resources },
+      };
+    });
+    return cfgs;
+  });
   const { toast } = useToast();
 
   const changeInfo = mockChangeData.changeSystemData;
