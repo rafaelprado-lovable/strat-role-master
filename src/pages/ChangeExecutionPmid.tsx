@@ -996,8 +996,7 @@ export default function ChangeExecutionPmid() {
               )}
             </div>
           </div>
-          {/* Configuração de Deploy */}
-          <DeploymentConfigPanel serviceNames={services.map((s) => s.name)} initialConfigs={initialConfigs} />
+        </div>
         </div>
     </div>
   );
