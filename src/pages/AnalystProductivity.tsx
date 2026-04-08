@@ -32,7 +32,7 @@ function parseDate(dateStr: string): Date | null {
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
-  const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [periodFilter, setPeriodFilter] = useState<string>('abril');
   const [queueFilter, setQueueFilter] = useState<string[]>([]);
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
