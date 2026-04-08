@@ -68,7 +68,12 @@ export default function AnalystProductivity() {
     if (queueFilter.length > 0) {
       data = data.filter(d => queueFilter.includes(d.oldvalue_name?.trim()));
     }
-    if (periodFilter !== 'all') {
+    if (periodFilter === 'abril') {
+      data = data.filter(d => {
+        const dt = parseDate(d.sys_created_on);
+        return dt && dt.getMonth() === 3 && dt.getFullYear() === 2025;
+      });
+    } else if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
       const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
