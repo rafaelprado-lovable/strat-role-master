@@ -71,7 +71,7 @@ export default function AnalystProductivity() {
     if (periodFilter === 'abril') {
       data = data.filter(d => {
         const dt = parseDate(d.sys_created_on);
-        return dt && dt.getMonth() === 3 && dt.getFullYear() === 2025;
+        return dt && dt.getMonth() === 3 && dt.getFullYear() === 2026;
       });
     } else if (periodFilter !== 'all') {
       const now = new Date();
