@@ -30,7 +30,6 @@ import {
   History,
   Link,
 } from "lucide-react";
-import DeploymentConfigPanel from "@/components/pmid/DeploymentConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Types from API ─────────────────────────────────────────────
