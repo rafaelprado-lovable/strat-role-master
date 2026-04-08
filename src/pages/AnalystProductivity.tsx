@@ -32,7 +32,7 @@ function parseDate(dateStr: string): Date | null {
 
 export default function AnalystProductivity() {
   const [search, setSearch] = useState('');
-  const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [periodFilter, setPeriodFilter] = useState<string>('abril');
   const [queueFilter, setQueueFilter] = useState<string[]>([]);
 
   const { data: tramitations = [], isLoading: loadingTramitations } = useQuery({
@@ -68,7 +68,12 @@ export default function AnalystProductivity() {
     if (queueFilter.length > 0) {
       data = data.filter(d => queueFilter.includes(d.oldvalue_name?.trim()));
     }
-    if (periodFilter !== 'all') {
+    if (periodFilter === 'abril') {
+      data = data.filter(d => {
+        const dt = parseDate(d.sys_created_on);
+        return dt && dt.getMonth() === 3 && dt.getFullYear() === 2025;
+      });
+    } else if (periodFilter !== 'all') {
       const now = new Date();
       const hours = parseInt(periodFilter);
       const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
@@ -145,6 +150,7 @@ export default function AnalystProductivity() {
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="abril">Abril 2025</SelectItem>
               <SelectItem value="all">Todo período</SelectItem>
               <SelectItem value="24">Últimas 24h</SelectItem>
               <SelectItem value="48">Últimas 48h</SelectItem>
