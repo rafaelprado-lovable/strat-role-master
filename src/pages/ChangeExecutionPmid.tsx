@@ -4,15 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ServiceConfigEditor, { type DeploymentConfig } from "@/components/pmid/ServiceConfigEditor";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   CheckCircle2,
   XCircle,
@@ -36,7 +30,6 @@ import {
   History,
   Link,
 } from "lucide-react";
-import DeploymentConfigPanel from "@/components/pmid/DeploymentConfigPanel";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Types from API ─────────────────────────────────────────────
@@ -509,6 +502,21 @@ export default function ChangeExecutionPmid() {
     });
     return map;
   });
+
+  // Per-service deployment configs
+  const allVariables = useMemo(() => Array.from(new Set(initialConfigs?.flatMap((c) => c.variables) || [])).sort(), [initialConfigs]);
+  const [serviceConfigs, setServiceConfigs] = useState<Record<string, DeploymentConfig>>(() => {
+    const cfgs: Record<string, DeploymentConfig> = {};
+    initialConfigs.forEach((ic) => {
+      cfgs[ic.serviceName] = {
+        variables: ic.variables.map((v) => ({ id: crypto.randomUUID(), name: v })),
+        secrets: ic.secrets || [],
+        hostAliases: ic.hostAliases.map((h: any) => ({ id: crypto.randomUUID(), ip: h.ip || "", hostnames: h.hostnames || [""] })),
+        resources: { ...ic.resources },
+      };
+    });
+    return cfgs;
+  });
   const { toast } = useToast();
 
   const changeInfo = mockChangeData.changeSystemData;
@@ -787,7 +795,6 @@ export default function ChangeExecutionPmid() {
                           className={`h-2 ${svc.deployStatus === "Failed" ? "[&>div]:bg-destructive" : svc.deployStatus === "Deployed" ? "[&>div]:bg-green-500" : ""}`}
                         />
                       </div>
-
                       {svc.deployStartedAt && (
                         <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -798,6 +805,19 @@ export default function ChangeExecutionPmid() {
                               <CheckCircle2 className="h-3 w-3 text-green-500" /> Fim: {svc.deployFinishedAt}
                             </span>
                           )}
+                        </div>
+                      )}
+
+                      {/* Per-service config */}
+                      {serviceConfigs[svc.name] && (
+                        <div className="mt-3">
+                          <ServiceConfigEditor
+                            config={serviceConfigs[svc.name]}
+                            allVariables={allVariables}
+                            onChange={(newCfg) =>
+                              setServiceConfigs((prev) => ({ ...prev, [svc.name]: newCfg }))
+                            }
+                          />
                         </div>
                       )}
                     </CardContent>
@@ -976,8 +996,6 @@ export default function ChangeExecutionPmid() {
               )}
             </div>
           </div>
-          {/* Configuração de Deploy */}
-          <DeploymentConfigPanel serviceNames={services.map((s) => s.name)} initialConfigs={initialConfigs} />
         </div>
     </div>
   );
