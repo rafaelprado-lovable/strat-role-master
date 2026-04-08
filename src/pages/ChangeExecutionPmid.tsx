@@ -524,6 +524,26 @@ export default function ChangeExecutionPmid() {
   const overallProgress =
     services.length > 0 ? Math.round(services.reduce((sum, s) => sum + s.deployProgress, 0) / services.length) : 0;
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">Carregando dados da change...</span>
+      </div>
+    );
+  }
+
+  if (isError || !changeData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <AlertTriangle className="h-8 w-8 text-destructive" />
+        <span className="ml-2 text-muted-foreground">
+          {isError ? "Erro ao carregar dados da change." : `Change ${changeNumber} não encontrada.`}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
