@@ -995,8 +995,6 @@ export default function ChangeExecutionPmid() {
                 </Card>
               )}
             </div>
-          </div>
-        </div>
         </div>
     </div>
   );
