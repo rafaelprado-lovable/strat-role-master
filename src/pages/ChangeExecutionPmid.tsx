@@ -656,7 +656,8 @@ export default function ChangeExecutionPmid() {
                     ))}
                   </div>
                 </>
-              )
+              )}
+
             </div>
 
             {/* Detail Panel */}
