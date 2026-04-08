@@ -976,12 +976,9 @@ export default function ChangeExecutionPmid() {
               )}
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="config">
+          {/* Configuração de Deploy */}
           <DeploymentConfigPanel serviceNames={services.map((s) => s.name)} initialConfigs={initialConfigs} />
-        </TabsContent>
-      </Tabs>
+        </div>
     </div>
   );
 }
