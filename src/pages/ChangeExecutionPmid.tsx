@@ -846,12 +846,26 @@ export default function ChangeExecutionPmid() {
                       <TabsList className="w-full">
                         <TabsTrigger value="resources" className="flex-1">Recursos</TabsTrigger>
                         <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
-                        <TabsTrigger value="releases" className="flex-1">Release Alvo</TabsTrigger>
                       </TabsList>
 
                       <TabsContent value="resources">
                         <ScrollArea className="h-[500px] pr-2">
                           <div className="space-y-3 mt-3">
+                            {/* Version info */}
+                            <Card className="border-primary/30 bg-primary/5">
+                              <CardContent className="p-3 space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground">Versões</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs font-mono bg-green-500/10 text-green-500 border-green-500/30">
+                                    {selectedService.currentVersion}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">→</span>
+                                  <Badge variant="outline" className="text-xs font-mono bg-primary/10 text-primary border-primary/30">
+                                    {selectedService.targetVersion}
+                                  </Badge>
+                                </div>
+                              </CardContent>
+                            </Card>
                             {selectedService.resources.map((res, idx) => (
                               <Card key={idx} className="border-border/50">
                                 <CardContent className="p-3 space-y-2">
@@ -961,29 +975,6 @@ export default function ChangeExecutionPmid() {
                         </div>
                       </TabsContent>
 
-                      <TabsContent value="releases">
-                        <div className="space-y-4 mt-3">
-                          <p className="text-xs text-muted-foreground">Versão que será implantada nesta change</p>
-
-                          {/* Current version */}
-                          <div className="p-3 rounded-md border border-border bg-accent/30">
-                            <p className="text-xs text-muted-foreground mb-1">Versão atual em produção</p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-medium">{selectedService.currentVersion}</span>
-                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/30">atual</Badge>
-                            </div>
-                          </div>
-
-                          {/* Target version */}
-                          <div className="p-3 rounded-md border border-primary/40 bg-primary/5">
-                            <p className="text-xs text-muted-foreground mb-1">Versão alvo</p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-medium">{selectedService.targetVersion}</span>
-                              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">target</Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </TabsContent>
                     </Tabs>
                   </CardContent>
                 </Card>
