@@ -807,6 +807,19 @@ export default function ChangeExecutionPmid() {
                           )}
                         </div>
                       )}
+
+                      {/* Per-service config */}
+                      {serviceConfigs[svc.name] && (
+                        <div className="mt-3">
+                          <ServiceConfigEditor
+                            config={serviceConfigs[svc.name]}
+                            allVariables={allVariables}
+                            onChange={(newCfg) =>
+                              setServiceConfigs((prev) => ({ ...prev, [svc.name]: newCfg }))
+                            }
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
