@@ -219,8 +219,7 @@ const mockChangeData = {
             type: "GKE",
             namespace: "d-prd",
             region: "southamerica-east1",
-            tracing: false,
-            enableCustomResource: true,
+            region: "southamerica-east1",
           },
           author: {
             id: "3eaf3b3e-a9ab-48af-ab59-8bbcffe3f977",
