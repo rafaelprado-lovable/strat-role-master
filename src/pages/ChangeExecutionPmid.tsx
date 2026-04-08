@@ -350,6 +350,105 @@ const getHealthBadge = (health: HealthStatus) => {
   );
 };
 
+// ─── ServiceCard ────────────────────────────────────────────────
+
+interface ServiceCardProps {
+  svc: PmidService;
+  selectedService: PmidService | null;
+  setSelectedService: (s: PmidService) => void;
+  handleDeploy: (id: string) => void;
+  getDeployBadge: (status: DeployStatus) => React.ReactNode;
+  getHealthBadge: (health: HealthStatus) => React.ReactNode;
+  serviceConfigs: Record<string, DeploymentConfig>;
+  allVariables: string[];
+  setServiceConfigs: React.Dispatch<React.SetStateAction<Record<string, DeploymentConfig>>>;
+  isNew?: boolean;
+}
+
+function ServiceCard({ svc, selectedService, setSelectedService, handleDeploy, getDeployBadge, getHealthBadge, serviceConfigs, allVariables, setServiceConfigs, isNew }: ServiceCardProps) {
+  return (
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${selectedService?.id === svc.id ? "ring-2 ring-primary" : ""} ${isNew ? "border-primary/40" : ""}`}
+      onClick={() => setSelectedService(svc)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-sm font-semibold">{svc.name}</CardTitle>
+            {isNew && <Badge className="text-xs bg-primary/15 text-primary border-primary/30" variant="outline">Novo</Badge>}
+            <div className="flex gap-1">
+              {getDeployBadge(svc.deployStatus)}
+              {getHealthBadge(svc.healthStatus)}
+            </div>
+          </div>
+          {(svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleDeploy(svc.id); }}>
+              <Rocket className="h-3 w-3 mr-1" /> Deploy
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+          <span className="flex items-center gap-1"><Server className="h-3 w-3" /> {svc.cluster}</span>
+          <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{svc.namespace}</span>
+          <span className="flex items-center gap-1">
+            <GitBranch className="h-3 w-3" />
+            {isNew ? (
+              <span className="text-primary font-medium">{svc.targetVersion}</span>
+            ) : (
+              <>
+                {svc.currentVersion}
+                {svc.currentVersion !== svc.targetVersion && (
+                  <span className="text-primary font-medium"> → {svc.targetVersion}</span>
+                )}
+              </>
+            )}
+          </span>
+          <Badge variant="outline" className="text-xs">{svc.size}</Badge>
+        </div>
+
+        {svc.targetVersion && (svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground">Release alvo:</span>
+            <Badge variant="outline" className="text-xs font-mono bg-primary/10 text-primary border-primary/30">
+              {svc.targetVersion}
+            </Badge>
+          </div>
+        )}
+
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">
+              {svc.deployStatus === "Deployed" ? "Deploy concluído" : svc.deployStatus === "Deploying" ? "Deploying..." : svc.deployStatus === "Failed" ? "Deploy falhou" : "Aguardando deploy"}
+            </span>
+            <span className="font-medium">{svc.deployProgress}%</span>
+          </div>
+          <Progress value={svc.deployProgress} className={`h-2 ${svc.deployStatus === "Failed" ? "[&>div]:bg-destructive" : svc.deployStatus === "Deployed" ? "[&>div]:bg-green-500" : ""}`} />
+        </div>
+
+        {svc.deployStartedAt && (
+          <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Início: {svc.deployStartedAt}</span>
+            {svc.deployFinishedAt && (
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-500" /> Fim: {svc.deployFinishedAt}</span>
+            )}
+          </div>
+        )}
+
+        {serviceConfigs[svc.name] && (
+          <div className="mt-3">
+            <ServiceConfigEditor
+              config={serviceConfigs[svc.name]}
+              allVariables={allVariables}
+              onChange={(newCfg) => setServiceConfigs((prev) => ({ ...prev, [svc.name]: newCfg }))}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────
 
 export default function ChangeExecutionPmid() {
@@ -626,113 +725,38 @@ export default function ChangeExecutionPmid() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Service Cards */}
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Serviços para Deploy
-              </h3>
-              <div className="space-y-3">
-                {services.map((svc) => (
-                  <Card
-                    key={svc.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${selectedService?.id === svc.id ? "ring-2 ring-primary" : ""}`}
-                    onClick={() => setSelectedService(svc)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <CardTitle className="text-sm font-semibold">{svc.name}</CardTitle>
-                          <div className="flex gap-1">
-                            {getDeployBadge(svc.deployStatus)}
-                            {getHealthBadge(svc.healthStatus)}
-                          </div>
-                        </div>
-                        {(svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeploy(svc.id);
-                            }}
-                          >
-                            <Rocket className="h-3 w-3 mr-1" />
-                            Deploy
-                          </Button>
-                        )}
-                      </div>
+              {/* New Services */}
+              {services.filter((s) => s.currentRelease === "N/A").length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <ArrowUpCircle className="h-5 w-5 text-primary" />
+                    Novos Serviços
+                    <Badge variant="secondary" className="text-xs">{services.filter((s) => s.currentRelease === "N/A").length}</Badge>
+                  </h3>
+                  <div className="space-y-3">
+                    {services.filter((s) => s.currentRelease === "N/A").map((svc) => (
+                      <ServiceCard key={svc.id} svc={svc} selectedService={selectedService} setSelectedService={setSelectedService} handleDeploy={handleDeploy} getDeployBadge={getDeployBadge} getHealthBadge={getHealthBadge} serviceConfigs={serviceConfigs} allVariables={allVariables} setServiceConfigs={setServiceConfigs} isNew />
+                    ))}
+                  </div>
+                </>
+              )}
 
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                        <span className="flex items-center gap-1">
-                          <Server className="h-3 w-3" /> {svc.cluster}
-                        </span>
-                        <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{svc.namespace}</span>
-                        <span className="flex items-center gap-1">
-                          <GitBranch className="h-3 w-3" />
-                          {svc.currentVersion}
-                          {svc.currentVersion !== svc.targetVersion && (
-                            <span className="text-primary font-medium"> → {svc.targetVersion}</span>
-                          )}
-                        </span>
-                        <Badge variant="outline" className="text-xs">{svc.size}</Badge>
-                      </div>
+              {/* Existing Services */}
+              {services.filter((s) => s.currentRelease !== "N/A").length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Serviços Existentes
+                    <Badge variant="secondary" className="text-xs">{services.filter((s) => s.currentRelease !== "N/A").length}</Badge>
+                  </h3>
+                  <div className="space-y-3">
+                    {services.filter((s) => s.currentRelease !== "N/A").map((svc) => (
+                      <ServiceCard key={svc.id} svc={svc} selectedService={selectedService} setSelectedService={setSelectedService} handleDeploy={handleDeploy} getDeployBadge={getDeployBadge} getHealthBadge={getHealthBadge} serviceConfigs={serviceConfigs} allVariables={allVariables} setServiceConfigs={setServiceConfigs} />
+                    ))}
+                  </div>
+                </>
+              )}
 
-                      {/* Target release info */}
-                      {svc.targetVersion && (svc.deployStatus === "Pending" || svc.deployStatus === "Failed") && (
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs text-muted-foreground">Release alvo:</span>
-                          <Badge variant="outline" className="text-xs font-mono bg-primary/10 text-primary border-primary/30">
-                            {svc.targetVersion}
-                          </Badge>
-                        </div>
-                      )}
-
-                      {/* Deploy Progress Bar */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            {svc.deployStatus === "Deployed"
-                              ? "Deploy concluído"
-                              : svc.deployStatus === "Deploying"
-                              ? "Deploying..."
-                              : svc.deployStatus === "Failed"
-                              ? "Deploy falhou"
-                              : "Aguardando deploy"}
-                          </span>
-                          <span className="font-medium">{svc.deployProgress}%</span>
-                        </div>
-                        <Progress
-                          value={svc.deployProgress}
-                          className={`h-2 ${svc.deployStatus === "Failed" ? "[&>div]:bg-destructive" : svc.deployStatus === "Deployed" ? "[&>div]:bg-green-500" : ""}`}
-                        />
-                      </div>
-                      {svc.deployStartedAt && (
-                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> Início: {svc.deployStartedAt}
-                          </span>
-                          {svc.deployFinishedAt && (
-                            <span className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-green-500" /> Fim: {svc.deployFinishedAt}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Per-service config */}
-                      {serviceConfigs[svc.name] && (
-                        <div className="mt-3">
-                          <ServiceConfigEditor
-                            config={serviceConfigs[svc.name]}
-                            allVariables={allVariables}
-                            onChange={(newCfg) =>
-                              setServiceConfigs((prev) => ({ ...prev, [svc.name]: newCfg }))
-                            }
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             </div>
 
             {/* Detail Panel */}
