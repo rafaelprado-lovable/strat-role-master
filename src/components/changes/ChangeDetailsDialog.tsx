@@ -482,7 +482,6 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                 </ul>
               );
             })()}
-            )}
           </div>
 
           {/* Refazer análise */}
