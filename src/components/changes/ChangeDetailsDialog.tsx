@@ -339,55 +339,220 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
           <div>
             <h3 className="text-lg font-semibold mb-4">Dados do serviço</h3>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>NOME DO SERVIÇO</TableHead>
-                  <TableHead>VERSÃO ATUAL EM PRODUÇÃO</TableHead>
-                  <TableHead>VERSÃO ATUAL NO CF</TableHead>
-                  <TableHead>PIPELINE DE SERVIÇO</TableHead>
-                  <TableHead>VERSÃO DE ROTA</TableHead>
-                </TableRow>
-              </TableHeader>
+            {!change.changeServicesList || change.changeServicesList.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado</p>
+            ) : (
+              <div className="space-y-4">
+                {change.changeServicesList.map((servico: any, index: number) => {
+                  const dhuo = servico.dhuo_data;
+                  const deploy = dhuo?.deployment_data;
+                  const details = (() => {
+                    try { return deploy?.details ? JSON.parse(deploy.details) : null; } catch { return null; }
+                  })();
+                  const variables = details?.params?.variables || deploy?.advanced?.variables?.map((v: any) => v.label) || [];
+                  const target = dhuo?.target_release;
 
-              <TableBody>
-                {!change.changeServicesList || change.changeServicesList.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Nenhum serviço cadastrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  change.changeServicesList.map((servico, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{servico.service_name}</TableCell>
-                      <TableCell>{servico.cf_production_version}</TableCell>
-                      <TableCell>{servico.implementation_version}</TableCell>
-                      <TableCell>
-                        <a
-                          href={servico.pipeline_service_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline flex items-center gap-2"
-                        >
-                          Abrir pipeline <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        <a
-                          href={servico.pipeline_route_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline flex items-center gap-2"
-                        >
-                          Abrir pipeline <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  return (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      {/* Header do serviço */}
+                      <div className="bg-muted/50 px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-sm">{servico.service_name}</span>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {servico.cf_production_version} → {servico.implementation_version}
+                          </Badge>
+                          {deploy?.status && (
+                            <Badge variant={deploy.status === "SUCCESS" ? "default" : "destructive"} className="text-xs">
+                              {deploy.status}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {servico.pipeline_service_link && (
+                            <a href={servico.pipeline_service_link} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-primary underline flex items-center gap-1">
+                              Pipeline serviço <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                          {servico.pipeline_route_link && (
+                            <a href={servico.pipeline_route_link} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-primary underline flex items-center gap-1">
+                              Pipeline rota <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {dhuo && deploy ? (
+                        <div className="p-4 space-y-4">
+                          {/* Cluster & Ambiente */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Cluster</p>
+                              <p className="text-sm font-medium">{deploy.cluster?.name || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Namespace</p>
+                              <p className="text-sm font-mono">{deploy.cluster?.namespace || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Região</p>
+                              <p className="text-sm">{deploy.cluster?.region || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Ambiente</p>
+                              <p className="text-sm">{deploy.environment?.name || "—"}</p>
+                            </div>
+                          </div>
+
+                          {/* Autor & Versão */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Autor do deploy</p>
+                              <p className="text-sm">{deploy.author?.name || "—"}</p>
+                              <p className="text-xs text-muted-foreground">{deploy.author?.email || ""}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Major Version</p>
+                              <p className="text-sm font-mono">{deploy.majorVersion || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Release atual</p>
+                              <p className="text-sm font-mono">{deploy.integrationRelease?.name || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Release alvo</p>
+                              <Badge variant="secondary" className="font-mono text-xs">
+                                {target?.name || servico.implementation_version}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Recursos */}
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground mb-2">Recursos</p>
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">CPU Request</p>
+                                <p className="text-sm font-mono font-medium">{deploy.deployment?.request?.cpu || "—"}</p>
+                              </div>
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">CPU Limit</p>
+                                <p className="text-sm font-mono font-medium">{deploy.deployment?.limit?.cpu || "—"}</p>
+                              </div>
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">Mem Request</p>
+                                <p className="text-sm font-mono font-medium">{deploy.deployment?.request?.memory || "—"}</p>
+                              </div>
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">Mem Limit</p>
+                                <p className="text-sm font-mono font-medium">{deploy.deployment?.limit?.memory || "—"}</p>
+                              </div>
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">Min Pods</p>
+                                <p className="text-sm font-mono font-medium">{deploy.hpa?.minReplica ?? "—"}</p>
+                              </div>
+                              <div className="border rounded p-2 text-center">
+                                <p className="text-xs text-muted-foreground">Max Pods</p>
+                                <p className="text-sm font-mono font-medium">{deploy.hpa?.maxReplica ?? "—"}</p>
+                              </div>
+                            </div>
+                            {deploy.hpa && (
+                              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                                <span>HPA CPU: {deploy.hpa.targetCPUUtilizationPercentage}%</span>
+                                <span>HPA Memory: {deploy.hpa.targetMemoryUtilizationPercentage}%</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Variáveis */}
+                          {variables.length > 0 && (
+                            <>
+                              <Separator />
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-2">Variáveis ({variables.length})</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {variables.map((v: string, i: number) => (
+                                    <Badge key={i} variant="outline" className="font-mono text-xs">{v}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Releases disponíveis */}
+                          {dhuo.available_releases && dhuo.available_releases.length > 0 && (
+                            <>
+                              <Separator />
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-2">
+                                  Releases disponíveis ({dhuo.available_releases.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {dhuo.available_releases.slice(0, 10).map((r: any) => (
+                                    <Badge
+                                      key={r.id}
+                                      variant={r.name === target?.name ? "default" : "outline"}
+                                      className="font-mono text-xs"
+                                    >
+                                      {r.name}
+                                      {r.name === deploy.integrationRelease?.name && " (atual)"}
+                                      {r.name === target?.name && " (alvo)"}
+                                    </Badge>
+                                  ))}
+                                  {dhuo.available_releases.length > 10 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      +{dhuo.available_releases.length - 10} mais
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-4">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Versão produção</TableHead>
+                                <TableHead>Versão CF</TableHead>
+                                <TableHead>Pipeline serviço</TableHead>
+                                <TableHead>Pipeline rota</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell className="font-mono">{servico.cf_production_version}</TableCell>
+                                <TableCell className="font-mono">{servico.implementation_version}</TableCell>
+                                <TableCell>
+                                  {servico.pipeline_service_link ? (
+                                    <a href={servico.pipeline_service_link} target="_blank" rel="noopener noreferrer"
+                                      className="text-primary underline flex items-center gap-1 text-sm">
+                                      Abrir <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  ) : "—"}
+                                </TableCell>
+                                <TableCell>
+                                  {servico.pipeline_route_link ? (
+                                    <a href={servico.pipeline_route_link} target="_blank" rel="noopener noreferrer"
+                                      className="text-primary underline flex items-center gap-1 text-sm">
+                                      Abrir <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  ) : "—"}
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <Separator />
