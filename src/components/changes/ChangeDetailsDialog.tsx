@@ -467,16 +467,21 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Responsáveis pela validação do ambiente</h3>
 
-            {!change.changeAproovalData?.enviroment_responsible?.length ? (
-              <p className="text-sm text-muted-foreground">Sem informação</p>
-            ) : (
-              <ul className="list-disc ml-5 space-y-1">
-                {change.changeAproovalData.enviroment_responsible.map((team: string, i: number) => (
-                  <li key={i} className="text-sm">
-                    {team}
-                  </li>
-                ))}
-              </ul>
+            {(() => {
+              const raw = change.changeAproovalData?.enviroment_responsible;
+              const teams = Array.isArray(raw) ? raw : raw ? [raw] : [];
+              return teams.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem informação</p>
+              ) : (
+                <ul className="list-disc ml-5 space-y-1">
+                  {teams.map((team: string, i: number) => (
+                    <li key={i} className="text-sm">
+                      {team}
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
             )}
           </div>
 
