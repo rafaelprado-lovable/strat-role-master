@@ -598,10 +598,14 @@ export default function ChangeExecutionPmid() {
       if (isNewService) {
         // POST — new service, no existing deployment
         const firstRelease = targetRelease || dhuo.available_releases?.[0];
+        if (!firstRelease?.integrationVersionId || !firstRelease?.integrationReleaseId) {
+          toast({ title: "Erro", description: "Nenhuma release disponível para este serviço. Não é possível realizar o deploy.", variant: "destructive" });
+          return;
+        }
         body = {
-          integrationVersionId: firstRelease?.integrationVersionId,
-          integrationReleaseId: firstRelease?.integrationReleaseId,
-          majorVersion: firstRelease?.majorVersion || "v1",
+          integrationVersionId: firstRelease.integrationVersionId,
+          integrationReleaseId: firstRelease.integrationReleaseId,
+          majorVersion: firstRelease.majorVersion || "v1",
           clusterId: "1b5b5254-5f9f-43f7-bb8e-ac9cb59a5b92", // default prd cluster
           size: "custom",
           deployment: cfg?.resources
