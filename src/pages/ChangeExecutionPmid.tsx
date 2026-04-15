@@ -568,54 +568,97 @@ export default function ChangeExecutionPmid() {
 
   const handleDeploy = useCallback(
     async (serviceId: string) => {
-      // Find the original service data from changeServicesList to get dhuo_data
       const svc = services.find((s) => s.id === serviceId);
       const originalSvc = changeServicesList.find((cs) => cs.service_name === svc?.name);
-      const dd = originalSvc?.dhuo_data?.deployment_data;
+      const dhuo = originalSvc?.dhuo_data;
 
-      if (!dd) {
-        toast({ title: "Erro", description: "Dados de deployment não encontrados para este serviço.", variant: "destructive" });
+      if (!dhuo) {
+        toast({ title: "Erro", description: "Dados DHuO não encontrados para este serviço.", variant: "destructive" });
         return;
       }
 
-      // Find the target release from available_releases or selected release
+      const dd = dhuo.deployment_data; // null for new services
+      const isNewService = !dd;
+
+      // Find the target release
       const targetReleaseName = selectedReleaseMap[serviceId] || svc?.targetVersion;
-      const targetRelease = originalSvc?.dhuo_data?.available_releases?.find(
-        (r) => r.name === targetReleaseName
-      );
+      const targetRelease = dhuo.available_releases?.find((r) => r.name === targetReleaseName);
 
       // Get config overrides if any
       const cfg = serviceConfigs[svc?.name || ""];
 
-      const body = {
-        integrationReleaseId: targetRelease?.integrationReleaseId || dd.integrationRelease?.id,
-        clusterId: dd.cluster?.id,
-        size: dd.size || "custom",
-        deployment: cfg?.resources
-          ? {
-              request: { memory: cfg.resources.memoryMin, cpu: cfg.resources.cpuMin },
-              limit: { memory: cfg.resources.memoryMax, cpu: cfg.resources.cpuMax },
-            }
-          : dd.deployment,
-        hpa: cfg?.resources
-          ? {
-              minReplica: cfg.resources.podsMin,
-              maxReplica: cfg.resources.podsMax,
-              targetCPUUtilizationPercentage: cfg.resources.autoscalingTargetCpu,
-              targetMemoryUtilizationPercentage: cfg.resources.autoscalingTargetMemory,
-            }
-          : dd.hpa,
-        advanced: {
-          variables: dd.advanced?.variables || [],
-          nodeAffinityKey: dd.advanced?.nodeAffinityKey || "",
-          nodeAffinityValue: dd.advanced?.nodeAffinityValue || [""],
-          hostAlias: dd.advanced?.hostAlias || [],
-          logLevel: dd.advanced?.logLevel || "trace",
-          enableTracing: dd.advanced?.enableTracing ?? false,
-        },
-        majorVersion: dd.majorVersion || "v1",
-        integrationVersionId: targetRelease?.integrationVersionId || dd.integrationVersion?.id,
+      const dhuoHeaders = {
+        "Content-Type": "application/json",
+        "x-dhuo-organization": "Rq2vDqrRHamVKxo0in",
+        "x-dhuo-workspace": "PISBwg3mYhY2IR7aQc",
       };
+
+      let body: Record<string, any>;
+
+      if (isNewService) {
+        // POST — new service, no existing deployment
+        const firstRelease = targetRelease || dhuo.available_releases?.[0];
+        body = {
+          integrationVersionId: firstRelease?.integrationVersionId,
+          integrationReleaseId: firstRelease?.integrationReleaseId,
+          majorVersion: firstRelease?.majorVersion || "v1",
+          clusterId: "1b5b5254-5f9f-43f7-bb8e-ac9cb59a5b92", // default prd cluster
+          size: "custom",
+          deployment: cfg?.resources
+            ? {
+                request: { memory: cfg.resources.memoryMin, cpu: cfg.resources.cpuMin },
+                limit: { memory: cfg.resources.memoryMax, cpu: cfg.resources.cpuMax },
+              }
+            : { request: { memory: "100Mi", cpu: "150m" }, limit: { memory: "200Mi", cpu: "250m" } },
+          hpa: cfg?.resources
+            ? {
+                minReplica: cfg.resources.podsMin,
+                maxReplica: cfg.resources.podsMax,
+                targetCPUUtilizationPercentage: cfg.resources.autoscalingTargetCpu,
+                targetMemoryUtilizationPercentage: cfg.resources.autoscalingTargetMemory,
+              }
+            : { minReplica: 1, maxReplica: 1, targetCPUUtilizationPercentage: 80, targetMemoryUtilizationPercentage: 80 },
+          advanced: {
+            variables: [],
+            nodeAffinityKey: "",
+            nodeAffinityValue: [],
+            hostAlias: [],
+            logLevel: "dev",
+            enableTracing: false,
+          },
+        };
+      } else {
+        // PUT — existing service deployment
+        body = {
+          integrationReleaseId: targetRelease?.integrationReleaseId || dd.integrationRelease?.id,
+          clusterId: dd.cluster?.id,
+          size: dd.size || "custom",
+          deployment: cfg?.resources
+            ? {
+                request: { memory: cfg.resources.memoryMin, cpu: cfg.resources.cpuMin },
+                limit: { memory: cfg.resources.memoryMax, cpu: cfg.resources.cpuMax },
+              }
+            : dd.deployment,
+          hpa: cfg?.resources
+            ? {
+                minReplica: cfg.resources.podsMin,
+                maxReplica: cfg.resources.podsMax,
+                targetCPUUtilizationPercentage: cfg.resources.autoscalingTargetCpu,
+                targetMemoryUtilizationPercentage: cfg.resources.autoscalingTargetMemory,
+              }
+            : dd.hpa,
+          advanced: {
+            variables: dd.advanced?.variables || [],
+            nodeAffinityKey: dd.advanced?.nodeAffinityKey || "",
+            nodeAffinityValue: dd.advanced?.nodeAffinityValue || [""],
+            hostAlias: dd.advanced?.hostAlias || [],
+            logLevel: dd.advanced?.logLevel || "trace",
+            enableTracing: dd.advanced?.enableTracing ?? false,
+          },
+          majorVersion: dd.majorVersion || "v1",
+          integrationVersionId: targetRelease?.integrationVersionId || dd.integrationVersion?.id,
+        };
+      }
 
       // Update UI to deploying state
       setServices((prev) =>
@@ -635,15 +678,21 @@ export default function ChangeExecutionPmid() {
       );
 
       try {
-        await apiClient.rawFetch(`/v1/integration-deployments/${dd.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "x-dhuo-organization": "Rq2vDqrRHamVKxo0in",
-            "x-dhuo-workspace": "PISBwg3mYhY2IR7aQc",
-          },
-          body: JSON.stringify(body),
-        });
+        if (isNewService) {
+          // POST /v1/integrations/{integration_id}/integration-deployments
+          await apiClient.rawFetch(`/v1/integrations/${dhuo.integration_id}/integration-deployments`, {
+            method: "POST",
+            headers: dhuoHeaders,
+            body: JSON.stringify(body),
+          });
+        } else {
+          // PUT /v1/integration-deployments/{deployment_id}
+          await apiClient.rawFetch(`/v1/integration-deployments/${dd.id}`, {
+            method: "PUT",
+            headers: dhuoHeaders,
+            body: JSON.stringify(body),
+          });
+        }
         toast({ title: "Deploy iniciado", description: `Deploy de ${svc?.name} enviado com sucesso.` });
       } catch (err: any) {
         toast({ title: "Erro no deploy", description: err?.message || "Falha ao enviar deploy.", variant: "destructive" });
