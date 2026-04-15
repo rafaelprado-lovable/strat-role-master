@@ -151,6 +151,11 @@ interface PmidService {
 // ─── Parse details JSON ─────────────────────────────────────────
 
 interface ParsedDetails {
+  integration?: {
+    name: string;
+    version: string;
+    release: string;
+  };
   deploy: {
     cluster: string;
     clusterType: string;
@@ -203,6 +208,8 @@ function buildServicesFromChange(changeServicesList: ChangeServiceItem[]): PmidS
     const hpa = dd?.hpa;
     const deploy = dd?.deployment;
 
+    const prodVersion = details?.integration?.release || dd?.integrationRelease?.name || svc.cf_production_version;
+
     return {
       id: dd?.id || `svc-${idx}`,
       name: svc.service_name,
@@ -210,9 +217,9 @@ function buildServicesFromChange(changeServicesList: ChangeServiceItem[]): PmidS
       cluster: clusterName,
       clusterType,
       region,
-      currentVersion: dd?.integrationRelease?.name || svc.cf_production_version,
+      currentVersion: prodVersion,
       targetVersion: dhuo?.target_release?.name || svc.implementation_version,
-      currentRelease: svc.cf_production_version,
+      currentRelease: prodVersion,
       targetRelease: svc.implementation_version,
       deployStatus: "Pending" as DeployStatus,
       healthStatus: dd?.status === "SUCCESS" ? ("Healthy" as HealthStatus) : ("Unknown" as HealthStatus),
@@ -223,7 +230,7 @@ function buildServicesFromChange(changeServicesList: ChangeServiceItem[]): PmidS
           name: svc.service_name,
           namespace,
           health: "Healthy" as HealthStatus,
-          version: svc.cf_production_version,
+          version: prodVersion,
           targetVersion: svc.implementation_version,
           replicas: hpa ? { desired: hpa.minReplica, ready: hpa.minReplica, available: hpa.minReplica } : undefined,
           cpu: deploy?.request?.cpu,
@@ -235,7 +242,7 @@ function buildServicesFromChange(changeServicesList: ChangeServiceItem[]): PmidS
           name: `${svc.service_name}-svc`,
           namespace,
           health: "Healthy" as HealthStatus,
-          version: svc.cf_production_version,
+          version: prodVersion,
           targetVersion: svc.implementation_version,
         },
         ...(hpa
@@ -245,7 +252,7 @@ function buildServicesFromChange(changeServicesList: ChangeServiceItem[]): PmidS
                 name: `${svc.service_name}-hpa`,
                 namespace,
                 health: "Healthy" as HealthStatus,
-                version: svc.cf_production_version,
+                version: prodVersion,
                 targetVersion: svc.implementation_version,
               },
             ]
