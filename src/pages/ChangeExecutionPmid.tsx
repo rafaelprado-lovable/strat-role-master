@@ -151,6 +151,11 @@ interface PmidService {
 // ─── Parse details JSON ─────────────────────────────────────────
 
 interface ParsedDetails {
+  integration?: {
+    name: string;
+    version: string;
+    release: string;
+  };
   deploy: {
     cluster: string;
     clusterType: string;
