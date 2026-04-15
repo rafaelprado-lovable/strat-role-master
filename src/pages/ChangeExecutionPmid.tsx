@@ -567,7 +567,57 @@ export default function ChangeExecutionPmid() {
   }, [services]);
 
   const handleDeploy = useCallback(
-    (serviceId: string) => {
+    async (serviceId: string) => {
+      // Find the original service data from changeServicesList to get dhuo_data
+      const svc = services.find((s) => s.id === serviceId);
+      const originalSvc = changeServicesList.find((cs) => cs.service_name === svc?.name);
+      const dd = originalSvc?.dhuo_data?.deployment_data;
+
+      if (!dd) {
+        toast({ title: "Erro", description: "Dados de deployment não encontrados para este serviço.", variant: "destructive" });
+        return;
+      }
+
+      // Find the target release from available_releases or selected release
+      const targetReleaseName = selectedReleaseMap[serviceId] || svc?.targetVersion;
+      const targetRelease = originalSvc?.dhuo_data?.available_releases?.find(
+        (r) => r.name === targetReleaseName
+      );
+
+      // Get config overrides if any
+      const cfg = serviceConfigs[svc?.name || ""];
+
+      const body = {
+        integrationReleaseId: targetRelease?.integrationReleaseId || dd.integrationRelease?.id,
+        clusterId: dd.cluster?.id,
+        size: dd.size || "custom",
+        deployment: cfg?.resources
+          ? {
+              request: { memory: cfg.resources.memoryMin, cpu: cfg.resources.cpuMin },
+              limit: { memory: cfg.resources.memoryMax, cpu: cfg.resources.cpuMax },
+            }
+          : dd.deployment,
+        hpa: cfg?.resources
+          ? {
+              minReplica: cfg.resources.podsMin,
+              maxReplica: cfg.resources.podsMax,
+              targetCPUUtilizationPercentage: cfg.resources.autoscalingTargetCpu,
+              targetMemoryUtilizationPercentage: cfg.resources.autoscalingTargetMemory,
+            }
+          : dd.hpa,
+        advanced: {
+          variables: dd.advanced?.variables || [],
+          nodeAffinityKey: dd.advanced?.nodeAffinityKey || "",
+          nodeAffinityValue: dd.advanced?.nodeAffinityValue || [""],
+          hostAlias: dd.advanced?.hostAlias || [],
+          logLevel: dd.advanced?.logLevel || "trace",
+          enableTracing: dd.advanced?.enableTracing ?? false,
+        },
+        majorVersion: dd.majorVersion || "v1",
+        integrationVersionId: targetRelease?.integrationVersionId || dd.integrationVersion?.id,
+      };
+
+      // Update UI to deploying state
       setServices((prev) =>
         prev.map((s) =>
           s.id === serviceId
@@ -578,14 +628,35 @@ export default function ChangeExecutionPmid() {
                 deployProgress: 5,
                 deployStartedAt: new Date().toISOString().replace("T", " ").slice(0, 19),
                 deployFinishedAt: undefined,
-                targetVersion: selectedReleaseMap[s.id] || s.targetVersion,
+                targetVersion: targetReleaseName || s.targetVersion,
               }
             : s
         )
       );
-      toast({ title: "Deploy iniciado", description: "Aplicação de deploy em andamento..." });
+
+      try {
+        await apiClient.rawFetch(`/v1/integration-deployments/${dd.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-dhuo-organization": "Rq2vDqrRHamVKxo0in",
+            "x-dhuo-workspace": "PISBwg3mYhY2IR7aQc",
+          },
+          body: JSON.stringify(body),
+        });
+        toast({ title: "Deploy iniciado", description: `Deploy de ${svc?.name} enviado com sucesso.` });
+      } catch (err: any) {
+        toast({ title: "Erro no deploy", description: err?.message || "Falha ao enviar deploy.", variant: "destructive" });
+        setServices((prev) =>
+          prev.map((s) =>
+            s.id === serviceId
+              ? { ...s, deployStatus: "Failed" as DeployStatus, healthStatus: "Degraded" as HealthStatus, deployProgress: 0 }
+              : s
+          )
+        );
+      }
     },
-    [toast, selectedReleaseMap]
+    [toast, selectedReleaseMap, services, changeServicesList, serviceConfigs]
   );
 
   const handleDeployAll = useCallback(() => {
