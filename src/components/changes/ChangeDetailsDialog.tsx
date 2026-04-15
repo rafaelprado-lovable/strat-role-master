@@ -351,15 +351,16 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                   })();
                   const variables = details?.params?.variables || deploy?.advanced?.variables?.map((v: any) => v.label) || [];
                   const target = dhuo?.target_release;
+                  const prodVersion = deploy?.integrationRelease?.name || servico.cf_production_version;
 
-                  return (
+                   return (
                     <div key={index} className="border rounded-lg overflow-hidden">
                       {/* Header do serviço */}
                       <div className="bg-muted/50 px-4 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="font-semibold text-sm">{servico.service_name}</span>
                           <Badge variant="outline" className="font-mono text-xs">
-                            {servico.cf_production_version} → {servico.implementation_version}
+                            {prodVersion} → {servico.implementation_version}
                           </Badge>
                           {deploy?.status && (
                             <Badge variant={deploy.status === "SUCCESS" ? "default" : "destructive"} className="text-xs">
@@ -525,7 +526,7 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                             </TableHeader>
                             <TableBody>
                               <TableRow>
-                                <TableCell className="font-mono">{servico.cf_production_version}</TableCell>
+                                <TableCell className="font-mono">{prodVersion}</TableCell>
                                 <TableCell className="font-mono">{servico.implementation_version}</TableCell>
                                 <TableCell>
                                   {servico.pipeline_service_link ? (
