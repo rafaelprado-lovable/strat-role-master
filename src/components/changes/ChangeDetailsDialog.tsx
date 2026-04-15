@@ -351,7 +351,7 @@ export function ChangeDetailsDialog({ open, onOpenChange, change, onUpdateChange
                   })();
                   const variables = details?.params?.variables || deploy?.advanced?.variables?.map((v: any) => v.label) || [];
                   const target = dhuo?.target_release;
-                  const prodVersion = deploy?.integrationRelease?.name || servico.cf_production_version;
+                  const prodVersion = details?.integration?.release || deploy?.integrationRelease?.name || servico.cf_production_version;
 
                    return (
                     <div key={index} className="border rounded-lg overflow-hidden">
