@@ -1060,9 +1060,12 @@ export default function ChangeExecutionPmid() {
                   </div>
                 </Card>
               )}
-            </div>
           </div>
+
+          {/* Tarefas da Change */}
+          <ChangeTasksPanel changeNumber={changeInfo.number} />
         </div>
+    </div>
     </div>
   );
 }
