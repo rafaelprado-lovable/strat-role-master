@@ -459,14 +459,8 @@ function ServiceCard({ svc, selectedService, setSelectedService, handleDeploy, g
 
 // ─── Component ──────────────────────────────────────────────────
 
-interface ChangeExecutionPmidProps {
-  changeNumberProp?: string;
-  onBack?: () => void;
-}
-
-export default function ChangeExecutionPmid({ changeNumberProp, onBack }: ChangeExecutionPmidProps = {}) {
-  const { id: changeNumberFromParams } = useParams<{ id: string }>();
-  const changeNumber = changeNumberProp || changeNumberFromParams;
+export default function ChangeExecutionPmid() {
+  const { id: changeNumber } = useParams<{ id: string }>();
   const { toast } = useToast();
 
   // Fetch change data from /v1/changes API
@@ -785,22 +779,15 @@ export default function ChangeExecutionPmid({ changeNumberProp, onBack }: Change
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              ← Voltar
-            </Button>
-          )}
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Execução de Change - PMID</h2>
-            <p className="text-muted-foreground">
-              {changeInfo.number} - {changeInfo.description.length > 100 ? changeInfo.description.slice(0, 100) + "..." : changeInfo.description}
-            </p>
-            <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-              <span>Início: {changeInfo.start_date}</span>
-              <span>Fim: {changeInfo.end_date}</span>
-              <Badge variant="outline" className="text-xs">{changeInfo.state}</Badge>
-            </div>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Execução de Change - PMID</h2>
+          <p className="text-muted-foreground">
+            {changeInfo.number} - {changeInfo.description.length > 100 ? changeInfo.description.slice(0, 100) + "..." : changeInfo.description}
+          </p>
+          <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+            <span>Início: {changeInfo.start_date}</span>
+            <span>Fim: {changeInfo.end_date}</span>
+            <Badge variant="outline" className="text-xs">{changeInfo.state}</Badge>
           </div>
         </div>
         <div className="flex gap-2">

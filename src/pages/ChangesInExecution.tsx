@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
-import { changesApi } from '@/services/mockApi';
+import { changesApi, departmentApi } from '@/services/mockApi';
 import {
   Table,
   TableBody,
@@ -19,13 +19,21 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Search, PlayCircle, ArrowLeft } from "lucide-react";
+import { Eye, Search, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChangeInExecutionDetailsDialog } from "@/components/changes/ChangeInExecutionDetailsDialog";
-import ChangeExecution from "./ChangeExecution";
-import ChangeExecutionPmid from "./ChangeExecutionPmid";
+import { useNavigate } from "react-router-dom";
 import ChangeExecutionCep from "./ChangeExecutionCep";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+
+interface Task {
+  id: string;
+  numeroTarefa: string;
+  descricaoTarefa: string;
+  tipoTarefa: string;
+  statusTarefa: string;
+}
 
 interface ChangeInExecution {
   changeSystemData: {
@@ -82,6 +90,7 @@ interface ChangeInExecution {
 const mockChangesInExecution: ChangeInExecution[] = [];
 
 export default function ChangesInExecution() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [numeroFilter, setNumeroFilter] = useState<string>("all");
@@ -89,14 +98,15 @@ export default function ChangesInExecution() {
   const [fimExecucaoFilter, setFimExecucaoFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedChange, setSelectedChange] = useState<ChangeInExecution | null>(null);
+  const [executingChange, setExecutingChange] = useState<ChangeInExecution | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [executingChange, setExecutingChange] = useState<{ change: ChangeInExecution; tech: string } | null>(null);
   const itemsPerPage = 10;
 
   const { data: changes = [] } = useQuery({
     queryKey: ['changes'],
     queryFn: changesApi.getExecutionChanges
   });
+
 
   const filteredChanges = changes.filter((change) => {
     const matchesSearch =
@@ -122,36 +132,18 @@ export default function ChangesInExecution() {
   };
 
   const handleExecutar = (change: ChangeInExecution) => {
-    const tech = change?.changeAproovalData?.tecnology?.toLowerCase() || "";
-    setExecutingChange({ change, tech });
-  };
-
-  const handleBackFromExecution = () => {
-    setExecutingChange(null);
-  };
-
-  // If executing a change, show the execution component inline
-  if (executingChange) {
-    const { change, tech } = executingChange;
-    const changeNumber = change.changeSystemData.number;
+    const tech = change?.changeAproovalData?.tecnology?.toLowerCase();
 
     if (tech === "nmws") {
-      return <ChangeExecution changeNumberProp={changeNumber} onBack={handleBackFromExecution} />;
+      navigate(`/change-execution/${change.changeSystemData.number}`);
     } else if (tech === "pmid") {
-      return <ChangeExecutionPmid changeNumberProp={changeNumber} onBack={handleBackFromExecution} />;
+      navigate(`/change-execution-pmid/${change.changeSystemData.number}`);
     } else {
       // DIGIBEE / CEP
-      return (
-        <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={handleBackFromExecution}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para lista de Changes
-          </Button>
-          <ChangeExecutionCep change={change as any} />
-        </div>
-      );
+      setExecutingChange(change);
     }
-  }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -165,6 +157,7 @@ export default function ChangesInExecution() {
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Busca */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Buscar</label>
               <div className="relative">
@@ -178,6 +171,7 @@ export default function ChangesInExecution() {
               </div>
             </div>
 
+            {/* Número da Change */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Número da Change</label>
               <Select value={numeroFilter} onValueChange={setNumeroFilter}>
@@ -195,6 +189,7 @@ export default function ChangesInExecution() {
               </Select>
             </div>
 
+            {/* Descrição */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Descrição</label>
               <Select value={descricaoFilter} onValueChange={setDescricaoFilter}>
@@ -209,6 +204,7 @@ export default function ChangesInExecution() {
               </Select>
             </div>
 
+            {/* Fim da Execução */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Fim da Execução</label>
               <Select value={fimExecucaoFilter} onValueChange={setFimExecucaoFilter}>
@@ -222,6 +218,7 @@ export default function ChangesInExecution() {
               </Select>
             </div>
 
+            {/* Status */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -334,6 +331,14 @@ export default function ChangesInExecution() {
           change={selectedChange as any}
         />
       )}
+
+      <Dialog open={!!executingChange} onOpenChange={() => setExecutingChange(null)}>
+        <DialogContent className="max-w-[95vw] h-[95vh] p-0">
+          {executingChange && (
+            <ChangeExecutionCep change={executingChange as any} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

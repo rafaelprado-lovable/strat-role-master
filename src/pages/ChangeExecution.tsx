@@ -199,12 +199,7 @@ const getStepIcon = (type: string) => {
   }
 };
 
-interface ChangeExecutionProps {
-  changeNumberProp?: string;
-  onBack?: () => void;
-}
-
-export default function ChangeExecution({ changeNumberProp, onBack }: ChangeExecutionProps = {}) {
+export default function ChangeExecution() {
   const [clusters, setClusters] = useState<Cluster[]>(mockClusters);
   const { toast } = useToast();
 
@@ -286,16 +281,9 @@ export default function ChangeExecution({ changeNumberProp, onBack }: ChangeExec
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              ← Voltar
-            </Button>
-          )}
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Execução de Change</h2>
-            <p className="text-muted-foreground">{changeNumberProp || "CHG0174916"} - Bug 1185202: [PRODUÇÃO]|PMID</p>
-          </div>
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Execução de Change</h2>
+          <p className="text-muted-foreground">CHG0174916 - Bug 1185202: [PRODUÇÃO]|PMID</p>
         </div>
       </div>
 
