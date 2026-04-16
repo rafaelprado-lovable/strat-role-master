@@ -172,15 +172,16 @@ export function ChangeTasksPanel({ changeNumber }: ChangeTasksPanelProps) {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[140px]">NÚMERO DA TAREFA</TableHead>
-                  <TableHead>DESCRIÇÃO DA TAREFA</TableHead>
-                  <TableHead className="w-[140px]">TIPO DA TAREFA</TableHead>
-                  <TableHead className="w-[120px]">STATUS DA TAREFA</TableHead>
-                  <TableHead className="w-[180px]">FECHAR TAREFA COMO SUCESSO</TableHead>
-                  <TableHead className="w-[180px]">FECHAR TAREFA COMO ROLLBACK</TableHead>
+                  <TableHead className="whitespace-nowrap">NÚMERO DA TAREFA</TableHead>
+                  <TableHead className="min-w-[300px]">DESCRIÇÃO DA TAREFA</TableHead>
+                  <TableHead className="whitespace-nowrap">TIPO DA TAREFA</TableHead>
+                  <TableHead className="whitespace-nowrap">STATUS DA TAREFA</TableHead>
+                  <TableHead className="whitespace-nowrap">FECHAR TAREFA COMO SUCESSO</TableHead>
+                  <TableHead className="whitespace-nowrap">FECHAR TAREFA COMO ROLLBACK</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -240,6 +241,7 @@ export function ChangeTasksPanel({ changeNumber }: ChangeTasksPanelProps) {
                 )}
               </TableBody>
             </Table>
+            </div>
 
             {totalPages > 1 && (
               <div className="mt-4">
