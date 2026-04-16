@@ -34,6 +34,7 @@ import {
   History,
   Link,
 } from "lucide-react";
+import { ChangeTasksPanel } from "@/components/changes/ChangeTasksPanel";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Types from API ─────────────────────────────────────────────
@@ -1059,9 +1060,12 @@ export default function ChangeExecutionPmid() {
                   </div>
                 </Card>
               )}
-            </div>
           </div>
+
+          {/* Tarefas da Change */}
+          <ChangeTasksPanel changeNumber={changeInfo.number} />
         </div>
+    </div>
     </div>
   );
 }
