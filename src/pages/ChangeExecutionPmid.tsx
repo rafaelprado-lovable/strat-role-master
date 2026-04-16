@@ -34,6 +34,7 @@ import {
   History,
   Link,
 } from "lucide-react";
+import { ChangeTasksPanel } from "@/components/changes/ChangeTasksPanel";
 import { useToast } from "@/hooks/use-toast";
 
 // ─── Types from API ─────────────────────────────────────────────
