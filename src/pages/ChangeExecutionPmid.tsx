@@ -481,6 +481,8 @@ export default function ChangeExecutionPmid() {
     pipeline_service_link: s.pipeline_service_link || s.pipeline_link || '',
   }));
   const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '', week_day: '', teams_involved_in_execution: [] as string[], teams_involved_in_validation: [] as string[] };
+  const approvalData = changeData?.changeAproovalData || null;
+  const testData = changeData?.changeTestData || null;
 
   const initialServices = useMemo(() => buildServicesFromChange(changeServicesList), [changeServicesList]);
   const initialConfigs = useMemo(() => buildInitialConfigs(changeServicesList), [changeServicesList]);
