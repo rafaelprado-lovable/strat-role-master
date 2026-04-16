@@ -481,6 +481,8 @@ export default function ChangeExecutionPmid() {
     pipeline_service_link: s.pipeline_service_link || s.pipeline_link || '',
   }));
   const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '', week_day: '', teams_involved_in_execution: [] as string[], teams_involved_in_validation: [] as string[] };
+  const approvalData = changeData?.changeAproovalData || null;
+  const testData = changeData?.changeTestData || null;
 
   const initialServices = useMemo(() => buildServicesFromChange(changeServicesList), [changeServicesList]);
   const initialConfigs = useMemo(() => buildInitialConfigs(changeServicesList), [changeServicesList]);
@@ -846,6 +848,100 @@ export default function ChangeExecutionPmid() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dados do ChangeForm */}
+      {approvalData && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Dados do ChangeForm</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm text-muted-foreground">Tecnologia</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.tecnology || "—"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Tipo do restart</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.restart_type ? "Sim" : "N/A"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Possui serviço novo</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.new_service ? "Sim" : "Não"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Possui serviço reuso</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.old_service ? "Sim" : "Não"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Validação durante a change</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.validation_time || "—"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Validação HDC</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.hdc_validation ? "Sim" : "Não"}</div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Aumento de volumetria</label>
+                <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">{approvalData.increase_volume ? "Sim" : "Não"}</div>
+              </div>
+              {testData && (
+                <div>
+                  <label className="text-sm text-muted-foreground">Tipo de teste</label>
+                  <div className="mt-1 rounded-md bg-muted px-3 py-2 text-sm">
+                    {testData.system_test || testData.fqa || testData.uat || testData.no_test || "—"}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Validação do funcional */}
+      {approvalData && (approvalData.validator_contact?.length > 0 || approvalData.validation_process) && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Validação do funcional</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {approvalData.validator_contact?.length > 0 && (
+              <div className="rounded-md border p-4">
+                <label className="text-sm text-muted-foreground">Contato dos responsáveis pela validação funcional:</label>
+                <div className="mt-2 space-y-1">
+                  {approvalData.validator_contact.map((contact: string, idx: number) => (
+                    <p key={idx} className="text-sm font-medium">{contact}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {approvalData.validation_process && (
+              <div className="rounded-md border p-4">
+                <label className="text-sm text-muted-foreground">Procedimento:</label>
+                <p className="mt-1 text-sm font-medium">{approvalData.validation_process}</p>
+              </div>
+            )}
+            {approvalData.validation_time && (
+              <div className="rounded-md border p-4">
+                <label className="text-sm text-muted-foreground">A validação ocorrerá:</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge variant="outline">{approvalData.validation_time}</Badge>
+                </div>
+              </div>
+            )}
+            {changeInfo.teams_involved_in_validation && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Responsáveis pela validação do ambiente</h4>
+                <ul className="list-disc list-inside text-sm">
+                  {(Array.isArray(changeInfo.teams_involved_in_validation) ? changeInfo.teams_involved_in_validation : [changeInfo.teams_involved_in_validation]).map((team: string, idx: number) => (
+                    <li key={idx}>{team}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tarefas da Change */}
       <ChangeTasksPanel changeNumber={changeInfo.number} />
