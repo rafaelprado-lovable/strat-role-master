@@ -184,25 +184,19 @@ export default function ChangesInExecution() {
               {filteredChanges.length}
             </Badge>
           </TabsTrigger>
-          {executingChange && (
-            <>
-              <TabsTrigger value="nmws" disabled={executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "nmws"}>
-                NMWS
+          {executingChange && (() => {
+            const tech = executingChange.changeAproovalData?.tecnology?.toLowerCase();
+            const tabValue = tech === "nmws" ? "nmws" : tech === "pmid" ? "pmid" : "digibee";
+            const tabLabel = tech === "nmws" ? "NMWS" : tech === "pmid" ? "PMID" : "DIGIBEE";
+            return (
+              <TabsTrigger value={tabValue}>
+                {tabLabel}
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {executingChange.changeSystemData.number}
+                </Badge>
               </TabsTrigger>
-              <TabsTrigger value="pmid" disabled={executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "pmid"}>
-                PMID
-              </TabsTrigger>
-              <TabsTrigger value="digibee" disabled={
-                executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "digibee" &&
-                executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "nmws" &&
-                executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "pmid"
-                  ? false : executingChange.changeAproovalData?.tecnology?.toLowerCase() !== "digibee" &&
-                    executingChange.changeAproovalData?.tecnology?.toLowerCase() !== undefined
-              }>
-                DIGIBEE
-              </TabsTrigger>
-            </>
-          )}
+            );
+          })()}
         </TabsList>
 
         {/* Tasks Tab */}
