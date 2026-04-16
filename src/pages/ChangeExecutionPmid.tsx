@@ -847,6 +847,9 @@ export default function ChangeExecutionPmid() {
         </CardContent>
       </Card>
 
+      {/* Tarefas da Change */}
+      <ChangeTasksPanel changeNumber={changeInfo.number} />
+
       <div className="space-y-6">
           {/* Overall Progress */}
           <Card>
@@ -1106,8 +1109,6 @@ export default function ChangeExecutionPmid() {
               )}
           </div>
 
-          {/* Tarefas da Change */}
-          <ChangeTasksPanel changeNumber={changeInfo.number} />
         </div>
     </div>
     </div>
