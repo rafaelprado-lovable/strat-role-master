@@ -480,7 +480,7 @@ export default function ChangeExecutionPmid() {
     ...s,
     pipeline_service_link: s.pipeline_service_link || s.pipeline_link || '',
   }));
-  const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '' };
+  const changeInfo = changeData?.changeSystemData || { number: changeNumber || '', description: '', start_date: '', end_date: '', state: '', week_day: '', teams_involved_in_execution: [] as string[], teams_involved_in_validation: [] as string[] };
 
   const initialServices = useMemo(() => buildServicesFromChange(changeServicesList), [changeServicesList]);
   const initialConfigs = useMemo(() => buildInitialConfigs(changeServicesList), [changeServicesList]);
@@ -781,15 +781,9 @@ export default function ChangeExecutionPmid() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Execução de Change - PMID</h2>
-          <p className="text-muted-foreground">
-            {changeInfo.number} - {changeInfo.description.length > 100 ? changeInfo.description.slice(0, 100) + "..." : changeInfo.description}
-          </p>
-          <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-            <span>Início: {changeInfo.start_date}</span>
-            <span>Fim: {changeInfo.end_date}</span>
-            <Badge variant="outline" className="text-xs">{changeInfo.state}</Badge>
-          </div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {changeInfo.number} - {changeInfo.description}
+          </h2>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => toast({ title: "Atualizando...", description: "Buscando status atualizado" })}>
@@ -802,6 +796,56 @@ export default function ChangeExecutionPmid() {
           </Button>
         </div>
       </div>
+
+      {/* Change Info Card */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Número da change</label>
+              <p className="mt-1 text-base">{changeInfo.number}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Descrição da change</label>
+              <p className="mt-1 text-base">{changeInfo.description}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Início da implementação</label>
+              <p className="mt-1 text-base">{changeInfo.start_date}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Fim da implementação</label>
+              <p className="mt-1 text-base">{changeInfo.end_date}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Dia da semana</label>
+              <p className="mt-1 text-base">{changeInfo.week_day || "—"}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Estado</label>
+              <div className="mt-1">
+                <Badge variant="outline">{changeInfo.state}</Badge>
+              </div>
+            </div>
+            {changeInfo.teams_involved_in_execution && (
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-muted-foreground">Equipes envolvidas na aplicação</label>
+                <p className="mt-1 text-base">
+                  {Array.isArray(changeInfo.teams_involved_in_execution) ? changeInfo.teams_involved_in_execution.join(" ") : changeInfo.teams_involved_in_execution}
+                </p>
+              </div>
+            )}
+            {changeInfo.teams_involved_in_validation && (
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-muted-foreground">Equipes envolvidas na validação</label>
+                <p className="mt-1 text-base">
+                  {Array.isArray(changeInfo.teams_involved_in_validation) ? changeInfo.teams_involved_in_validation.join(" ") : changeInfo.teams_involved_in_validation}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
           {/* Overall Progress */}
