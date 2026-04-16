@@ -241,6 +241,7 @@ export function ChangeTasksPanel({ changeNumber }: ChangeTasksPanelProps) {
                 )}
               </TableBody>
             </Table>
+            </div>
 
             {totalPages > 1 && (
               <div className="mt-4">
