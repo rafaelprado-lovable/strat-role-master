@@ -42,6 +42,7 @@ import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
 import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
+import McpBuilder from "./pages/McpBuilder";
 
 const queryClient = new QueryClient();
 
@@ -340,6 +341,14 @@ const App = () => (
                     <Machines />
                   </AppLayout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mcps"
+              element={
+                <AppLayout>
+                  <McpBuilder />
+                </AppLayout>
               }
             />
             <Route
