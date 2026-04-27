@@ -487,14 +487,17 @@ export default function AiChat() {
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t border-border bg-card px-4 py-3">
+      <div className="border-t border-border bg-card px-4 py-3 relative">
         <div className="max-w-3xl mx-auto flex gap-2 items-end">
           <Textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
+            onKeyUp={handleInputClickOrKeyUp}
+            onClick={handleInputClickOrKeyUp}
+            onBlur={() => setTimeout(() => { setShortcut(null); setAnchor(null); }, 150)}
+            placeholder="Digite sua mensagem... (use @ / # : para atalhos)"
             className="min-h-[44px] max-h-[160px] resize-none bg-background"
             autoResize
             rows={1}
@@ -509,6 +512,17 @@ export default function AiChat() {
             </Button>
           )}
         </div>
+        {shortcut && (
+          <ShortcutPopover
+            trigger={shortcut.trigger}
+            query={shortcut.query}
+            items={SHORTCUT_DATA[shortcut.trigger]}
+            selectedIndex={shortcut.selectedIndex}
+            anchor={anchor}
+            onHoverIndex={(i) => setShortcut(s => s ? { ...s, selectedIndex: i } : s)}
+            onSelect={applyShortcut}
+          />
+        )}
       </div>
     </div>
   );
