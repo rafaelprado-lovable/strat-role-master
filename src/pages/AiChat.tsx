@@ -66,9 +66,98 @@ export default function AiChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load conversations from API on mount
+  // ===== Atalhos (@, /, #, :) =====
+  const [shortcut, setShortcut] = useState<ShortcutState | null>(null);
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
+
+  const filteredItems = (() => {
+    if (!shortcut) return [] as ShortcutItem[];
+    const q = shortcut.query.toLowerCase();
+    const all = SHORTCUT_DATA[shortcut.trigger];
+    if (!q) return all.slice(0, 8);
+    return all
+      .filter(i =>
+        i.value.toLowerCase().includes(q) ||
+        i.label.toLowerCase().includes(q) ||
+        (i.description?.toLowerCase().includes(q) ?? false))
+      .slice(0, 8);
+  })();
+
+  const updateAnchor = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setAnchor({ left: rect.left, top: rect.top });
+  }, []);
+
+  const detectShortcut = useCallback((value: string, caret: number) => {
+    // Look back from caret to find a trigger char preceded by start/space.
+    for (let i = caret - 1; i >= Math.max(0, caret - 40); i--) {
+      const ch = value[i];
+      if (ch === ' ' || ch === '\n') break;
+      if (TRIGGERS.includes(ch as ShortcutTrigger)) {
+        const before = i === 0 ? ' ' : value[i - 1];
+        if (before === ' ' || before === '\n' || i === 0) {
+          const query = value.slice(i + 1, caret);
+          // Cancel if query has whitespace
+          if (/\s/.test(query)) break;
+          setShortcut(prev => ({
+            trigger: ch as ShortcutTrigger,
+            query,
+            startIndex: i,
+            selectedIndex: prev && prev.trigger === ch && prev.startIndex === i ? prev.selectedIndex : 0,
+          }));
+          updateAnchor();
+          return;
+        }
+        break;
+      }
+    }
+    setShortcut(null);
+    setAnchor(null);
+  }, [updateAnchor]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    setInput(v);
+    detectShortcut(v, e.target.selectionStart ?? v.length);
+  };
+
+  const handleInputClickOrKeyUp = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    detectShortcut(el.value, el.selectionStart ?? el.value.length);
+  };
+
+  const applyShortcut = (item: ShortcutItem) => {
+    if (!shortcut || !inputRef.current) return;
+    const el = inputRef.current;
+    const before = input.slice(0, shortcut.startIndex);
+    const caret = el.selectionStart ?? input.length;
+    const after = input.slice(caret);
+    const insertion = renderShortcutInsertion(shortcut.trigger, item);
+    const newValue = before + insertion + after;
+    setInput(newValue);
+    setShortcut(null);
+    setAnchor(null);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = (before + insertion).length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  // Reposition anchor on resize/scroll
   useEffect(() => {
-    const load = async () => {
+    if (!shortcut) return;
+    window.addEventListener('resize', updateAnchor);
+    window.addEventListener('scroll', updateAnchor, true);
+    return () => {
+      window.removeEventListener('resize', updateAnchor);
+      window.removeEventListener('scroll', updateAnchor, true);
+    };
+  }, [shortcut, updateAnchor]);
+
       setLoadingConversations(true);
       try {
         const data = await conversationService.listAll();
