@@ -9,6 +9,23 @@ import { chatService, ChatMessage } from '@/services/chatService';
 import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import {
+  ShortcutPopover,
+  SHORTCUT_DATA,
+  renderShortcutInsertion,
+  type ShortcutTrigger,
+  type ShortcutItem,
+} from '@/components/chat/ShortcutPopover';
+
+const TRIGGERS: ShortcutTrigger[] = ['@', '/', '#', ':'];
+
+interface ShortcutState {
+  trigger: ShortcutTrigger;
+  query: string;
+  /** index in input where the trigger char sits */
+  startIndex: number;
+  selectedIndex: number;
+}
 
 interface Conversation {
   id: string;
@@ -48,6 +65,98 @@ export default function AiChat() {
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // ===== Atalhos (@, /, #, :) =====
+  const [shortcut, setShortcut] = useState<ShortcutState | null>(null);
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null);
+
+  const filteredItems = (() => {
+    if (!shortcut) return [] as ShortcutItem[];
+    const q = shortcut.query.toLowerCase();
+    const all = SHORTCUT_DATA[shortcut.trigger];
+    if (!q) return all.slice(0, 8);
+    return all
+      .filter(i =>
+        i.value.toLowerCase().includes(q) ||
+        i.label.toLowerCase().includes(q) ||
+        (i.description?.toLowerCase().includes(q) ?? false))
+      .slice(0, 8);
+  })();
+
+  const updateAnchor = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setAnchor({ left: rect.left, top: rect.top });
+  }, []);
+
+  const detectShortcut = useCallback((value: string, caret: number) => {
+    // Look back from caret to find a trigger char preceded by start/space.
+    for (let i = caret - 1; i >= Math.max(0, caret - 40); i--) {
+      const ch = value[i];
+      if (ch === ' ' || ch === '\n') break;
+      if (TRIGGERS.includes(ch as ShortcutTrigger)) {
+        const before = i === 0 ? ' ' : value[i - 1];
+        if (before === ' ' || before === '\n' || i === 0) {
+          const query = value.slice(i + 1, caret);
+          // Cancel if query has whitespace
+          if (/\s/.test(query)) break;
+          setShortcut(prev => ({
+            trigger: ch as ShortcutTrigger,
+            query,
+            startIndex: i,
+            selectedIndex: prev && prev.trigger === ch && prev.startIndex === i ? prev.selectedIndex : 0,
+          }));
+          updateAnchor();
+          return;
+        }
+        break;
+      }
+    }
+    setShortcut(null);
+    setAnchor(null);
+  }, [updateAnchor]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    setInput(v);
+    detectShortcut(v, e.target.selectionStart ?? v.length);
+  };
+
+  const handleInputClickOrKeyUp = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    detectShortcut(el.value, el.selectionStart ?? el.value.length);
+  };
+
+  const applyShortcut = (item: ShortcutItem) => {
+    if (!shortcut || !inputRef.current) return;
+    const el = inputRef.current;
+    const before = input.slice(0, shortcut.startIndex);
+    const caret = el.selectionStart ?? input.length;
+    const after = input.slice(caret);
+    const insertion = renderShortcutInsertion(shortcut.trigger, item);
+    const newValue = before + insertion + after;
+    setInput(newValue);
+    setShortcut(null);
+    setAnchor(null);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = (before + insertion).length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  // Reposition anchor on resize/scroll
+  useEffect(() => {
+    if (!shortcut) return;
+    window.addEventListener('resize', updateAnchor);
+    window.addEventListener('scroll', updateAnchor, true);
+    return () => {
+      window.removeEventListener('resize', updateAnchor);
+      window.removeEventListener('scroll', updateAnchor, true);
+    };
+  }, [shortcut, updateAnchor]);
 
   // Load conversations from API on mount
   useEffect(() => {
@@ -194,7 +303,31 @@ export default function AiChat() {
 
   const handleStop = () => { abortRef.current?.abort(); setIsLoading(false); };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Atalhos: navegação no popover
+    if (shortcut && filteredItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setShortcut(s => s ? { ...s, selectedIndex: (s.selectedIndex + 1) % filteredItems.length } : s);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setShortcut(s => s ? { ...s, selectedIndex: (s.selectedIndex - 1 + filteredItems.length) % filteredItems.length } : s);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        applyShortcut(filteredItems[shortcut.selectedIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShortcut(null);
+        setAnchor(null);
+        return;
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
@@ -354,14 +487,17 @@ export default function AiChat() {
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t border-border bg-card px-4 py-3">
+      <div className="border-t border-border bg-card px-4 py-3 relative">
         <div className="max-w-3xl mx-auto flex gap-2 items-end">
           <Textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
+            onKeyUp={handleInputClickOrKeyUp}
+            onClick={handleInputClickOrKeyUp}
+            onBlur={() => setTimeout(() => { setShortcut(null); setAnchor(null); }, 150)}
+            placeholder="Digite sua mensagem... (use @ / # : para atalhos)"
             className="min-h-[44px] max-h-[160px] resize-none bg-background"
             autoResize
             rows={1}
@@ -376,6 +512,17 @@ export default function AiChat() {
             </Button>
           )}
         </div>
+        {shortcut && (
+          <ShortcutPopover
+            trigger={shortcut.trigger}
+            query={shortcut.query}
+            items={SHORTCUT_DATA[shortcut.trigger]}
+            selectedIndex={shortcut.selectedIndex}
+            anchor={anchor}
+            onHoverIndex={(i) => setShortcut(s => s ? { ...s, selectedIndex: i } : s)}
+            onSelect={applyShortcut}
+          />
+        )}
       </div>
     </div>
   );
