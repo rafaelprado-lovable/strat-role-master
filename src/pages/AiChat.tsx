@@ -9,6 +9,23 @@ import { chatService, ChatMessage } from '@/services/chatService';
 import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import {
+  ShortcutPopover,
+  SHORTCUT_DATA,
+  renderShortcutInsertion,
+  type ShortcutTrigger,
+  type ShortcutItem,
+} from '@/components/chat/ShortcutPopover';
+
+const TRIGGERS: ShortcutTrigger[] = ['@', '/', '#', ':'];
+
+interface ShortcutState {
+  trigger: ShortcutTrigger;
+  query: string;
+  /** index in input where the trigger char sits */
+  startIndex: number;
+  selectedIndex: number;
+}
 
 interface Conversation {
   id: string;
