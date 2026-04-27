@@ -303,7 +303,31 @@ export default function AiChat() {
 
   const handleStop = () => { abortRef.current?.abort(); setIsLoading(false); };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Atalhos: navegação no popover
+    if (shortcut && filteredItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setShortcut(s => s ? { ...s, selectedIndex: (s.selectedIndex + 1) % filteredItems.length } : s);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setShortcut(s => s ? { ...s, selectedIndex: (s.selectedIndex - 1 + filteredItems.length) % filteredItems.length } : s);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        applyShortcut(filteredItems[shortcut.selectedIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShortcut(null);
+        setAnchor(null);
+        return;
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
