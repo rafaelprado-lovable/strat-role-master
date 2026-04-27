@@ -158,6 +158,9 @@ export default function AiChat() {
     };
   }, [shortcut, updateAnchor]);
 
+  // Load conversations from API on mount
+  useEffect(() => {
+    const load = async () => {
       setLoadingConversations(true);
       try {
         const data = await conversationService.listAll();
