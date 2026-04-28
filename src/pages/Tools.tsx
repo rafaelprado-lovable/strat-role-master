@@ -231,6 +231,17 @@ const Tools = () => {
                       <TableCell>
                         <Badge variant="outline">{schema?.name || tool.pluginKey}</Badge>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
+                          {(tool.scopes ?? []).length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            (tool.scopes ?? []).map(s => (
+                              <Badge key={s} variant="secondary" className="text-[10px] font-mono">{s}</Badge>
+                            ))
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-muted-foreground max-w-[300px] truncate">
                         {tool.description}
                       </TableCell>
