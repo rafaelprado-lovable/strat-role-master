@@ -143,6 +143,7 @@ const Tools = () => {
         description: formDescription,
         toolType: formToolType,
         pluginKey: formPluginKey,
+        scopes: formScopes,
         inputs: formInputs,
         outputs: {},
         enabled: formEnabled,
