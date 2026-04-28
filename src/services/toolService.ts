@@ -7,6 +7,7 @@ export interface ChatTool {
   description: string;
   toolType: string;
   pluginKey: string;
+  scopes?: string[];
   inputs: Record<string, string>;
   outputs: Record<string, unknown>;
   enabled: boolean;
