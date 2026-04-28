@@ -18,6 +18,14 @@ import {
   type ShortcutItem,
 } from '@/components/chat/ShortcutPopover';
 
+/** Converte URLs de imagem soltas em markdown ![](url) para serem renderizadas como <img>. */
+function autolinkImages(text: string): string {
+  if (!text) return text;
+  // Evita reescrever URLs já dentro de () de markdown ou após !
+  const imageUrlRegex = /(^|[\s])(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?[^\s<>()]*)?)/gi;
+  return text.replace(imageUrlRegex, (_m, pre, url) => `${pre}![imagem](${url})`);
+}
+
 const TRIGGERS: ShortcutTrigger[] = ['@', '/', '#', ':'];
 
 interface ShortcutState {
