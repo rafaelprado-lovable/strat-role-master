@@ -84,6 +84,8 @@ const Tools = () => {
     setFormDescription('');
     setFormPluginKey('');
     setFormInputs({});
+    setFormScopes([]);
+    setFormScopeInput('');
     setFormEnabled(true);
     setFormToolType('node');
     setFormWaitForCompletion(true);
@@ -104,6 +106,8 @@ const Tools = () => {
     setFormDescription(tool.description);
     setFormPluginKey(tool.pluginKey);
     setFormInputs({ ...tool.inputs });
+    setFormScopes(Array.isArray(tool.scopes) ? [...tool.scopes] : []);
+    setFormScopeInput('');
     setFormEnabled(tool.enabled);
     setFormToolType(tool.toolType || 'node');
     setFormWaitForCompletion(tool.waitForCompletion ?? true);
