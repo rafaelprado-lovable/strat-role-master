@@ -47,11 +47,21 @@ const Tools = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formPluginKey, setFormPluginKey] = useState('');
   const [formInputs, setFormInputs] = useState<Record<string, string>>({});
+  const [formScopes, setFormScopes] = useState<string[]>([]);
+  const [formScopeInput, setFormScopeInput] = useState('');
   const [formEnabled, setFormEnabled] = useState(true);
   const [formToolType, setFormToolType] = useState('node');
   const [formWaitForCompletion, setFormWaitForCompletion] = useState(true);
   const [formWaitTimeout, setFormWaitTimeout] = useState(20);
   const [formPollInterval, setFormPollInterval] = useState(2);
+
+  const addScope = (raw: string) => {
+    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return;
+    setFormScopes(prev => Array.from(new Set([...prev, ...parts])));
+    setFormScopeInput('');
+  };
+  const removeScope = (s: string) => setFormScopes(prev => prev.filter(x => x !== s));
 
   const loadTools = async () => {
     const data = await toolService.getAll();
