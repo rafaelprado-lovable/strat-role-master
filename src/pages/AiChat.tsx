@@ -452,8 +452,33 @@ export default function AiChat() {
                 msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted text-foreground rounded-bl-md'
               )}>
                 {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words
+                    prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-2 prose-img:max-w-full prose-img:h-auto
+                    prose-a:text-primary">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({ node, ...props }) => (
+                          <a href={props.src as string} target="_blank" rel="noopener noreferrer">
+                            <img {...props} loading="lazy" alt={props.alt || 'imagem'} />
+                          </a>
+                        ),
+                        a: ({ node, href, children, ...props }) => {
+                          const url = href || '';
+                          if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(url)) {
+                            return (
+                              <a href={url} target="_blank" rel="noopener noreferrer">
+                                <img src={url} alt="imagem" loading="lazy"
+                                  className="rounded-lg border border-border my-2 max-w-full h-auto" />
+                              </a>
+                            );
+                          }
+                          return <a href={url} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                        },
+                      }}
+                    >
+                      {autolinkImages(msg.content)}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
