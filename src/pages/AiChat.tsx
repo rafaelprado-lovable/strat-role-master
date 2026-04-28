@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { chatService, ChatMessage } from '@/services/chatService';
 import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 import {
   ShortcutPopover,
