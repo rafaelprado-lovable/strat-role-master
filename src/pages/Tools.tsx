@@ -348,6 +348,43 @@ const Tools = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>Escopos</Label>
+              <p className="text-xs text-muted-foreground">
+                Tags que identificam domínios/integrações desta ferramenta. Ex: <code className="font-mono">oms</code>, <code className="font-mono">servicenow</code>. Pressione Enter ou vírgula para adicionar.
+              </p>
+              <div className="flex flex-wrap gap-1.5 p-2 rounded-md border border-input bg-background min-h-[42px]">
+                {formScopes.map(s => (
+                  <Badge key={s} variant="secondary" className="gap-1 pr-1">
+                    {s}
+                    <button
+                      type="button"
+                      onClick={() => removeScope(s)}
+                      className="rounded-sm hover:bg-muted-foreground/20 p-0.5"
+                      aria-label={`Remover escopo ${s}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <input
+                  value={formScopeInput}
+                  onChange={e => setFormScopeInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addScope(formScopeInput);
+                    } else if (e.key === 'Backspace' && !formScopeInput && formScopes.length) {
+                      removeScope(formScopes[formScopes.length - 1]);
+                    }
+                  }}
+                  onBlur={() => formScopeInput && addScope(formScopeInput)}
+                  placeholder={formScopes.length ? '' : 'oms, servicenow...'}
+                  className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
