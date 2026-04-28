@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Power, PowerOff, Wrench } from 'lucide-react';
+import { Plus, Pencil, Trash2, Power, PowerOff, Wrench, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,11 +47,21 @@ const Tools = () => {
   const [formDescription, setFormDescription] = useState('');
   const [formPluginKey, setFormPluginKey] = useState('');
   const [formInputs, setFormInputs] = useState<Record<string, string>>({});
+  const [formScopes, setFormScopes] = useState<string[]>([]);
+  const [formScopeInput, setFormScopeInput] = useState('');
   const [formEnabled, setFormEnabled] = useState(true);
   const [formToolType, setFormToolType] = useState('node');
   const [formWaitForCompletion, setFormWaitForCompletion] = useState(true);
   const [formWaitTimeout, setFormWaitTimeout] = useState(20);
   const [formPollInterval, setFormPollInterval] = useState(2);
+
+  const addScope = (raw: string) => {
+    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return;
+    setFormScopes(prev => Array.from(new Set([...prev, ...parts])));
+    setFormScopeInput('');
+  };
+  const removeScope = (s: string) => setFormScopes(prev => prev.filter(x => x !== s));
 
   const loadTools = async () => {
     const data = await toolService.getAll();
@@ -74,6 +84,8 @@ const Tools = () => {
     setFormDescription('');
     setFormPluginKey('');
     setFormInputs({});
+    setFormScopes([]);
+    setFormScopeInput('');
     setFormEnabled(true);
     setFormToolType('node');
     setFormWaitForCompletion(true);
@@ -94,6 +106,8 @@ const Tools = () => {
     setFormDescription(tool.description);
     setFormPluginKey(tool.pluginKey);
     setFormInputs({ ...tool.inputs });
+    setFormScopes(Array.isArray(tool.scopes) ? [...tool.scopes] : []);
+    setFormScopeInput('');
     setFormEnabled(tool.enabled);
     setFormToolType(tool.toolType || 'node');
     setFormWaitForCompletion(tool.waitForCompletion ?? true);
@@ -129,6 +143,7 @@ const Tools = () => {
         description: formDescription,
         toolType: formToolType,
         pluginKey: formPluginKey,
+        scopes: formScopes,
         inputs: formInputs,
         outputs: {},
         enabled: formEnabled,
@@ -201,6 +216,7 @@ const Tools = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo (Node)</TableHead>
+                  <TableHead>Escopos</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -214,6 +230,17 @@ const Tools = () => {
                       <TableCell className="font-medium">{tool.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{schema?.name || tool.pluginKey}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
+                          {(tool.scopes ?? []).length === 0 ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            (tool.scopes ?? []).map(s => (
+                              <Badge key={s} variant="secondary" className="text-[10px] font-mono">{s}</Badge>
+                            ))
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-[300px] truncate">
                         {tool.description}
@@ -331,6 +358,43 @@ const Tools = () => {
                 placeholder="Descreva o que esta ferramenta faz..."
                 className="min-h-[60px]"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Escopos</Label>
+              <p className="text-xs text-muted-foreground">
+                Tags que identificam domínios/integrações desta ferramenta. Ex: <code className="font-mono">oms</code>, <code className="font-mono">servicenow</code>. Pressione Enter ou vírgula para adicionar.
+              </p>
+              <div className="flex flex-wrap gap-1.5 p-2 rounded-md border border-input bg-background min-h-[42px]">
+                {formScopes.map(s => (
+                  <Badge key={s} variant="secondary" className="gap-1 pr-1">
+                    {s}
+                    <button
+                      type="button"
+                      onClick={() => removeScope(s)}
+                      className="rounded-sm hover:bg-muted-foreground/20 p-0.5"
+                      aria-label={`Remover escopo ${s}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <input
+                  value={formScopeInput}
+                  onChange={e => setFormScopeInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addScope(formScopeInput);
+                    } else if (e.key === 'Backspace' && !formScopeInput && formScopes.length) {
+                      removeScope(formScopes[formScopes.length - 1]);
+                    }
+                  }}
+                  onBlur={() => formScopeInput && addScope(formScopeInput)}
+                  placeholder={formScopes.length ? '' : 'oms, servicenow...'}
+                  className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
