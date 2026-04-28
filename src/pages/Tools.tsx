@@ -216,6 +216,7 @@ const Tools = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo (Node)</TableHead>
+                  <TableHead>Escopos</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
