@@ -42,6 +42,8 @@ import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
 import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
+import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
+import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
 
 const queryClient = new QueryClient();
 
@@ -348,6 +350,30 @@ const App = () => (
                   <AppLayout>
                     <Tools />
                   </AppLayout>
+              }
+            />
+            <Route
+              path="/knowledge-base/oms"
+              element={
+                <AppLayout>
+                  <KnowledgeBaseOms />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/knowledge-base/oms/new"
+              element={
+                <AppLayout>
+                  <KnowledgeBaseOmsEditor />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/knowledge-base/oms/:id"
+              element={
+                <AppLayout>
+                  <KnowledgeBaseOmsEditor />
+                </AppLayout>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
