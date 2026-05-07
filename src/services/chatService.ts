@@ -10,6 +10,7 @@ export interface ChatMessage {
 export const chatService = {
   async sendMessage(
     message: string,
+    conversationId: string,
     _history: { role: string; content: string }[],
     onDelta: (chunk: string) => void,
     onDone: () => void,
@@ -20,7 +21,7 @@ export const chatService = {
       const response = await fetch(AGENT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, conversation_id: conversationId }),
         signal,
       });
 
