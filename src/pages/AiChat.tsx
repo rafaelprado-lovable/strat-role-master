@@ -286,7 +286,7 @@ export default function AiChat() {
     };
 
     await chatService.sendMessage(
-      text, history,
+      text, convId, history,
       (chunk) => upsertAssistant(chunk),
       () => {
         setIsLoading(false);
