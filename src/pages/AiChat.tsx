@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, Bot, User, Loader2, Trash2, Plus, MessageSquare, History, Clock } from 'lucide-react';
+import { Send, Square, Bot, User, Loader2, Trash2, Plus, MessageSquare, History, Clock, X, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { chatService, ChatMessage } from '@/services/chatService';
 import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
