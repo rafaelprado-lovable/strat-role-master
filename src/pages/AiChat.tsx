@@ -541,19 +541,12 @@ export default function AiChat() {
                       remarkPlugins={[remarkGfm]}
                       components={{
                         img: ({ node, ...props }) => (
-                          <a href={props.src as string} target="_blank" rel="noopener noreferrer">
-                            <img {...props} loading="lazy" alt={props.alt || 'imagem'} />
-                          </a>
+                          <ChatImage src={props.src as string} alt={props.alt} />
                         ),
                         a: ({ node, href, children, ...props }) => {
                           const url = href || '';
                           if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(url)) {
-                            return (
-                              <a href={url} target="_blank" rel="noopener noreferrer">
-                                <img src={url} alt="imagem" loading="lazy"
-                                  className="rounded-lg border border-border my-2 max-w-full h-auto" />
-                              </a>
-                            );
+                            return <ChatImage src={url} alt={typeof children === 'string' ? children : 'imagem'} />;
                           }
                           return <a href={url} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
                         },
