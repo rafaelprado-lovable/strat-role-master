@@ -18,6 +18,18 @@ import {
   type ShortcutItem,
 } from '@/components/chat/ShortcutPopover';
 
+/** Remove indentação comum de todas as linhas (evita markdown ser tratado como code block). */
+function dedent(text: string): string {
+  if (!text) return text;
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const indents = lines
+    .filter(l => l.trim().length > 0)
+    .map(l => (l.match(/^[ \t]*/)?.[0].length ?? 0));
+  const min = indents.length ? Math.min(...indents) : 0;
+  if (min === 0) return lines.join('\n');
+  return lines.map(l => l.slice(min)).join('\n');
+}
+
 /** Converte URLs de imagem soltas em markdown ![](url) para serem renderizadas como <img>. */
 function autolinkImages(text: string): string {
   if (!text) return text;
