@@ -31,12 +31,73 @@ function dedent(text: string): string {
   return lines.map(l => l.slice(min)).join('\n');
 }
 
-/** Converte URLs de imagem soltas em markdown ![](url) para serem renderizadas como <img>. */
+/** Converte URLs de imagem soltas em markdown ![](url) para serem renderizadas como <img>.
+ *  Evita reescrever URLs já formatadas como markdown ou dentro de HTML. */
 function autolinkImages(text: string): string {
   if (!text) return text;
-  // Evita reescrever URLs já dentro de () de markdown ou após !
-  const imageUrlRegex = /(^|[\s])(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?[^\s<>()]*)?)/gi;
-  return text.replace(imageUrlRegex, (_m, pre, url) => `${pre}![imagem](${url})`);
+  // Regex que captura URLs de imagem que NÃO estão já em sintaxe markdown ![](...) nem em <img ...>
+  const imageUrlRegex = /(^|[\s\(\[])(https?:\/\/[^\s<>\(\)]{2,}\.(?:png|jpe?g|gif|webp|svg|bmp))((?:\?[^\s<>\(\)]*)?)/gi;
+  return text.replace(imageUrlRegex, (match, pre, url, query) => {
+    const fullUrl = url + query;
+    // Não converter se já está dentro de () usado por markdown ou se precedido por ![
+    if (/!\[.*\]\(/.test(text.slice(Math.max(0, text.indexOf(match) - 20), text.indexOf(match) + match.length))) {
+      return match;
+    }
+    // Não converter se já está dentro de <img ...>
+    if (/<img[^>]*src=/.test(text.slice(Math.max(0, text.indexOf(match) - 30), text.indexOf(match)))) {
+      return match;
+    }
+    return `${pre}![imagem](${fullUrl})`;
+  });
+}
+
+/** Componente de imagem com tratamento de erro e lightbox. */
+function ChatImage({ src, alt }: { src: string; alt?: string }) {
+  const [error, setError] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  if (error) {
+    return (
+      <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary underline text-xs">
+        <ZoomIn className="w-3.5 h-3.5" />
+        {alt || 'Ver imagem'}
+      </a>
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="block cursor-zoom-in p-0 m-0 bg-transparent border-0"
+        type="button"
+      >
+        <img
+          src={src}
+          alt={alt || 'imagem'}
+          loading="lazy"
+          onError={() => setError(true)}
+          className="rounded-lg border border-border my-2 max-w-full h-auto max-h-80 object-contain"
+        />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute top-2 right-2 z-50 flex items-center justify-center w-8 h-8 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+            type="button"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <img
+            src={src}
+            alt={alt || 'imagem'}
+            className="max-w-full max-h-[85vh] rounded-lg object-contain"
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 const TRIGGERS: ShortcutTrigger[] = ['@', '/', '#', ':'];
