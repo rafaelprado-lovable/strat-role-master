@@ -43,24 +43,44 @@ function normalizeMarkdown(text: string): string {
   out = out.replace(/\*\*[ \t]+([^\n*]+?)[ \t]+\*\*/g, '**$1**');
   // Itálico com espaços internos: __ foo __ -> __foo__
   out = out.replace(/__[ \t]+([^\n_]+?)[ \t]+__/g, '__$1__');
-  // Remove linhas em branco entre linhas de tabela (que começam com `|`)
+
   const lines = out.split('\n');
   const cleaned: string[] = [];
+  const isTableRow = (s: string) => /^\s*\|.*\|\s*$/.test(s);
+  const isTableSep = (s: string) => /^\s*\|?\s*:?-{3,}.*\|.*$/.test(s) && s.includes('-');
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Remove linhas em branco entre linhas de tabela
     if (line.trim() === '') {
-      // procurar próxima linha não vazia
       let j = i + 1;
       while (j < lines.length && lines[j].trim() === '') j++;
       const prev = cleaned[cleaned.length - 1] ?? '';
       const next = lines[j] ?? '';
-      if (prev.trimStart().startsWith('|') && next.trimStart().startsWith('|')) {
-        // skip blank lines between table rows
+      if (isTableRow(prev) && (isTableRow(next) || isTableSep(next))) {
         i = j - 1;
         continue;
       }
+      cleaned.push(line);
+      continue;
     }
+
+    // Garante linha em branco ANTES do início de uma tabela (header seguido de separador)
+    if (isTableRow(line) && isTableSep(lines[i + 1] ?? '')) {
+      const prev = cleaned[cleaned.length - 1] ?? '';
+      if (prev.trim() !== '' && !isTableRow(prev)) {
+        cleaned.push('');
+      }
+    }
+
     cleaned.push(line);
+
+    // Garante linha em branco DEPOIS do fim de uma tabela
+    const next = lines[i + 1] ?? '';
+    if (isTableRow(line) && next.trim() !== '' && !isTableRow(next) && !isTableSep(next)) {
+      cleaned.push('');
+    }
   }
   return cleaned.join('\n');
 }
