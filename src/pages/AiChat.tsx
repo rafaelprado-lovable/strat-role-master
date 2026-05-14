@@ -592,7 +592,7 @@ export default function AiChat() {
                     prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-2 prose-img:max-w-full prose-img:h-auto
                     prose-a:text-primary">
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
                       components={{
                         img: ({ node, ...props }) => (
                           <ChatImage src={props.src as string} alt={props.alt} />
