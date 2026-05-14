@@ -31,6 +31,39 @@ function dedent(text: string): string {
   return lines.map(l => l.slice(min)).join('\n');
 }
 
+/** Normaliza markdown vindo do agente:
+ *  - corrige `** texto **` (espaços internos quebram bold) -> `**texto**`
+ *  - colapsa linhas em branco entre linhas de tabela (que quebram GFM tables)
+ */
+function normalizeMarkdown(text: string): string {
+  if (!text) return text;
+  let out = text;
+  // Bold com espaços internos: ** foo ** -> **foo**
+  out = out.replace(/\*\*[ \t]+([^\n*]+?)[ \t]+\*\*/g, '**$1**');
+  // Itálico com espaços internos: __ foo __ -> __foo__
+  out = out.replace(/__[ \t]+([^\n_]+?)[ \t]+__/g, '__$1__');
+  // Remove linhas em branco entre linhas de tabela (que começam com `|`)
+  const lines = out.split('\n');
+  const cleaned: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '') {
+      // procurar próxima linha não vazia
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim() === '') j++;
+      const prev = cleaned[cleaned.length - 1] ?? '';
+      const next = lines[j] ?? '';
+      if (prev.trimStart().startsWith('|') && next.trimStart().startsWith('|')) {
+        // skip blank lines between table rows
+        i = j - 1;
+        continue;
+      }
+    }
+    cleaned.push(line);
+  }
+  return cleaned.join('\n');
+}
+
 /** Converte URLs de imagem soltas em markdown ![](url) para serem renderizadas como <img>.
  *  Evita reescrever URLs já formatadas como markdown ou dentro de HTML. */
 function autolinkImages(text: string): string {
@@ -552,7 +585,7 @@ export default function AiChat() {
                         },
                       }}
                     >
-                      {autolinkImages(dedent(msg.content))}
+                      {autolinkImages(normalizeMarkdown(dedent(msg.content)))}
                     </ReactMarkdown>
                   </div>
                 ) : (
