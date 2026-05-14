@@ -585,7 +585,7 @@ export default function AiChat() {
                         },
                       }}
                     >
-                      {autolinkImages(dedent(msg.content))}
+                      {autolinkImages(normalizeMarkdown(dedent(msg.content)))}
                     </ReactMarkdown>
                   </div>
                 ) : (
