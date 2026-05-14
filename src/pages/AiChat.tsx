@@ -10,6 +10,7 @@ import { chatService, ChatMessage } from '@/services/chatService';
 import { conversationService, Conversation as ApiConversation } from '@/services/conversationService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import { toast } from 'sonner';
 import {
   ShortcutPopover,
