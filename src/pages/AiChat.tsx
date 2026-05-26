@@ -485,6 +485,94 @@ export default function AiChat() {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
+  const handleQuerySubmit = async () => {
+    const m = msisdn.trim();
+    const r = rn.trim();
+    if (!m || !r) return;
+
+    const text = `MSISDN: ${m}\nRN: ${r}\nCNL: 00000`;
+    setInput(text);
+    setActiveTab('chat');
+
+    // Give React a tick to update input state, then send
+    requestAnimationFrame(() => {
+      handleSendPrebuilt(text);
+    });
+  };
+
+  const handleSendPrebuilt = async (text: string) => {
+    if (!text || isLoading) return;
+
+    let currentId = activeId;
+    if (!currentId) {
+      const id = `conv-${Date.now()}`;
+      try {
+        await conversationService.create(id, text.slice(0, 50));
+        const convo: Conversation = { id, title: text.slice(0, 50), messages: [], updatedAt: new Date().toISOString() };
+        setConversations(prev => [convo, ...prev]);
+        setActiveId(id);
+        currentId = id;
+      } catch {
+        toast.error('Erro ao criar conversa');
+        return;
+      }
+    }
+
+    const now = new Date();
+    const userMsg: ChatMessage = { id: `msg-${Date.now()}-u`, role: 'user', content: text, timestamp: now };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setIsLoading(true);
+
+    conversationService.addMessages(currentId, [{
+      role: 'user',
+      content: text,
+      timestamp: now.toISOString(),
+    }]).catch(() => {});
+
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    let assistantContent = '';
+    const assistantId = `msg-${Date.now()}-a`;
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const convId = currentId;
+
+    const upsertAssistant = (nextChunk: string) => {
+      assistantContent += nextChunk;
+      const content = assistantContent;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && last.id === assistantId) {
+          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content } : m);
+        }
+        return [...prev, { id: assistantId, role: 'assistant', content, timestamp: new Date() }];
+      });
+    };
+
+    await chatService.sendMessage(
+      text, convId, history,
+      (chunk) => upsertAssistant(chunk),
+      () => {
+        setIsLoading(false);
+        if (assistantContent) {
+          conversationService.addMessages(convId, [{
+            role: 'agent',
+            content: assistantContent,
+            timestamp: new Date().toISOString(),
+          }]).catch(() => {});
+          setConversations(prev => prev.map(c =>
+            c.id === convId
+              ? { ...c, title: deriveTitle([...messages, { id: '', role: 'user', content: text, timestamp: new Date() }]), updatedAt: new Date().toISOString() }
+              : c
+          ));
+        }
+      },
+      (err) => { upsertAssistant(`\n\n⚠️ ${err}`); setIsLoading(false); },
+      controller.signal,
+    );
+  };
+
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 6.5rem)' }}>
       {/* Header */}
