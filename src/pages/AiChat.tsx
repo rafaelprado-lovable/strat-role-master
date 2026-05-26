@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Send, Square, Bot, User, Loader2, Trash2, Plus, MessageSquare, History, Clock, X, ZoomIn, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -197,6 +198,10 @@ export default function AiChat() {
   const [activeTab, setActiveTab] = useState<'chat' | 'query'>('chat');
   const [msisdn, setMsisdn] = useState('');
   const [rn, setRn] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefillHandledRef = useRef(false);
+
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -325,6 +330,20 @@ export default function AiChat() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Recebe prefill vindo da home (aba Consulta)
+  useEffect(() => {
+    const state = location.state as { prefillQuery?: string } | null;
+    if (!state?.prefillQuery || prefillHandledRef.current || loadingConversations) return;
+    prefillHandledRef.current = true;
+    const text = state.prefillQuery;
+    setActiveTab('chat');
+    // limpa o state da rota para não re-disparar
+    navigate(location.pathname, { replace: true });
+    requestAnimationFrame(() => handleSendPrebuilt(text));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingConversations]);
+
 
   const startNewConversation = async () => {
     const id = `conv-${Date.now()}`;
