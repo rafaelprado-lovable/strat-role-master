@@ -198,6 +198,10 @@ export default function AiChat() {
   const [activeTab, setActiveTab] = useState<'chat' | 'query'>('chat');
   const [msisdn, setMsisdn] = useState('');
   const [rn, setRn] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefillHandledRef = useRef(false);
+
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
