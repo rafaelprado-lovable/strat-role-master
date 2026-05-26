@@ -194,6 +194,10 @@ function apiToLocal(c: ApiConversation): Conversation {
 }
 
 export default function AiChat() {
+  const [activeTab, setActiveTab] = useState<'chat' | 'query'>('chat');
+  const [msisdn, setMsisdn] = useState('');
+  const [rn, setRn] = useState('');
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
