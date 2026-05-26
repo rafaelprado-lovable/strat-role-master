@@ -331,6 +331,20 @@ export default function AiChat() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
+  // Recebe prefill vindo da home (aba Consulta)
+  useEffect(() => {
+    const state = location.state as { prefillQuery?: string } | null;
+    if (!state?.prefillQuery || prefillHandledRef.current || loadingConversations) return;
+    prefillHandledRef.current = true;
+    const text = state.prefillQuery;
+    setActiveTab('chat');
+    // limpa o state da rota para não re-disparar
+    navigate(location.pathname, { replace: true });
+    requestAnimationFrame(() => handleSendPrebuilt(text));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingConversations]);
+
+
   const startNewConversation = async () => {
     const id = `conv-${Date.now()}`;
     try {
