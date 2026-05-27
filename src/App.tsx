@@ -44,6 +44,7 @@ import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
+import UpdateMnp from "./pages/UpdateMnp";
 
 const queryClient = new QueryClient();
 
