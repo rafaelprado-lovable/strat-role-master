@@ -804,7 +804,7 @@ export default function AiChat() {
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-3">
                   <Search className="w-6 h-6 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold text-foreground">Consulta OMS</h2>
+                <h2 className="text-lg font-semibold text-foreground">Atualização do MNP</h2>
                 <p className="text-sm text-muted-foreground">Preencha os campos abaixo para consultar a ordem.</p>
               </div>
 
