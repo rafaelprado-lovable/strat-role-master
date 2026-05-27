@@ -44,6 +44,7 @@ import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
+import UpdateMnp from "./pages/UpdateMnp";
 
 const queryClient = new QueryClient();
 
@@ -376,6 +377,15 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route
+              path="/update/mnp"
+              element={
+                <AppLayout>
+                  <UpdateMnp />
+                </AppLayout>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
