@@ -22,7 +22,7 @@ export default function UpdateMnp() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Atualização MNP</h2>
-        <p className="text-muted-foreground">Preencha os dados para consultar a ordem no OMS</p>
+        <p className="text-muted-foreground">Preencha os dados para atualizar o MNP no OMS</p>
       </div>
 
       <Card>
@@ -35,7 +35,7 @@ export default function UpdateMnp() {
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">Atualização do MNP</h2>
                 <p className="text-sm text-muted-foreground">
-                  Preencha os campos abaixo para consultar a ordem.
+                  Preencha os campos abaixo para atualizar o MNP.
                 </p>
               </div>
 
@@ -81,7 +81,7 @@ export default function UpdateMnp() {
                 disabled={!msisdn.trim() || !rn.trim()}
               >
                 <Send className="w-4 h-4 mr-2" />
-                Consultar
+                Atualizar
               </Button>
             </div>
           </div>
