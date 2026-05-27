@@ -377,6 +377,15 @@ const App = () => (
                 </AppLayout>
               }
             />
+            <Route
+              path="/update/mnp"
+              element={
+                <AppLayout>
+                  <UpdateMnp />
+                </AppLayout>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
