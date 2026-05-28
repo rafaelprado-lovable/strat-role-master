@@ -1,21 +1,43 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Search, Send } from 'lucide-react';
+import { Search, Send, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function UpdateMnp() {
-  const navigate = useNavigate();
   const [msisdn, setMsisdn] = useState('');
   const [rn, setRn] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleQuerySubmit = () => {
+  const handleQuerySubmit = async () => {
     const m = msisdn.trim();
     const r = rn.trim();
     if (!m || !r) return;
-    const text = `MSISDN: ${m}\nRN: ${r}\nCNL: 00000`;
-    navigate('/ai-chat', { state: { prefillQuery: text } });
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5040/bdpr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ msisdn: m, rn: r }),
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+      toast({
+        title: 'Atualização enviada',
+        description: text || `MSISDN ${m} atualizado com sucesso.`,
+      });
+      setMsisdn('');
+      setRn('');
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao atualizar',
+        description: err?.message ?? 'Falha ao enviar requisição.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,10 +100,14 @@ export default function UpdateMnp() {
               <Button
                 className="w-full h-11"
                 onClick={handleQuerySubmit}
-                disabled={!msisdn.trim() || !rn.trim()}
+                disabled={!msisdn.trim() || !rn.trim() || loading}
               >
-                <Send className="w-4 h-4 mr-2" />
-                Atualizar
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                {loading ? 'Enviando...' : 'Atualizar'}
               </Button>
             </div>
           </div>
