@@ -18,7 +18,7 @@ export default function UpdateMnp() {
     try {
       const res = await fetch('http://localhost:5040/bdpr', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('http://10.151.0.61:5032/bdpr', {
         body: JSON.stringify({ msisdn: m, rn: r }),
       });
       const text = await res.text();
