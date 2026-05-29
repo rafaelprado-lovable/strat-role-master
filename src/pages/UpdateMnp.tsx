@@ -21,20 +21,21 @@ export default function UpdateMnp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msisdn: m, rn: r }),
       });
-      const text = await res.text();
-      if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
-      toast({
-        title: 'Atualização enviada',
-        description: text || `MSISDN ${m} atualizado com sucesso.`,
-      });
+      let msg: string | undefined;
+      try {
+        const data = await res.json();
+        if (data && typeof data.message === 'string') {
+          msg = data.message;
+        }
+      } catch {
+        msg = await res.text();
+      }
+      if (!res.ok) throw new Error(msg || `HTTP ${res.status}`);
+      toast.success(msg || `MSISDN ${m} atualizado com sucesso.`);
       setMsisdn('');
       setRn('');
     } catch (err: any) {
-      toast({
-        title: 'Erro ao atualizar',
-        description: err?.message ?? 'Falha ao enviar requisição.',
-        variant: 'destructive',
-      });
+      toast.error(err?.message ?? 'Falha ao enviar requisição.');
     } finally {
       setLoading(false);
     }
