@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -48,6 +48,46 @@ function fmtNum(v: number): string {
 }
 
 export function ChatChart({ block }: { block: ChartBlock }) {
+  // Estado de visibilidade por série (pod). Default: todas visíveis.
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState('');
+
+  const toggle = (name: string, solo = false) => {
+    setHidden(prev => {
+      const next = new Set(prev);
+      if (solo) {
+        // Isola apenas esta série
+        const onlyThis = block.series.length - 1;
+        if (prev.size === onlyThis && !prev.has(name)) {
+          // Já está isolada → restaura todas
+          return new Set();
+        }
+        const s = new Set<string>();
+        block.series.forEach(srv => {
+          if (srv.name !== name) s.add(srv.name);
+        });
+        return s;
+      }
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const showAll = () => setHidden(new Set());
+  const hideAll = () => setHidden(new Set(block.series.map(s => s.name)));
+
+  const visibleSeries = useMemo(
+    () => block.series.filter(s => !hidden.has(s.name)),
+    [block.series, hidden]
+  );
+
+  const filteredSeries = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return block.series;
+    return block.series.filter(s => s.name.toLowerCase().includes(q));
+  }, [block.series, filter]);
+
   // Mescla todos os timestamps em pontos compartilhados para o eixo X
   const data = useMemo(() => {
     const map = new Map<string, Record<string, number | string>>();
@@ -67,6 +107,7 @@ export function ChatChart({ block }: { block: ChartBlock }) {
   const singlePoint = data.length < 2;
   const manySeries = block.series.length > 4;
   const densePoints = data.length > 30;
+  const hasFilter = block.series.length > 3;
 
   return (
     <div className="not-prose my-3 rounded-xl border border-border bg-card/40 p-4 shadow-sm">
@@ -138,37 +179,89 @@ export function ChatChart({ block }: { block: ChartBlock }) {
                     name,
                   ]}
                 />
-                {block.series.map((s, i) => (
-                  <Line
-                    key={s.name}
-                    type="monotone"
-                    dataKey={s.name}
-                    stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                    strokeWidth={1.75}
-                    dot={densePoints ? false : { r: 2, strokeWidth: 0 }}
-                    activeDot={{ r: 4, strokeWidth: 0 }}
-                    isAnimationActive={false}
-                    connectNulls
-                  />
-                ))}
+                {block.series.map((s, i) => {
+                  if (hidden.has(s.name)) return null;
+                  return (
+                    <Line
+                      key={s.name}
+                      type="monotone"
+                      dataKey={s.name}
+                      stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                      strokeWidth={1.75}
+                      dot={densePoints ? false : { r: 2, strokeWidth: 0 }}
+                      activeDot={{ r: 4, strokeWidth: 0 }}
+                      isAnimationActive={false}
+                      connectNulls
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
-          {/* Legenda customizada: compacta, com truncamento */}
-          <div className={`mt-3 grid gap-x-3 gap-y-1.5 ${manySeries ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            {block.series.map((s, i) => (
-              <div
-                key={s.name}
-                className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground"
-                title={s.name}
+
+          {/* Controles: busca + atalhos */}
+          {hasFilter && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+                placeholder="Filtrar pod…"
+                className="h-7 flex-1 min-w-[140px] rounded-md border border-border bg-background px-2 text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={showAll}
+                className="h-7 rounded-md border border-border bg-background px-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50"
               >
-                <span
-                  className="h-2 w-2 flex-shrink-0 rounded-full"
-                  style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }}
-                />
-                <span className="truncate font-mono">{shortName(s.name)}</span>
-              </div>
-            ))}
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={hideAll}
+                className="h-7 rounded-md border border-border bg-background px-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              >
+                Nenhum
+              </button>
+              <span className="text-[10px] text-muted-foreground">
+                {visibleSeries.length}/{block.series.length}
+              </span>
+            </div>
+          )}
+
+          {/* Legenda interativa — clique alterna, alt+clique isola */}
+          <div className={`mt-2 grid gap-x-3 gap-y-1 ${manySeries ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {filteredSeries.map((s) => {
+              const i = block.series.indexOf(s);
+              const isHidden = hidden.has(s.name);
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  onClick={(e) => toggle(s.name, e.altKey)}
+                  title={`${s.name}\nClique para mostrar/ocultar · Alt+clique para isolar`}
+                  className={`flex min-w-0 items-center gap-2 rounded px-1.5 py-0.5 text-left text-[11px] transition-colors hover:bg-muted/40 ${
+                    isHidden ? 'opacity-40' : 'opacity-100'
+                  }`}
+                >
+                  <span
+                    className="h-2 w-2 flex-shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length],
+                      ...(isHidden ? { backgroundColor: 'hsl(var(--muted-foreground))' } : {}),
+                    }}
+                  />
+                  <span className={`truncate font-mono ${isHidden ? 'line-through text-muted-foreground' : 'text-foreground/80'}`}>
+                    {shortName(s.name)}
+                  </span>
+                </button>
+              );
+            })}
+            {filteredSeries.length === 0 && (
+              <span className="col-span-full text-[11px] italic text-muted-foreground">
+                Nenhum pod corresponde ao filtro.
+              </span>
+            )}
           </div>
         </>
       )}
