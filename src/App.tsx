@@ -45,7 +45,6 @@ import Tools from "./pages/Tools";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
 import UpdateMnp from "./pages/UpdateMnp";
-import ChartDemo from "./pages/ChartDemo";
 
 const queryClient = new QueryClient();
 
@@ -386,7 +385,7 @@ const App = () => (
                 </AppLayout>
               }
             />
-            <Route path="/chart-demo" element={<ChartDemo />} />
+
 
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
