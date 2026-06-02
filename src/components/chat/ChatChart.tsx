@@ -16,21 +16,36 @@ export interface ChartBlock {
   series: { name: string; points: { ts: string; value: number }[] }[];
 }
 
-/** Cores HSL referenciando o design system + variações para múltiplas séries. */
+/** Paleta sóbria com bom contraste no tema escuro, sem cores neon estridentes. */
 const SERIES_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--destructive))',
-  'hsl(142 76% 45%)',
-  'hsl(38 92% 55%)',
   'hsl(199 89% 60%)',
-  'hsl(271 76% 65%)',
+  'hsl(160 65% 50%)',
+  'hsl(38 92% 60%)',
+  'hsl(340 75% 62%)',
+  'hsl(271 70% 68%)',
+  'hsl(15 80% 62%)',
 ];
 
-/** Formata timestamp ISO/string para HH:mm:ss. */
+/** Formata timestamp ISO/string para HH:mm. */
 function fmtTs(ts: string): string {
   const d = new Date(ts.replace(' ', 'T'));
   if (isNaN(d.getTime())) return ts;
-  return d.toLocaleTimeString('pt-BR', { hour12: false });
+  return d.toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+}
+
+/** Encurta nomes longos tipo "bff-r-plans-bundle-v2-58bcdd9fc-fcvdh" -> "…-fcvdh". */
+function shortName(name: string): string {
+  if (name.length <= 24) return name;
+  const tail = name.split('-').slice(-1)[0];
+  return `…-${tail}`;
+}
+
+/** Formata valores numéricos compactos. */
+function fmtNum(v: number): string {
+  if (Math.abs(v) >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+  if (Math.abs(v) >= 1_000) return (v / 1_000).toFixed(1) + 'k';
+  if (Math.abs(v) < 10) return v.toFixed(2);
+  return v.toFixed(0);
 }
 
 export function ChatChart({ block }: { block: ChartBlock }) {
@@ -51,13 +66,15 @@ export function ChatChart({ block }: { block: ChartBlock }) {
   }, [block]);
 
   const singlePoint = data.length < 2;
+  const manySeries = block.series.length > 4;
+  const densePoints = data.length > 30;
 
   return (
-    <div className="not-prose my-3 rounded-lg border border-border bg-background/60 p-3">
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <h4 className="text-xs font-semibold text-foreground">{block.title}</h4>
+    <div className="not-prose my-3 rounded-xl border border-border bg-card/40 p-4 shadow-sm">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h4 className="text-sm font-semibold text-foreground">{block.title}</h4>
         {block.unit && (
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
             {block.unit}
           </span>
         )}
@@ -86,48 +103,75 @@ export function ChatChart({ block }: { block: ChartBlock }) {
           </p>
         </div>
       ) : (
-        <div className="h-[220px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                stroke="hsl(var(--border))"
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                stroke="hsl(var(--border))"
-                width={45}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: 8,
-                  fontSize: 11,
-                }}
-                labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 10 }}
-                iconType="circle"
-              />
-              {block.series.map((s, i) => (
-                <Line
-                  key={s.name}
-                  type="monotone"
-                  dataKey={s.name}
-                  stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                  activeDot={{ r: 4 }}
-                  isAnimationActive={false}
+        <>
+          <div className="h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" opacity={0.25} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                  tickLine={false}
+                  axisLine={{ stroke: 'hsl(var(--border))', opacity: 0.4 }}
+                  minTickGap={32}
                 />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  stroke="hsl(var(--border))"
+                  tickLine={false}
+                  axisLine={false}
+                  width={42}
+                  tickFormatter={fmtNum}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 8,
+                    fontSize: 11,
+                    boxShadow: '0 4px 12px hsl(0 0% 0% / 0.25)',
+                  }}
+                  labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: 4 }}
+                  itemStyle={{ padding: '2px 0' }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}${block.unit ? ' ' + block.unit : ''}`,
+                    name,
+                  ]}
+                />
+                {block.series.map((s, i) => (
+                  <Line
+                    key={s.name}
+                    type="monotone"
+                    dataKey={s.name}
+                    stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                    strokeWidth={1.75}
+                    dot={densePoints ? false : { r: 2, strokeWidth: 0 }}
+                    activeDot={{ r: 4, strokeWidth: 0 }}
+                    isAnimationActive={false}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Legenda customizada: compacta, com truncamento */}
+          <div className={`mt-3 grid gap-x-3 gap-y-1.5 ${manySeries ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {block.series.map((s, i) => (
+              <div
+                key={s.name}
+                className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground"
+                title={s.name}
+              >
+                <span
+                  className="h-2 w-2 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }}
+                />
+                <span className="truncate font-mono">{shortName(s.name)}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
