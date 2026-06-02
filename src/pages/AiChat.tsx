@@ -708,23 +708,30 @@ export default function AiChat() {
                       <div className="prose prose-sm dark:prose-invert max-w-none break-words
                         prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-2 prose-img:max-w-full prose-img:h-auto
                         prose-a:text-primary">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm, remarkBreaks]}
-                          components={{
-                            img: ({ node, ...props }) => (
-                              <ChatImage src={props.src as string} alt={props.alt} />
-                            ),
-                            a: ({ node, href, children, ...props }) => {
-                              const url = href || '';
-                              if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(url)) {
-                                return <ChatImage src={url} alt={typeof children === 'string' ? children : 'imagem'} />;
-                              }
-                              return <a href={url} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
-                            },
-                          }}
-                        >
-                          {autolinkImages(normalizeMarkdown(dedent(msg.content)))}
-                        </ReactMarkdown>
+                        {extractCharts(msg.content).segments.map((seg, idx) =>
+                          seg.type === 'chart' ? (
+                            <ChatChart key={`chart-${idx}`} block={seg.block} />
+                          ) : (
+                            <ReactMarkdown
+                              key={`md-${idx}`}
+                              remarkPlugins={[remarkGfm, remarkBreaks]}
+                              components={{
+                                img: ({ node, ...props }) => (
+                                  <ChatImage src={props.src as string} alt={props.alt} />
+                                ),
+                                a: ({ node, href, children, ...props }) => {
+                                  const url = href || '';
+                                  if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(url)) {
+                                    return <ChatImage src={url} alt={typeof children === 'string' ? children : 'imagem'} />;
+                                  }
+                                  return <a href={url} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                                },
+                              }}
+                            >
+                              {autolinkImages(normalizeMarkdown(dedent(seg.content)))}
+                            </ReactMarkdown>
+                          )
+                        )}
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
