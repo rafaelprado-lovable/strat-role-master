@@ -1,56 +1,74 @@
-import { apiClient } from './apiClient';
-import { definitionService, Definition } from './definitionService';
+// Tool service: ferramentas customizadas (desacopladas dos nodes do Automation).
+// Persistido em localStorage. Cada ferramenta é um endpoint HTTP configurável.
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface KeyValue {
+  id: string;
+  key: string;
+  value: string;
+}
 
 export interface ChatTool {
   id: string;
   name: string;
   description: string;
-  toolType: string;
-  pluginKey: string;
-  scopes?: string[];
-  inputs: Record<string, string>;
-  outputs: Record<string, unknown>;
+  endpoint: string;
+  method: HttpMethod;
+  ignoreSsl: boolean;
+  headers: KeyValue[];
+  body: KeyValue[];
   enabled: boolean;
-  waitForCompletion: boolean;
-  waitTimeoutSeconds: number;
-  pollIntervalSeconds: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
+const STORAGE_KEY = 'heimdall:tools';
+
+const read = (): ChatTool[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+};
+
+const write = (tools: ChatTool[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tools));
+};
+
 export const toolService = {
-  getAll: async (): Promise<ChatTool[]> => {
-    const res = await apiClient.get<any>('/v1/read/tool');
-    return Array.isArray(res) ? res : Array.isArray(res?.tools) ? res.tools : Array.isArray(res?.data) ? res.data : [];
+  getAll: async (): Promise<ChatTool[]> => read(),
+
+  getById: async (id: string): Promise<ChatTool | null> =>
+    read().find(t => t.id === id) ?? null,
+
+  create: async (data: Omit<ChatTool, 'id' | 'createdAt' | 'updatedAt'>): Promise<ChatTool> => {
+    const now = new Date().toISOString();
+    const tool: ChatTool = {
+      ...data,
+      id: `tool-${Date.now()}`,
+      createdAt: now,
+      updatedAt: now,
+    };
+    write([...read(), tool]);
+    return tool;
   },
 
-  getById: async (id: string): Promise<ChatTool> => {
-    return apiClient.get<ChatTool>(`/v1/read/tool?id=${encodeURIComponent(id)}`);
-  },
-
-  create: async (data: ChatTool): Promise<ChatTool> => {
-    return apiClient.post<ChatTool>('/v1/create/tool', data);
-  },
-
-  update: async (data: Partial<ChatTool> & { id: string }): Promise<ChatTool> => {
-    return apiClient.post<ChatTool>('/v1/update/tool', data);
-  },
-
-  bulkUpdate: async (fields: Partial<ChatTool>, filter: Record<string, unknown>): Promise<unknown> => {
-    return apiClient.post('/v1/update/tool/bulk', { fields, filter });
+  update: async (id: string, patch: Partial<ChatTool>): Promise<ChatTool | null> => {
+    const all = read();
+    const idx = all.findIndex(t => t.id === id);
+    if (idx === -1) return null;
+    const updated: ChatTool = { ...all[idx], ...patch, id, updatedAt: new Date().toISOString() };
+    all[idx] = updated;
+    write(all);
+    return updated;
   },
 
   delete: async (id: string): Promise<void> => {
-    return apiClient.delete(`/v1/delete/tool?id=${encodeURIComponent(id)}`);
-  },
-
-  getAvailablePlugins: async (): Promise<{ key: string; name: string; description: string; inputs: Definition['inputs']; outputs: Definition['outputs'] }[]> => {
-    const definitions = await definitionService.list();
-    const defs = Array.isArray(definitions) ? definitions : [];
-    return defs.map(def => ({
-      key: def.definition_id,
-      name: def.label || def.definition_id,
-      description: def.description || '',
-      inputs: def.inputs || [],
-      outputs: def.outputs || [],
-    }));
+    write(read().filter(t => t.id !== id));
   },
 };
