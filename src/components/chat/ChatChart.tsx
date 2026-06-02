@@ -53,7 +53,7 @@ export function ChatChart({ block }: { block: ChartBlock }) {
   const singlePoint = data.length < 2;
 
   return (
-    <div className="my-3 rounded-lg border border-border bg-background/60 p-3">
+    <div className="not-prose my-3 rounded-lg border border-border bg-background/60 p-3">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h4 className="text-xs font-semibold text-foreground">{block.title}</h4>
         {block.unit && (
