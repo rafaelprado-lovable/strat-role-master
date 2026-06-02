@@ -45,6 +45,7 @@ import Tools from "./pages/Tools";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
 import UpdateMnp from "./pages/UpdateMnp";
+import ChartDemo from "./pages/ChartDemo";
 
 const queryClient = new QueryClient();
 
