@@ -22,6 +22,7 @@ import {
   type ShortcutTrigger,
   type ShortcutItem,
 } from '@/components/chat/ShortcutPopover';
+import { ChatChart, extractCharts } from '@/components/chat/ChatChart';
 
 /** Remove indentação comum de todas as linhas (evita markdown ser tratado como code block). */
 function dedent(text: string): string {
