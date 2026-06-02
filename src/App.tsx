@@ -42,6 +42,7 @@ import AiChat from "./pages/AiChat";
 import AnalystProductivity from "./pages/AnalystProductivity";
 import Machines from "./pages/Machines";
 import Tools from "./pages/Tools";
+import Skills from "./pages/Skills";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
 import UpdateMnp from "./pages/UpdateMnp";
@@ -350,6 +351,14 @@ const App = () => (
               element={
                   <AppLayout>
                     <Tools />
+                  </AppLayout>
+              }
+            />
+            <Route
+              path="/skills"
+              element={
+                  <AppLayout>
+                    <Skills />
                   </AppLayout>
               }
             />
