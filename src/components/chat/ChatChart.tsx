@@ -48,6 +48,46 @@ function fmtNum(v: number): string {
 }
 
 export function ChatChart({ block }: { block: ChartBlock }) {
+  // Estado de visibilidade por série (pod). Default: todas visíveis.
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState('');
+
+  const toggle = (name: string, solo = false) => {
+    setHidden(prev => {
+      const next = new Set(prev);
+      if (solo) {
+        // Isola apenas esta série
+        const onlyThis = block.series.length - 1;
+        if (prev.size === onlyThis && !prev.has(name)) {
+          // Já está isolada → restaura todas
+          return new Set();
+        }
+        const s = new Set<string>();
+        block.series.forEach(srv => {
+          if (srv.name !== name) s.add(srv.name);
+        });
+        return s;
+      }
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const showAll = () => setHidden(new Set());
+  const hideAll = () => setHidden(new Set(block.series.map(s => s.name)));
+
+  const visibleSeries = useMemo(
+    () => block.series.filter(s => !hidden.has(s.name)),
+    [block.series, hidden]
+  );
+
+  const filteredSeries = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return block.series;
+    return block.series.filter(s => s.name.toLowerCase().includes(q));
+  }, [block.series, filter]);
+
   // Mescla todos os timestamps em pontos compartilhados para o eixo X
   const data = useMemo(() => {
     const map = new Map<string, Record<string, number | string>>();
@@ -67,6 +107,7 @@ export function ChatChart({ block }: { block: ChartBlock }) {
   const singlePoint = data.length < 2;
   const manySeries = block.series.length > 4;
   const densePoints = data.length > 30;
+  const hasFilter = block.series.length > 3;
 
   return (
     <div className="not-prose my-3 rounded-xl border border-border bg-card/40 p-4 shadow-sm">
