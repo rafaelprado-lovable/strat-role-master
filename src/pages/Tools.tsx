@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Power, PowerOff, Wrench, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Power, PowerOff, Wrench, X, Save, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -25,12 +22,15 @@ import { toolService, ChatTool, HttpMethod, KeyValue } from '@/services/toolServ
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-const emptyKv = (): KeyValue => ({ id: `kv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, key: '', value: '' });
+const emptyKv = (): KeyValue => ({
+  id: `kv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  key: '',
+  value: '',
+});
 
 const Tools = () => {
   const { toast } = useToast();
   const [tools, setTools] = useState<ChatTool[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<ChatTool | null>(null);
   const [deletingTool, setDeletingTool] = useState<ChatTool | null>(null);
@@ -55,8 +55,6 @@ const Tools = () => {
     setEditingTool(null);
   };
 
-  const openCreate = () => { resetForm(); setDialogOpen(true); };
-
   const openEdit = (t: ChatTool) => {
     setEditingTool(t);
     setFormName(t.name);
@@ -64,10 +62,10 @@ const Tools = () => {
     setFormEndpoint(t.endpoint);
     setFormMethod(t.method);
     setFormIgnoreSsl(t.ignoreSsl);
-    setFormHeaders(t.headers.map(h => ({ ...h })));
-    setFormBody(t.body.map(b => ({ ...b })));
+    setFormHeaders(t.headers.length ? t.headers.map(h => ({ ...h })) : []);
+    setFormBody(t.body.length ? t.body.map(b => ({ ...b })) : []);
     setFormEnabled(t.enabled);
-    setDialogOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const updateKv = (
@@ -80,7 +78,7 @@ const Tools = () => {
 
   const handleSave = async () => {
     if (!formName.trim() || !formEndpoint.trim()) {
-      toast({ title: 'Erro', description: 'Nome e endpoint são obrigatórios.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Nome e URL são obrigatórios.', variant: 'destructive' });
       return;
     }
     const cleanKvs = (list: KeyValue[]) => list.filter(kv => kv.key.trim() || kv.value.trim());
@@ -102,7 +100,6 @@ const Tools = () => {
         await toolService.create(payload);
         toast({ title: 'Ferramenta criada' });
       }
-      setDialogOpen(false);
       resetForm();
       load();
     } catch {
@@ -115,6 +112,7 @@ const Tools = () => {
     await toolService.delete(deletingTool.id);
     toast({ title: 'Ferramenta removida' });
     setDeleteDialogOpen(false);
+    if (editingTool?.id === deletingTool.id) resetForm();
     setDeletingTool(null);
     load();
   };
@@ -134,243 +132,244 @@ const Tools = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Ferramentas</h1>
-          <p className="text-muted-foreground">Cadastre endpoints HTTP que podem ser invocados pelo agente</p>
-        </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" /> Nova Ferramenta
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Ferramentas</h1>
+        <p className="text-muted-foreground">Cadastre endpoints HTTP que podem ser invocados pelo agente</p>
       </div>
 
-      {tools.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma ferramenta cadastrada</h3>
-            <p className="text-muted-foreground mb-4">Cadastre seu primeiro endpoint para começar.</p>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" /> Cadastrar primeira ferramenta
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Método</TableHead>
-                  <TableHead>Endpoint</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tools.map(t => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`font-mono text-[10px] ${methodColor(t.method)}`}>
-                        {t.method}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[280px] truncate">
-                      {t.endpoint}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[260px] truncate">{t.description}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={t.enabled ? 'default' : 'secondary'}
-                        className="cursor-pointer"
-                        onClick={() => handleToggleEnabled(t)}
-                      >
-                        {t.enabled
-                          ? (<><Power className="h-3 w-3 mr-1" /> Ativo</>)
-                          : (<><PowerOff className="h-3 w-3 mr-1" /> Inativo</>)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(t)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => { setDeletingTool(t); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingTool ? 'Editar Ferramenta' : 'Nova Ferramenta'}</DialogTitle>
-            <DialogDescription>
-              Configure o endpoint HTTP, headers e body que esta ferramenta irá invocar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-                <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Consultar cliente" />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <div className="flex items-center gap-2 h-10">
-                  <Switch checked={formEnabled} onCheckedChange={setFormEnabled} />
-                  <span className="text-sm text-muted-foreground">{formEnabled ? 'Ativo' : 'Inativo'}</span>
-                </div>
-              </div>
-            </div>
-
+      {/* Inline form */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            {editingTool ? `Editar: ${editingTool.name}` : 'Nova ferramenta'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4">
             <div className="space-y-2">
-              <Label>Descrição</Label>
-              <Textarea
-                value={formDescription}
-                onChange={e => setFormDescription(e.target.value)}
-                placeholder="Descreva o que esta ferramenta faz e quando o agente deve usá-la..."
-                className="min-h-[60px]"
+              <Label>Nome</Label>
+              <Input
+                value={formName}
+                onChange={e => setFormName(e.target.value)}
+                placeholder="Ex: Consultar cliente"
               />
             </div>
-
-            <div className="grid grid-cols-[120px_1fr] gap-3">
-              <div className="space-y-2">
-                <Label>Método</Label>
-                <Select value={formMethod} onValueChange={v => setFormMethod(v as HttpMethod)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Apontamento (endpoint)</Label>
-                <Input
-                  value={formEndpoint}
-                  onChange={e => setFormEndpoint(e.target.value)}
-                  placeholder="https://api.exemplo.com/v1/recurso"
-                  className="font-mono text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-md border border-border p-3">
-              <div>
-                <Label className="text-sm">Ignorar SSL</Label>
-                <p className="text-xs text-muted-foreground">Desativa verificação de certificado HTTPS</p>
-              </div>
-              <Switch checked={formIgnoreSsl} onCheckedChange={setFormIgnoreSsl} />
-            </div>
-
-            {/* Headers */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Headers</Label>
-                <Button
-                  type="button" size="sm" variant="outline" className="h-7 gap-1"
-                  onClick={() => setFormHeaders(prev => [...prev, emptyKv()])}
-                >
-                  <Plus className="h-3.5 w-3.5" /> Adicionar
-                </Button>
+              <Label>Status</Label>
+              <div className="flex items-center gap-2 h-10 rounded-md border border-input px-3">
+                <Switch checked={formEnabled} onCheckedChange={setFormEnabled} />
+                <span className="text-sm text-muted-foreground">{formEnabled ? 'Ativo' : 'Inativo'}</span>
               </div>
-              {formHeaders.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Nenhum header.</p>
-              ) : (
-                <div className="space-y-2">
-                  {formHeaders.map(h => (
-                    <div key={h.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                      <Input
-                        value={h.key}
-                        onChange={e => updateKv(formHeaders, setFormHeaders, h.id, 'key', e.target.value)}
-                        placeholder="Chave (ex: Authorization)"
-                        className="font-mono text-xs"
-                      />
-                      <Input
-                        value={h.value}
-                        onChange={e => updateKv(formHeaders, setFormHeaders, h.id, 'value', e.target.value)}
-                        placeholder="Valor"
-                        className="font-mono text-xs"
-                      />
-                      <Button
-                        type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground"
-                        onClick={() => setFormHeaders(prev => prev.filter(x => x.id !== h.id))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Body */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Body</Label>
-                <Button
-                  type="button" size="sm" variant="outline" className="h-7 gap-1"
-                  onClick={() => setFormBody(prev => [...prev, emptyKv()])}
-                >
-                  <Plus className="h-3.5 w-3.5" /> Adicionar
-                </Button>
-              </div>
-              {formBody.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Nenhum campo no body.</p>
-              ) : (
-                <div className="space-y-2">
-                  {formBody.map(b => (
-                    <div key={b.id} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                      <Input
-                        value={b.key}
-                        onChange={e => updateKv(formBody, setFormBody, b.id, 'key', e.target.value)}
-                        placeholder="Chave"
-                        className="font-mono text-xs"
-                      />
-                      <Input
-                        value={b.value}
-                        onChange={e => updateKv(formBody, setFormBody, b.id, 'value', e.target.value)}
-                        placeholder="Valor"
-                        className="font-mono text-xs"
-                      />
-                      <Button
-                        type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground"
-                        onClick={() => setFormBody(prev => prev.filter(x => x.id !== b.id))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { resetForm(); setDialogOpen(false); }}>
-              Cancelar
+          <div className="space-y-2">
+            <Label>Descrição</Label>
+            <Textarea
+              value={formDescription}
+              onChange={e => setFormDescription(e.target.value)}
+              placeholder="Descreva o que esta ferramenta faz e quando o agente deve usá-la..."
+              className="min-h-[60px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4">
+            <div className="space-y-2">
+              <Label>URL</Label>
+              <Input
+                value={formEndpoint}
+                onChange={e => setFormEndpoint(e.target.value)}
+                placeholder="https://api.exemplo.com/v1/recurso"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Método</Label>
+              <Select value={formMethod} onValueChange={v => setFormMethod(v as HttpMethod)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <Label className="text-sm">Chamar como insecure</Label>
+              <p className="text-xs text-muted-foreground">Ignora verificação de certificado SSL/TLS</p>
+            </div>
+            <Switch checked={formIgnoreSsl} onCheckedChange={setFormIgnoreSsl} />
+          </div>
+
+          {/* Headers */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Headers</Label>
+              <Button
+                type="button" size="sm" variant="outline" className="h-7 gap-1"
+                onClick={() => setFormHeaders(prev => [...prev, emptyKv()])}
+              >
+                <Plus className="h-3.5 w-3.5" /> Adicionar header
+              </Button>
+            </div>
+            {formHeaders.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Nenhum header adicionado.</p>
+            ) : (
+              <div className="space-y-2">
+                {formHeaders.map(h => (
+                  <div key={h.id} className="grid grid-cols-[120px_1fr_1fr_auto] gap-2 items-center">
+                    <span className="text-xs text-muted-foreground">Chave</span>
+                    <Input
+                      value={h.key}
+                      onChange={e => updateKv(formHeaders, setFormHeaders, h.id, 'key', e.target.value)}
+                      placeholder="Authorization"
+                      className="font-mono text-xs"
+                    />
+                    <Input
+                      value={h.value}
+                      onChange={e => updateKv(formHeaders, setFormHeaders, h.id, 'value', e.target.value)}
+                      placeholder="Valor"
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground"
+                      onClick={() => setFormHeaders(prev => prev.filter(x => x.id !== h.id))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Body */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Body</Label>
+              <Button
+                type="button" size="sm" variant="outline" className="h-7 gap-1"
+                onClick={() => setFormBody(prev => [...prev, emptyKv()])}
+              >
+                <Plus className="h-3.5 w-3.5" /> Adicionar item
+              </Button>
+            </div>
+            {formBody.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">Nenhum item no body.</p>
+            ) : (
+              <div className="space-y-2">
+                {formBody.map(b => (
+                  <div key={b.id} className="grid grid-cols-[120px_1fr_1fr_auto] gap-2 items-center">
+                    <span className="text-xs text-muted-foreground">Chave</span>
+                    <Input
+                      value={b.key}
+                      onChange={e => updateKv(formBody, setFormBody, b.id, 'key', e.target.value)}
+                      placeholder="Chave"
+                      className="font-mono text-xs"
+                    />
+                    <Input
+                      value={b.value}
+                      onChange={e => updateKv(formBody, setFormBody, b.id, 'value', e.target.value)}
+                      placeholder="Valor"
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground"
+                      onClick={() => setFormBody(prev => prev.filter(x => x.id !== b.id))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            {editingTool && (
+              <Button variant="outline" onClick={resetForm} className="gap-2">
+                <XCircle className="h-4 w-4" /> Cancelar edição
+              </Button>
+            )}
+            <Button onClick={handleSave} className="gap-2">
+              <Save className="h-4 w-4" /> {editingTool ? 'Salvar alterações' : 'Criar ferramenta'}
             </Button>
-            <Button onClick={handleSave}>{editingTool ? 'Salvar' : 'Criar'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* List */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Ferramentas</h2>
+        {tools.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Wrench className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">Nenhuma ferramenta cadastrada ainda.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Método</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tools.map(t => (
+                    <TableRow key={t.id} className={editingTool?.id === t.id ? 'bg-muted/40' : ''}>
+                      <TableCell className="font-medium">{t.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`font-mono text-[10px] ${methodColor(t.method)}`}>
+                          {t.method}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground max-w-[280px] truncate">
+                        {t.endpoint}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-[260px] truncate">{t.description}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={t.enabled ? 'default' : 'secondary'}
+                          className="cursor-pointer"
+                          onClick={() => handleToggleEnabled(t)}
+                        >
+                          {t.enabled
+                            ? (<><Power className="h-3 w-3 mr-1" /> Ativo</>)
+                            : (<><PowerOff className="h-3 w-3 mr-1" /> Inativo</>)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openEdit(t)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => { setDeletingTool(t); setDeleteDialogOpen(true); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
