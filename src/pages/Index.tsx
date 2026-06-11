@@ -1,107 +1,88 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Shield, UserCog, Users } from 'lucide-react';
+import { Layers, Check, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 export default function Index() {
+  const { workspaces, current, setCurrent } = useWorkspace();
+  const userName = localStorage.getItem("userName") || "";
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Bem-vindo ao Sistema Heimdall</p>
+        <h2 className="text-3xl font-bold tracking-tight">Workspaces</h2>
+        <p className="text-muted-foreground">
+          {userName ? `Olá, ${userName}. ` : ""}Selecione um workspace para começar.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {workspaces.length === 0 ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Organizações</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Total cadastradas</p>
+          <CardContent className="py-12 text-center space-y-2">
+            <Layers className="h-10 w-10 mx-auto text-muted-foreground" />
+            <p className="text-muted-foreground">
+              Nenhum workspace configurado para o seu usuário.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Procure um administrador para vincular workspaces à sua conta.
+            </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Usuários ativos</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Funções</CardTitle>
-            <UserCog className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Funções definidas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Permissões</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Permissões ativas</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso Rápido</CardTitle>
-            <CardDescription>Navegue para as principais seções</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link to="/incidents">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <Building2 className="h-4 w-4" />
-                Incidentes
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Atividades Recentes</CardTitle>
-            <CardDescription>Últimas ações no sistema</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <Users className="h-3 w-3 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Novo usuário cadastrado</p>
-                  <p className="text-xs text-muted-foreground">Maria Silva adicionada</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-primary/10 p-2">
-                  <UserCog className="h-3 w-3 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Função atualizada</p>
-                  <p className="text-xs text-muted-foreground">Permissões do Operador modificadas</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {workspaces.map((ws) => {
+            const isActive = current?._id === ws._id;
+            return (
+              <Card
+                key={ws._id}
+                className={`group transition-all hover:shadow-lg hover:border-primary/40 cursor-pointer ${
+                  isActive ? "border-primary/60 ring-1 ring-primary/30" : ""
+                }`}
+                onClick={() => setCurrent(ws._id)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className="h-10 w-10 rounded-lg border border-border flex items-center justify-center shrink-0"
+                        style={{ background: `${ws.color}22`, borderColor: ws.color }}
+                      >
+                        <Layers className="h-5 w-5" style={{ color: ws.color }} />
+                      </span>
+                      <div className="min-w-0">
+                        <CardTitle className="truncate">{ws.name}</CardTitle>
+                        <CardDescription className="truncate">
+                          {ws.description || "Sem descrição"}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    {isActive && (
+                      <Badge className="gap-1 shrink-0">
+                        <Check className="h-3 w-3" /> Ativo
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant={isActive ? "default" : "outline"}
+                    size="sm"
+                    className="w-full justify-between"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrent(ws._id);
+                    }}
+                  >
+                    {isActive ? "Selecionado" : "Selecionar workspace"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
