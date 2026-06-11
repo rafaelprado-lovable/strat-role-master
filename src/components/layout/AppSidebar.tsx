@@ -107,6 +107,7 @@ export function AppSidebar() {
             icon: Rocket,
             hasSubmenu: true,
             submenu: [
+              { title: "Workspaces", url: "/workspaces" },
               { title: "Organizações", url: "/organizations" },
               { title: "Escopos", url: "/scopes" },
               { title: "Permissões", url: "/permissions" },

@@ -46,12 +46,15 @@ import Skills from "./pages/Skills";
 import KnowledgeBaseOms from "./pages/KnowledgeBaseOms";
 import KnowledgeBaseOmsEditor from "./pages/KnowledgeBaseOmsEditor";
 import UpdateMnp from "./pages/UpdateMnp";
+import Workspaces from "./pages/Workspaces";
+import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
+      <WorkspaceProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -394,14 +397,23 @@ const App = () => (
                 </AppLayout>
               }
             />
-
-
+            <Route
+              path="/workspaces"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Workspaces />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </WorkspaceProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
