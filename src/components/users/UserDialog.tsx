@@ -3,9 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi, organizationApi, roleApi, departmentApi } from '@/services/mockApi';
+import { workspaceService } from '@/services/workspaceService';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ const formSchema = z.object({
   roleId: z.string().min(1, 'Função é obrigatória'),
   password: z.string().min(8, 'Minimo de 8 caracteres'),
   departmentIds: z.array(z.string()).min(1, 'Selecione pelo menos um departamento'),
+  workspaceIds: z.array(z.string()).min(1, 'Selecione pelo menos um workspace'),
   phoneNumber: z.string().min(1, 'Telefone é obrigatório'),
   status: z.enum(['active', 'inactive']),
 });
@@ -72,6 +74,11 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     queryFn: departmentApi.getAll,
   });
 
+  const { data: workspaces } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: () => workspaceService.list(),
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,6 +87,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       organizationId: user?.organization || '',
       roleId: user?.role || '',
       departmentIds: user?.departmentIds || [],
+      workspaceIds: (user as any)?.workspaceIds || [],
       phoneNumber: user?.phoneNumber || ''
     },
   });
@@ -96,7 +104,8 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
         email: user.email || '',
         organizationId: user.organization?._id || user.organization || '',
         roleId: user.role?._id || user.role || '',
-        departmentIds, // 👈 agora o react-hook-form entende os checkboxes
+        departmentIds,
+        workspaceIds: (user as any).workspaceIds || [],
         phoneNumber: user.phoneNumber || '',
         password: user.password
       });
@@ -107,6 +116,7 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
         organizationId: '',
         roleId: '',
         departmentIds: [],
+        workspaceIds: [],
         phoneNumber: '',
         password: '',
         status: 'active',
@@ -315,6 +325,49 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                         }}
                       />
                     ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="workspaceIds"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel>Workspaces</FormLabel>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    {workspaces?.map((ws) => (
+                      <FormField
+                        key={ws._id}
+                        control={form.control}
+                        name="workspaceIds"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(ws._id)}
+                                onCheckedChange={(checked) =>
+                                  checked
+                                    ? field.onChange([...(field.value || []), ws._id])
+                                    : field.onChange(field.value?.filter((v) => v !== ws._id))
+                                }
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer flex items-center gap-2">
+                              <span className="h-3 w-3 rounded-full border border-border" style={{ background: ws.color }} />
+                              {ws.name}
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                    {(!workspaces || workspaces.length === 0) && (
+                      <p className="text-xs text-muted-foreground">Nenhum workspace cadastrado.</p>
+                    )}
                   </div>
                   <FormMessage />
                 </FormItem>
